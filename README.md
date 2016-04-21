@@ -2,8 +2,17 @@
 
 We have officially solved AI
 
+----
+####Primary contributors
 
-Links used for our domination:
+[Kevin Yang](https://github.com/kyang01)
+
+[Michael Farrell](https://github.com/michaelfarrell76)
+
+[Colton Gyulay](https://github.com/cgyulay)
+
+----
+#### Relevant links
 
 - https://medium.com/chat-bots/the-complete-beginner-s-guide-to-chatbots-8280b7b906ca#.u1jngyhzc
 - https://www.youtube.com/watch?v=IK0t38Al4_E
