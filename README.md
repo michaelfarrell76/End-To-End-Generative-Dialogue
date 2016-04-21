@@ -15,5 +15,4 @@ Links used for our domination:
 - http://arxiv.org/pdf/1603.09457v1.pdf
 - https://www.reddit.com/r/datasets/comments/3bxlg7/i_have_every_publicly_available_reddit_comment/
 - https://www.reddit.com/r/MachineLearning/comments/3ukvc6/datasets_of_one_to_one_conversations/
-- 
 
