@@ -1,0 +1,12 @@
+I've included the script to download the Ubuntu dataset from the Github repo: https://github.com/rkadlec/ubuntu-ranking-dataset-creator.
+
+Before running, make sure that nltk is installed in python. Afterwards, run this command in python to set up nltk datasets. 
+
+import nltk
+nltk.download()
+
+To download the data and run preprocessing, run the script included with the below command.
+
+./generate.sh -t -s -l
+
+This should generate a train.csv, valid.csv, and test.csv. They are formatted as triples where the first string is the previous conversation, the second string is a reply, and the third string is a 1 or 0 flag representing whether or not this was a real reply. 
