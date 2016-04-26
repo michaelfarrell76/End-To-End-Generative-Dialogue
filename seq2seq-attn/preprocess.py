@@ -282,7 +282,7 @@ def main(arguments):
                                            "source/target sequence.", required=True)
     parser.add_argument('--srcvalfile', help="Path to source validation data.", required=True)
     parser.add_argument('--targetvalfile', help="Path to target validation data.", required=True)
-    parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=4)
+    parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=16)
     # Make sure to configure this to the correct value -> May be 300 or something. I believe 
     # This is not including the start and end characters. 
     parser.add_argument('--seqlength', help="Maximum sequence length. Sequences longer "

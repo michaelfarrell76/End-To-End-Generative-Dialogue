@@ -54,4 +54,4 @@ Run the preprocess/preprocess-movies notebook all the way through to generate th
 
 python preprocess.py --srcfile data/train_full_context.txt --targetfile data/train_full_output.txt --srcvalfile data/dev_full_context.txt --targetvalfile data/dev_full_output.txt --outputfile data/conv
 
-th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -savefile conv-model 
+th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -savefile conv-model -gpuid 1
