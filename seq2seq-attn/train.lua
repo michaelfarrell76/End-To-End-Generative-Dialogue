@@ -308,7 +308,7 @@ function train(train_data, valid_data)
 	 local batch_l, target_l, source_l = d[5], d[6], d[7]
 	 
 	 local encoder_grads = encoder_grad_proto[{{1, batch_l}, {1, source_l}}]
-
+	 
 	 local rnn_state_enc = reset_state(init_fwd_enc, batch_l, 0)
 	 local context = context_proto[{{1, batch_l}, {1, source_l}}]
 	 if opt.gpuid >= 0 then
