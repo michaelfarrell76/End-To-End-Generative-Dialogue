@@ -140,8 +140,8 @@ function build()
 	local enc_embeddings = nn.LookupTable(opt.vocab_size_enc, opt.word_vec_size)
 	enc:add(enc_embeddings)
 	enc:add(nn.SplitTable(1, 2))
-	local encLSTM = nn.LSTM(opt.word_vec_size, opt.hidden_size)
-	enc:add(nn.Sequencer(encLSTM))
+	local encRNN = nn.LSTM(opt.word_vec_size, opt.hidden_size)
+	enc:add(nn.Sequencer(encRNN))
 	enc:add(nn.SelectTable(-1))
 
 	-- Decoder
@@ -149,8 +149,8 @@ function build()
 	local dec_embeddings = nn.LookupTable(opt.vocab_size_dec, opt.word_vec_size)
 	dec:add(dec_embeddings)
 	dec:add(nn.SplitTable(1, 2))
-	local decLSTM = nn.LSTM(opt.word_vec_size, opt.hidden_size)
-	dec:add(nn.Sequencer(decLSTM))
+	local decRNN = nn.LSTM(opt.word_vec_size, opt.hidden_size)
+	dec:add(nn.Sequencer(decRNN))
 	dec:add(nn.Sequencer(nn.Linear(opt.hidden_size, opt.vocab_size_dec)))
 	dec:add(nn.Sequencer(nn.LogSoftMax()))
 
@@ -214,13 +214,13 @@ function build()
 	-- Package model for training
 	local m ={
 		enc = enc,
-		encLSTM = encLSTM,
+		encRNN = encRNN,
 		dec = dec,
-		decLSTM = decLSTM,
+		decRNN = decRNN,
 		params = params,
 		grad_params = grad_params
 	}
-	
+
 	return m, criterion
 end
 
@@ -234,7 +234,8 @@ function train(m, criterion, train_data, valid_data)
 	opt.train_perf = {}
 	opt.val_perf = {}
 
-	-- Decay learning rate if val perf does not improve or we hit opt.start_decay_at limit
+	-- Decay learning rate if validation performance does not improve or we hit
+	-- opt.start_decay_at limit
 	function decay_lr(epoch)
 		print(opt.val_perf)
 		if epoch >= opt.start_decay_at then
@@ -270,14 +271,15 @@ function train(m, criterion, train_data, valid_data)
 			local target, target_out, nonzeros, source = d[1], d[2], d[3], d[4]
 			local batch_l, target_l, source_l = d[5], d[6], d[7]
 
-			-- Quick hack to line up forward/backward connection
-			-- (need mini-batches on dim 1)
+			-- Quick hack to line up encoder/decoder connection
+			-- (we need mini-batches on dim 1)
+			-- TODO: change forward/backward_connect rather than transpose here
 			source = source:t()
 			target = target:t()
 
 			-- Forward prop enc
 			local enc_out = m.enc:forward(source)
-			forward_connect(m.encLSTM, m.decLSTM, source_l)
+			forward_connect(m.encRNN, m.decRNN, source_l)
 
 			-- Forward prop dec
 			local dec_out = m.dec:forward(target)
@@ -286,7 +288,7 @@ function train(m, criterion, train_data, valid_data)
 			-- Backward prop dec
 			local grad_output = criterion:backward(dec_out, target_out)
 			m.dec:backward(target, grad_output)
-			backward_connect(m.encLSTM, m.decLSTM)
+			backward_connect(m.encRNN, m.decRNN)
 
 			-- Backward prop enc
 			local zeroTensor = torch.Tensor(enc_out):zero()
@@ -328,6 +330,7 @@ function train(m, criterion, train_data, valid_data)
 			train_nonzeros = train_nonzeros + nonzeros
 			train_loss = train_loss + loss*batch_l
 			local time_taken = timer:time().real - start_time
+
 			if i % opt.print_every == 0 then
 				local stats = string.format('Epoch: %d, Batch: %d/%d, Batch size: %d, LR: %.4f, ',
 					epoch, i, data:size(), batch_l, opt.learning_rate)
@@ -338,6 +341,8 @@ function train(m, criterion, train_data, valid_data)
 					num_words_source / time_taken, num_words_target / time_taken)
 				print(stats)
 			end
+
+			-- Friendly reminder
 			if i % 200 == 0 then
 				collectgarbage()
 			end
@@ -386,11 +391,11 @@ function main()
 		cutorch.manualSeed(opt.seed)
 	end
 	
-	-- Create the data loader class
-	print('loading data...')
+	-- Create the data loader classes
+	print('Loading data...')
 	train_data = data.new(opt, opt.data_file)
 	valid_data = data.new(opt, opt.val_data_file)
-	print('done!')
+	print('Done!')
 
 	print(string.format('Source vocab size: %d, Target vocab size: %d',
 		valid_data.source_size, valid_data.target_size))
@@ -407,6 +412,8 @@ function main()
 
 	-- Train
 	train(model, criterion, train_data, valid_data)
+
+	-- TODO: Test
 end
 
 main()
