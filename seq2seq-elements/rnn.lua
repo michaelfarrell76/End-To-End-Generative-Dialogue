@@ -15,7 +15,7 @@ cmd:text("")
 cmd:text("**Data options**")
 cmd:text("")
 cmd:option('-data_file','data/demo-train.hdf5',[[Path to the training *.hdf5 file 
-											   from preprocess.py]])
+												 from preprocess.py]])
 cmd:option('-val_data_file','data/demo-val.hdf5',[[Path to validation *.hdf5 file 
 												 from preprocess.py]])
 cmd:option('-savefile', 'seq2seq_lstm_attn', [[Savefile name (model will be saved as 
@@ -48,23 +48,23 @@ cmd:text("")
 cmd:option('-nepochs', 3, [[Number of training epochs]])
 cmd:option('-start_epoch', 1, [[If loading from a checkpoint, the epoch from which to start]])
 cmd:option('-param_init', 0.1, [[Parameters are initialized over uniform distribution with support
-							   (-param_init, param_init)]])
+								 (-param_init, param_init)]])
 cmd:option('-learning_rate', 1, [[Starting learning rate]])
 cmd:option('-max_grad_norm', 5, [[If the norm of the gradient vector exceeds this, renormalize it
 								to have the norm equal to max_grad_norm]])
 cmd:option('-dropout', 0.3, [[Dropout probability. 
 							Dropout is applied between vertical LSTM stacks.]])
 cmd:option('-lr_decay', 0.5, [[Decay learning rate by this much if (i) perplexity does not decrease
-					  on the validation set or (ii) epoch has gone past the start_decay_at_limit]])
+						on the validation set or (ii) epoch has gone past the start_decay_at_limit]])
 cmd:option('-start_decay_at', 9, [[Start decay after this epoch]])
 -- cmd:option('-curriculum', 0, [[For this many epochs, order the minibatches based on source
 --                 sequence length. Sometimes setting this to 1 will increase convergence speed.]])
 cmd:option('-pre_word_vecs_enc', '', [[If a valid path is specified, then this will load 
-									  pretrained word embeddings (hdf5 file) on the encoder side. 
-									  See README for specific formatting instructions.]])
+										pretrained word embeddings (hdf5 file) on the encoder side. 
+										See README for specific formatting instructions.]])
 cmd:option('-pre_word_vecs_dec', '', [[If a valid path is specified, then this will load 
-									  pretrained word embeddings (hdf5 file) on the decoder side. 
-									  See README for specific formatting instructions.]])
+										pretrained word embeddings (hdf5 file) on the decoder side. 
+										See README for specific formatting instructions.]])
 cmd:option('-fix_word_vecs_enc', 0, [[If = 1, fix word embeddings on the encoder side]])
 cmd:option('-fix_word_vecs_dec', 0, [[If = 1, fix word embeddings on the decoder side]])
 
@@ -75,8 +75,8 @@ cmd:text("")
 -- GPU
 cmd:option('-gpuid', -1, [[Which gpu to use. -1 = use CPU]])
 cmd:option('-gpuid2', -1, [[If this is >= 0, then the model will use two GPUs whereby the encoder
-						   is on the first GPU and the decoder is on the second GPU. 
-						   This will allow you to train with bigger batches/models.]])
+							 is on the first GPU and the decoder is on the second GPU. 
+							 This will allow you to train with bigger batches/models.]])
 
 -- Bookkeeping
 cmd:option('-save_every', 1, [[Save every this many epochs]])
@@ -100,16 +100,16 @@ end
 
 -- Zeros all tensors in table
 function zero_table(t)
-   	for i = 1, #t do
-	  	if opt.gpuid >= 0 and opt.gpuid2 >= 0 then
-	 		if i == 1 then
+	for i = 1, #t do
+		if opt.gpuid >= 0 and opt.gpuid2 >= 0 then
+			if i == 1 then
 				cutorch.setDevice(opt.gpuid)
-	 		else
+			else
 				cutorch.setDevice(opt.gpuid2)
-	 		end
-	  	end
-	  	t[i]:zero()
-   	end
+			end
+		end
+		t[i]:zero()
+	end
 end
 
 ------------
@@ -241,7 +241,7 @@ function train(m, criterion, train_data, valid_data)
 		if epoch >= opt.start_decay_at then
 			start_decay = 1
 		end
-	  
+		
 		if opt.val_perf[#opt.val_perf] ~= nil and opt.val_perf[#opt.val_perf-1] ~= nil then
 			local curr_ppl = opt.val_perf[#opt.val_perf]
 			local prev_ppl = opt.val_perf[#opt.val_perf-1]
