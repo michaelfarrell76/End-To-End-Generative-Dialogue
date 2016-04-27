@@ -220,13 +220,7 @@ function build()
 		params = params,
 		grad_params = grad_params
 	}
-	-- local m = {}
-	-- m.enc = enc
-	-- m.encLSTM = encLSTM
-	-- m.dec = dec
-	-- m.decLSTM = decLSTM
-	-- m.params = params
-	-- m.grad_params = grad_params
+	
 	return m, criterion
 end
 
