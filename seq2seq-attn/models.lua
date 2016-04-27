@@ -20,7 +20,7 @@ function make_lstm(data, opt, model, use_chars)
 		input_size = opt.word_vec_size
 	else
 		input_size = opt.num_kernels
-	end   
+	end
 	local offset = 0
 	-- there will be 2*n+3 inputs
 	local inputs = {}
@@ -111,7 +111,7 @@ function make_lstm(data, opt, model, use_chars)
 
 	if model == 'dec' then
 		local top_h = outputs[#outputs]
-		local decoder_attn = make_decoder_attn(data, opt)     
+		local decoder_attn = make_decoder_attn(data, opt)
 		decoder_attn.name = 'decoder_attn'
 		local attn_out = decoder_attn({top_h, inputs[offset]})
 		if dropout > 0 then
@@ -150,7 +150,7 @@ function make_decoder_attn(data, opt, simple)
 		context_output = nn.Tanh()(nn.LinearNoBias(opt.rnn_size*2,
 			opt.rnn_size)(context_combined))
 	else
-		context_output = nn.CAddTable()({context_combined,inputs[1]})
+		context_output = nn.CAddTable()({context_combined, inputs[1]})
 	end
 	return nn.gModule(inputs, {context_output})
 end

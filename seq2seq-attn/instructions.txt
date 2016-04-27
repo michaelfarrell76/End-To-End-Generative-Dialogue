@@ -58,8 +58,11 @@ python preprocess.py --srcfile data/train_full_context.txt --targetfile data/tra
 # For micro train/valid (for quick testing)
 python preprocess.py --srcfile data/train_micro_context.txt --targetfile data/train_micro_output.txt --srcvalfile data/dev_micro_context.txt --targetvalfile data/dev_micro_output.txt --outputfile data/micro
 
-# To run full
+# To run full (seq2seq-attn)
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -savefile conv-model -gpuid 1
 
-# To run micro
+# To run micro (seq2seq-attn)
 th train.lua -data_file data/micro-train.hdf5 -val_data_file data/micro-val.hdf5 -savefile micro-model
+
+# To run micro (elements)
+th rnn.lua -data_file ../seq2seq-attn/data/micro-train.hdf5 -val_data_file ../seq2seq-attn/data/micro-val.hdf5
