@@ -29,7 +29,7 @@ cmd:text("")
 cmd:text("**Model options**")
 cmd:text("")
 
--- cmd:option('-num_layers', 2, [[Number of layers in the LSTM encoder/decoder]])
+cmd:option('-num_layers', 2, [[Number of layers in the LSTM encoder/decoder]])
 cmd:option('-hidden_size', 500, [[Size of LSTM hidden states]])
 cmd:option('-word_vec_size', 500, [[Word embedding sizes]])
 -- cmd:option('-reverse_src', 0, [[If 1, reverse the source sequence. The original 
@@ -44,8 +44,8 @@ cmd:text("")
 cmd:text("**Optimization options**")
 cmd:text("")
 
--- optimization
-cmd:option('-nepochs', 3, [[Number of training epochs]])
+-- Optimization
+cmd:option('-num_epochs', 3, [[Number of training epochs]])
 cmd:option('-start_epoch', 1, [[If loading from a checkpoint, the epoch from which to start]])
 cmd:option('-param_init', 0.1, [[Parameters are initialized over uniform distribution with support
                                  (-param_init, param_init)]])
@@ -117,17 +117,17 @@ end
 ------------
 
 -- Forward coupling: copy encoder cell and output to decoder RNN
-function forward_connect(encRNN, decRNN, seq_length)
+function forward_connect(enc_rnn, dec_rnn, seq_length)
     -- print(seq_length)
-    -- print(encRNN.outputs)
-    decRNN.userPrevOutput = nn.rnn.recursiveCopy(decRNN.userPrevOutput, encRNN.outputs[seq_length])
-    decRNN.userPrevCell = nn.rnn.recursiveCopy(decRNN.userPrevCell, encRNN.cells[seq_length])
+    -- print(enc_rnn.outputs)
+    dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput, enc_rnn.outputs[seq_length])
+    dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell, enc_rnn.cells[seq_length])
 end
 
 -- Backward coupling: copy decoder gradients to encoder RNN
-function backward_connect(encRNN, decRNN)
-    encRNN.userNextGradCell = nn.rnn.recursiveCopy(encRNN.userNextGradCell, decRNN.userGradPrevCell)
-    encRNN.gradPrevOutput = nn.rnn.recursiveCopy(encRNN.gradPrevOutput, decRNN.userGradPrevOutput)
+function backward_connect(enc_rnn, dec_rnn)
+    enc_rnn.userNextGradCell = nn.rnn.recursiveCopy(enc_rnn.userNextGradCell, dec_rnn.userGradPrevCell)
+    enc_rnn.gradPrevOutput = nn.rnn.recursiveCopy(enc_rnn.gradPrevOutput, dec_rnn.userGradPrevOutput)
 end
 
 ------------
@@ -140,8 +140,8 @@ function build()
     local enc_embeddings = nn.LookupTable(opt.vocab_size_enc, opt.word_vec_size)
     enc:add(enc_embeddings)
     enc:add(nn.SplitTable(1, 2))
-    local encRNN = nn.LSTM(opt.word_vec_size, opt.hidden_size)
-    enc:add(nn.Sequencer(encRNN))
+    local enc_rnn = nn.LSTM(opt.word_vec_size, opt.hidden_size)
+    enc:add(nn.Sequencer(enc_rnn))
     enc:add(nn.SelectTable(-1))
 
     -- Decoder
@@ -149,8 +149,8 @@ function build()
     local dec_embeddings = nn.LookupTable(opt.vocab_size_dec, opt.word_vec_size)
     dec:add(dec_embeddings)
     dec:add(nn.SplitTable(1, 2))
-    local decRNN = nn.LSTM(opt.word_vec_size, opt.hidden_size)
-    dec:add(nn.Sequencer(decRNN))
+    local dec_rnn = nn.LSTM(opt.word_vec_size, opt.hidden_size)
+    dec:add(nn.Sequencer(dec_rnn))
     dec:add(nn.Sequencer(nn.Linear(opt.hidden_size, opt.vocab_size_dec)))
     dec:add(nn.Sequencer(nn.LogSoftMax()))
 
@@ -214,9 +214,9 @@ function build()
     -- Package model for training
     local m ={
         enc = enc,
-        encRNN = encRNN,
+        enc_rnn = enc_rnn,
         dec = dec,
-        decRNN = decRNN,
+        dec_rnn = dec_rnn,
         params = params,
         grad_params = grad_params
     }
@@ -279,16 +279,16 @@ function train(m, criterion, train_data, valid_data)
 
             -- Forward prop enc
             local enc_out = m.enc:forward(source)
-            forward_connect(m.encRNN, m.decRNN, source_l)
+            forward_connect(m.enc_rnn, m.dec_rnn, source_l)
 
             -- Forward prop dec
             local dec_out = m.dec:forward(target)
-            local loss = criterion:forward(dec_out, target_out) -- /batch_l
+            local loss = criterion:forward(dec_out, target_out)
 
             -- Backward prop dec
             local grad_output = criterion:backward(dec_out, target_out)
             m.dec:backward(target, grad_output)
-            backward_connect(m.encRNN, m.decRNN)
+            backward_connect(m.enc_rnn, m.dec_rnn)
 
             -- Backward prop enc
             local zeroTensor = torch.Tensor(enc_out):zero()
@@ -351,7 +351,7 @@ function train(m, criterion, train_data, valid_data)
     end
 
     local total_loss, total_nonzeros, batch_loss, batch_nonzeros
-    for epoch = opt.start_epoch, opt.nepochs do
+    for epoch = opt.start_epoch, opt.num_epochs do
         m.enc:training()
         m.dec:training()
         local total_loss, total_nonzeros = train_batch(train_data, epoch)
