@@ -29,7 +29,7 @@ cmd:text("")
 cmd:text("**Model options**")
 cmd:text("")
 
-cmd:option('-num_layers', 2, [[Number of layers in the LSTM encoder/decoder]])
+cmd:option('-num_layers', 1, [[Number of layers in the LSTM encoder/decoder]])
 cmd:option('-hidden_size', 500, [[Size of LSTM hidden states]])
 cmd:option('-word_vec_size', 500, [[Word embedding sizes]])
 -- cmd:option('-reverse_src', 0, [[If 1, reverse the source sequence. The original 
@@ -52,7 +52,7 @@ cmd:option('-param_init', 0.1, [[Parameters are initialized over uniform distrib
 cmd:option('-learning_rate', 1, [[Starting learning rate]])
 cmd:option('-max_grad_norm', 5, [[If the norm of the gradient vector exceeds this, renormalize it
                                 to have the norm equal to max_grad_norm]])
-cmd:option('-dropout', 0.3, [[Dropout probability. 
+cmd:option('-dropout', 0.3, [[Dropout probability.
                             Dropout is applied between vertical LSTM stacks.]])
 cmd:option('-lr_decay', 0.5, [[Decay learning rate by this much if (i) perplexity does not decrease
                         on the validation set or (ii) epoch has gone past the start_decay_at_limit]])
@@ -134,37 +134,76 @@ end
 -- Structure
 ------------
 
-function build()
-    -- Encoder
+function build_encoder()
     local enc = nn.Sequential()
     local enc_embeddings = nn.LookupTable(opt.vocab_size_enc, opt.word_vec_size)
     enc:add(enc_embeddings)
     enc:add(nn.SplitTable(1, 2))
-    local enc_rnn = nn.LSTM(opt.word_vec_size, opt.hidden_size)
-    enc:add(nn.Sequencer(enc_rnn))
+
+    local enc_rnn
+    for i = 1, opt.num_layers do
+        local inp = opt.hidden_size
+        if i == 1 then inp = opt.word_vec_size end
+
+        local rnn = nn.LSTM(inp, opt.hidden_size)
+        enc:add(nn.Sequencer(rnn))
+        if i == opt.num_layers then
+            enc_rnn = rnn -- Save final layer of encoder
+        elseif opt.dropout > 0 then
+            enc:add(nn.Sequencer(nn.Dropout(opt.dropout)))
+        end
+    end
+
     enc:add(nn.SelectTable(-1))
-
-    -- Decoder
-    local dec = nn.Sequential()
-    local dec_embeddings = nn.LookupTable(opt.vocab_size_dec, opt.word_vec_size)
-    dec:add(dec_embeddings)
-    dec:add(nn.SplitTable(1, 2))
-    local dec_rnn = nn.LSTM(opt.word_vec_size, opt.hidden_size)
-    dec:add(nn.Sequencer(dec_rnn))
-    dec:add(nn.Sequencer(nn.Linear(opt.hidden_size, opt.vocab_size_dec)))
-    dec:add(nn.Sequencer(nn.LogSoftMax()))
-
-    local criterion = nn.SequencerCriterion(nn.ClassNLLCriterion())
-    -- local decOutSeq = torch.Tensor({{1,2,3,4,6},{1,2,4,3,6}})
-    -- The decoder predicts one per timestep, so we split accordingly
-    -- decOutSeq = nn.SplitTable(1, 1):forward(decOutSeq)
 
     if opt.pre_word_vecs_enc:len() > 0 then
         print('TODO: bootstrap encoder word embeddings')
     end
+
+    return enc, enc_rnn
+end
+
+function build_decoder()
+    local dec = nn.Sequential()
+    local dec_embeddings = nn.LookupTable(opt.vocab_size_dec, opt.word_vec_size)
+    dec:add(dec_embeddings)
+    dec:add(nn.SplitTable(1, 2))
+
+    local dec_rnn
+    for i = 1, opt.num_layers do
+        local inp = opt.hidden_size
+        if i == 1 then inp = opt.word_vec_size end
+
+        local rnn = nn.LSTM(inp, opt.hidden_size)
+        dec:add(nn.Sequencer(rnn))
+        if i == 1 then -- Save initial layer of decoder
+            dec_rnn = rnn
+        end
+        if opt.dropout > 0 and i < opt.num_layers then
+            dec:add(nn.Sequencer(nn.Dropout(opt.dropout)))
+        end
+    end
+
+    dec:add(nn.Sequencer(nn.Linear(opt.hidden_size, opt.vocab_size_dec)))
+    dec:add(nn.Sequencer(nn.LogSoftMax()))
+
     if opt.pre_word_vecs_dec:len() > 0 then
         print('TODO: bootstrap decoder word embeddings')
     end
+
+    return dec, dec_rnn
+end
+
+function build()
+    -- Encoder, enc_rnn is top rnn in vertical enc stack
+    local enc, enc_rnn = build_encoder()
+
+    -- Decoder, dec_rnn is lowest rnn in vertical dec stack
+    local dec, dec_rnn = build_decoder()
+
+    -- Criterion
+    local criterion = nn.SequencerCriterion(nn.ClassNLLCriterion())
+
     if opt.train_from:len() == 1 then
         print('TODO: implement train_from')
     end
@@ -399,7 +438,8 @@ function main()
 
     print(string.format('Source vocab size: %d, Target vocab size: %d',
         valid_data.source_size, valid_data.target_size))
-    opt.max_sent_l = math.max(valid_data.source:size(2), valid_data.target:size(2))
+    opt.max_sent_l = math.max(valid_data.source:size(2),
+        valid_data.target:size(2))
     print(string.format('Source max sent len: %d, Target max sent len: %d',
         valid_data.source:size(2), valid_data.target:size(2)))
 

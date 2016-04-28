@@ -25,3 +25,10 @@ We have officially solved AI
 - https://www.reddit.com/r/datasets/comments/3bxlg7/i_have_every_publicly_available_reddit_comment/
 - https://www.reddit.com/r/MachineLearning/comments/3ukvc6/datasets_of_one_to_one_conversations/
 
+----
+#### Acknowledgments
+
+Our implementation utilizes code from the following:
+
+* [Yoon Kim's seq2seq-attn repo](https://github.com/harvardnlp/seq2seq-attn)
+* [Element rnn library](https://github.com/Element-Research/rnn)
