@@ -118,8 +118,6 @@ end
 
 -- Forward coupling: copy encoder cell and output to decoder RNN
 function forward_connect(enc_rnn, dec_rnn, seq_length)
-    -- print(seq_length)
-    -- print(enc_rnn.outputs)
     dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput, enc_rnn.outputs[seq_length])
     dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell, enc_rnn.cells[seq_length])
 end
@@ -205,7 +203,7 @@ function build()
     local criterion = nn.SequencerCriterion(nn.ClassNLLCriterion())
 
     if opt.train_from:len() == 1 then
-        print('TODO: implement train_from')
+        error('TODO: implement train_from')
     end
 
     -- Parameter tracking
@@ -233,7 +231,7 @@ function build()
 
     -- GPU
     if opt.gpuid >= 0 then
-        print('TODO: implement GPU support')
+        error('TODO: implement GPU support')
         -- for i = 1, #layers do
         --  if opt.gpuid2 >= 0 then
         --      if i == 1 then
