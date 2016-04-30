@@ -32,6 +32,7 @@ cmd:text("")
 cmd:option('-num_layers', 1, [[Number of layers in the LSTM encoder/decoder]])
 cmd:option('-hidden_size', 500, [[Size of LSTM hidden states]])
 cmd:option('-word_vec_size', 500, [[Word embedding sizes]])
+cmd:option('-layer_type', 'lstm', [[Recurrent layer type (rnn, gru, lstm, fast)]])
 -- cmd:option('-reverse_src', 0, [[If 1, reverse the source sequence. The original 
 --                               sequence-to-sequence paper found that this was crucial to 
 --                               achieving good performance, but with attention models this
@@ -116,6 +117,8 @@ end
 -- Coupling
 ------------
 
+-- TODO: expand to work with non lstm modules
+
 -- Forward coupling: copy encoder cell and output to decoder RNN
 function forward_connect(enc_rnn, dec_rnn, seq_length)
     dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput, enc_rnn.outputs[seq_length])
@@ -132,7 +135,7 @@ end
 -- Structure
 ------------
 
-function build_encoder()
+function build_encoder(recurrence)
     local enc = nn.Sequential()
     local enc_embeddings = nn.LookupTable(opt.vocab_size_enc, opt.word_vec_size)
     enc:add(enc_embeddings)
@@ -143,7 +146,7 @@ function build_encoder()
         local inp = opt.hidden_size
         if i == 1 then inp = opt.word_vec_size end
 
-        local rnn = nn.LSTM(inp, opt.hidden_size)
+        local rnn = recurrence(inp, opt.hidden_size)
         enc:add(nn.Sequencer(rnn))
         if i == opt.num_layers then
             enc_rnn = rnn -- Save final layer of encoder
@@ -161,7 +164,7 @@ function build_encoder()
     return enc, enc_rnn
 end
 
-function build_decoder()
+function build_decoder(recurrence)
     local dec = nn.Sequential()
     local dec_embeddings = nn.LookupTable(opt.vocab_size_dec, opt.word_vec_size)
     dec:add(dec_embeddings)
@@ -172,7 +175,7 @@ function build_decoder()
         local inp = opt.hidden_size
         if i == 1 then inp = opt.word_vec_size end
 
-        local rnn = nn.LSTM(inp, opt.hidden_size)
+        local rnn = recurrence(inp, opt.hidden_size)
         dec:add(nn.Sequencer(rnn))
         if i == 1 then -- Save initial layer of decoder
             dec_rnn = rnn
@@ -193,11 +196,28 @@ function build_decoder()
 end
 
 function build()
+    local recurrence = nn.LSTM
+    if opt.layer_type == 'rnn' then
+        recurrence = nn.Recurrent
+        error('RNN layer type not currently supported.')
+    elseif opt.layer_type == 'gru' then
+        recurrence = nn.GRU
+        error('GRU layer type not currently supported.')
+    elseif opt.layer_type == 'fast' then
+        recurrence = nn.FastLSTM
+    end
+
+    print('\nBuilding model with specs:')
+    print('Layer type: ' .. opt.layer_type)
+    print('Embedding size: ' .. opt.word_vec_size)
+    print('Hidden layer size: ' .. opt.hidden_size)
+    print('Number of layers: ' .. opt.num_layers)
+
     -- Encoder, enc_rnn is top rnn in vertical enc stack
-    local enc, enc_rnn = build_encoder()
+    local enc, enc_rnn = build_encoder(recurrence)
 
     -- Decoder, dec_rnn is lowest rnn in vertical dec stack
-    local dec, dec_rnn = build_decoder()
+    local dec, dec_rnn = build_decoder(recurrence)
 
     -- Criterion
     local criterion = nn.SequencerCriterion(nn.ClassNLLCriterion())
@@ -227,7 +247,7 @@ function build()
         params[i] = p
         grad_params[i] = gp
     end
-    print('Number of parameters: ' .. num_params)
+    print('Number of parameters: ' .. num_params .. '\n')
 
     -- GPU
     if opt.gpuid >= 0 then
@@ -249,7 +269,7 @@ function build()
     end
 
     -- Package model for training
-    local m ={
+    local m = {
         enc = enc,
         enc_rnn = enc_rnn,
         dec = dec,
@@ -266,6 +286,8 @@ end
 ------------
 
 function train(m, criterion, train_data, valid_data)
+    print('Beginning training...')
+
     local timer = torch.Timer()
     local start_decay = 0
     opt.train_perf = {}
