@@ -79,7 +79,7 @@ cmd:option('-gpuid2', -1, [[If this is >= 0, then the model will use two GPUs wh
 
 -- Bookkeeping
 cmd:option('-save_every', 1, [[Save every this many epochs]])
-cmd:option('-print_every', 50, [[Print stats after this many batches]])
+cmd:option('-print_every', 100, [[Print stats after this many batches]])
 cmd:option('-seed', 3435, [[Seed for random initialization]])
 
 opt = cmd:parse(arg)
@@ -465,11 +465,9 @@ function train(m, criterion, train_data, valid_data)
         -- Clean and save model
         local save_file = string.format('%s_epoch%.2f_%.2f.t7', opt.save_file, epoch, valid_score)
         -- if epoch % opt.save_every == 0 then
-        if epoch == opt.num_epochs then
-            print('Saving checkpoint to ' .. save_file)
-            -- clean_layer(m.enc); clean_layer(m.dec);
-            torch.save(save_file, {{m.enc, m.dec}, opt})
-        end
+        print('Saving checkpoint to ' .. save_file)
+        -- clean_layer(m.enc); clean_layer(m.dec);
+        torch.save(save_file, {{m.enc, m.dec}, opt})
     end
 end
 
