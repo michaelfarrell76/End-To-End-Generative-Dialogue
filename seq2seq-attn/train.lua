@@ -17,7 +17,7 @@ cmd:option('-data_file','data/demo-train.hdf5',[[Path to the training *.hdf5 fil
 											   from preprocess.py]])
 cmd:option('-val_data_file','data/demo-val.hdf5',[[Path to validation *.hdf5 file 
 												 from preprocess.py]])
-cmd:option('-savefile', 'seq2seq_lstm_attn', [[Savefile name (model will be saved as 
+cmd:option('-save_file', 'seq2seq_lstm_attn', [[Savefile name (model will be saved as 
 						 savefile_epochX_PPL.t7 where X is the X-th epoch and PPL is 
 						 the validation perplexity]])
 cmd:option('-num_shards', 0, [[If the training data has been broken up into different shards, 
