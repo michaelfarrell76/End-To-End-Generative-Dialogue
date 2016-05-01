@@ -52,17 +52,8 @@ Macbook-Pro-4:singularity candokevin$ tree
 
 Run the preprocess/preprocess-movies notebook all the way through to generate the train/validation data files
 
-# For full train/valid (NB: current preprocess only uses train and splits it)
-python preprocess.py --srcfile data/train_full_context.txt --targetfile data/train_full_output.txt --srcvalfile data/dev_full_context.txt --targetvalfile data/dev_full_output.txt --outputfile data/conv
+python preprocess.py
 
-# For micro train/valid (for quick testing)
-python preprocess.py --srcfile data/train_micro_context.txt --targetfile data/train_micro_output.txt --srcvalfile data/dev_micro_context.txt --targetvalfile data/dev_micro_output.txt --outputfile data/micro
-
-# To run full (seq2seq-attn)
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -savefile conv-model -gpuid 1
 
-# To run micro (seq2seq-attn)
-th train.lua -data_file data/micro-train.hdf5 -val_data_file data/micro-val.hdf5 -savefile micro-model
-
-# To run micro (elements)
-th rnn.lua -data_file ../seq2seq-attn/data/micro-train.hdf5 -val_data_file ../seq2seq-attn/data/micro-val.hdf5
+th beam.lua -model conv-model_final.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
