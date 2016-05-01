@@ -2,8 +2,9 @@
 .DS_Store
 .ipynb_checkpoints
 
-# MovieTriples
+# MovieTriples + other data
 data/MovieTriples/
+data/
 
 # Preprocessing files
 *.hdf5
