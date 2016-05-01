@@ -484,6 +484,16 @@ def format_data(directory, train_valid_split, seq_length):
         f.write(str(output) + ' \n')
     f.close()
 
+    emb_wordvec_upd = np.vstack((emb_wordvec[0], np.zeros((300, 2)).T))
+    emb_wordvec_upd[10001] = emb_wordvec[0][3][:]
+    emb_wordvec_upd[10002] = emb_wordvec[0][4][:]
+    emb_wordvec_upd[3] = emb_wordvec[0][10001][:]
+    emb_wordvec_upd[4] = emb_wordvec[0][10002][:]
+    emb_wordvec_upd = np.roll(emb_wordvec_upd, 1, axis=0)
+    f = h5py.File('data/word_vecs.hdf5', 'w')
+    f['word_vecs'] = emb_wordvec_upd
+    f.close()
+
     print('Done formatting the data from Movie Triples dataset')
 
 def main(arguments):
@@ -506,7 +516,7 @@ def main(arguments):
                                            "source/target sequence.", default='data/train_targ_words.txt')
     parser.add_argument('--srcvalfile', help="Path to source validation data.", default='data/dev_src_words.txt')
     parser.add_argument('--targetvalfile', help="Path to target validation data.", default='data/dev_targ_words.txt')
-    parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=32)
+    parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=16)
     parser.add_argument('--seqlength', help="Maximum sequence length. Sequences longer "
                                                "than this are dropped.", type=int, default=50)
     parser.add_argument('--outputfile', help="Prefix of the output file names. ", type=str, default='data/conv')
