@@ -22,7 +22,7 @@ cmd:option('-savefile', 'seq2seq_lstm_attn', [[Savefile name (model will be save
 						 the validation perplexity]])
 cmd:option('-num_shards', 0, [[If the training data has been broken up into different shards, 
 							 then training files are in this many partitions]])
-cmd:option('-train_from', '', [[If training from a checkpoint then this is the path to the
+cmd:option('-train_from', 'conv-model_final.t7', [[If training from a checkpoint then this is the path to the
 								pretrained model.]])
 
 -- rnn model specs
@@ -70,7 +70,7 @@ cmd:text("**Optimization options**")
 cmd:text("")
 
 -- optimization
-cmd:option('-epochs', 3, [[Number of training epochs]])
+cmd:option('-epochs', 10, [[Number of training epochs]])
 cmd:option('-start_epoch', 1, [[If loading from a checkpoing, the epoch from which to start]])
 cmd:option('-param_init', 0.1, [[Parameters are initialized over uniform distribution with support
 							   (-param_init, param_init)]])
@@ -488,13 +488,13 @@ function train(train_data, valid_data)
 	  local savefile = string.format('%s_epoch%.2f_%.2f.t7', opt.savefile, epoch, score)      
 	  if epoch % opt.save_every == 0 then
 		 print('saving checkpoint to ' .. savefile)
-	 clean_layer(encoder); clean_layer(decoder); clean_layer(generator)
-	 torch.save(savefile, {{encoder, decoder, generator}, opt})
+	 --clean_layer(encoder); clean_layer(decoder); clean_layer(generator)
+	 torch.save(savefile, {{encoder:double(), decoder:double(), generator:double()}, opt})
 	  end
    end
    -- save final model
    local savefile = string.format('%s_final.t7', opt.savefile)
-   clean_layer(encoder); clean_layer(decoder); clean_layer(generator)
+   --clean_layer(encoder); clean_layer(decoder); clean_layer(generator)
    print('saving final model to ' .. savefile)   
    torch.save(savefile, {{encoder:double(), decoder:double(), generator:double()}, opt})   
 end
