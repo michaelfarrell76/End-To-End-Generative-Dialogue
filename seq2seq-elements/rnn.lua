@@ -18,7 +18,7 @@ cmd:option('-data_file','data/demo-train.hdf5',[[Path to the training *.hdf5 fil
                                                  from preprocess.py]])
 cmd:option('-val_data_file','data/demo-val.hdf5',[[Path to validation *.hdf5 file 
                                                  from preprocess.py]])
-cmd:option('-savefile', 'seq2seq_lstm_attn', [[Savefile name (model will be saved as 
+cmd:option('-save_file', 'seq2seq_lstm', [[Save file name (model will be saved as 
                          savefile_epochX_PPL.t7 where X is the X-th epoch and PPL is 
                          the validation perplexity]])
 cmd:option('-train_from', '', [[If training from a checkpoint then this is the path to the
@@ -293,10 +293,24 @@ function train(m, criterion, train_data, valid_data)
     opt.train_perf = {}
     opt.val_perf = {}
 
+    function clean_layer(layer)
+        if opt.gpuid >= 0 then
+            layer.output = torch.CudaTensor()
+            layer.gradInput = torch.CudaTensor()
+        else
+            layer.output = torch.DoubleTensor()
+            layer.gradInput = torch.DoubleTensor()
+        end
+        if layer.modules then
+            for i, mod in ipairs(layer.modules) do
+                clean_layer(mod)
+            end
+        end
+    end
+
     -- Decay learning rate if validation performance does not improve or we hit
     -- opt.start_decay_at limit
     function decay_lr(epoch)
-        print(opt.val_perf)
         if epoch >= opt.start_decay_at then
             start_decay = 1
         end
@@ -384,17 +398,17 @@ function train(m, criterion, train_data, valid_data)
             m.enc:updateParameters(opt.learning_rate)
 
             -- Bookkeeping
-            num_words_target = num_words_target + batch_l*target_l
-            num_words_source = num_words_source + batch_l*source_l
+            num_words_target = num_words_target + batch_l * target_l
+            num_words_source = num_words_source + batch_l * source_l
             train_nonzeros = train_nonzeros + nonzeros
-            train_loss = train_loss + loss*batch_l
+            train_loss = train_loss + loss * batch_l
             local time_taken = timer:time().real - start_time
 
             if i % opt.print_every == 0 then
                 local stats = string.format('Epoch: %d, Batch: %d/%d, Batch size: %d, LR: %.4f, ',
                     epoch, i, data:size(), batch_l, opt.learning_rate)
                 stats = stats .. string.format('PPL: %.2f, |Param|: %.2f, |GParam|: %.2f, ',
-                    math.exp(train_loss/train_nonzeros), param_norm, grad_norm)
+                    math.exp(train_loss / train_nonzeros), param_norm, grad_norm)
                 stats = stats .. string.format('Training: %d/%d/%d total/source/target tokens/sec',
                     (num_words_target+num_words_source) / time_taken,
                     num_words_source / time_taken, num_words_target / time_taken)
@@ -411,25 +425,64 @@ function train(m, criterion, train_data, valid_data)
 
     local total_loss, total_nonzeros, batch_loss, batch_nonzeros
     for epoch = opt.start_epoch, opt.num_epochs do
+
+        -- Causing error after 1st epoch (likely because of clean_layer)
+        -- TODO: figure out how to fix clean_layer ASAP
         m.enc:training()
         m.dec:training()
         local total_loss, total_nonzeros = train_batch(train_data, epoch)
 
-        -- local train_score = math.exp(total_loss/total_nonzeros)
-        -- print('Train', train_score)
-        -- opt.train_perf[#opt.train_perf + 1] = train_score
-        -- local score = eval(valid_data)
-        -- opt.val_perf[#opt.val_perf + 1] = score
+        local train_score = math.exp(total_loss / total_nonzeros)
+        print('Train', train_score)
+
+        local valid_score = eval(m, criterion, valid_data)
+        print('Valid', valid_score)
+
+        opt.train_perf[#opt.train_perf + 1] = train_score
+        opt.val_perf[#opt.val_perf + 1] = valid_score
+
         decay_lr(epoch)
 
-        -- TODO: clean and save models
-        -- local savefile = string.format('%s_epoch%.2f_%.2f.t7', opt.savefile, epoch, score)      
+        -- Clean and save model
+        -- local save_file = string.format('%s_epoch%.2f_%.2f.t7', opt.save_file, epoch, valid_score)
         -- if epoch % opt.save_every == 0 then
-        --  print('saving checkpoint to ' .. savefile)
-        --  clean_layer(encoder); clean_layer(decoder); clean_layer(generator)
-        --  torch.save(savefile, {{encoder, decoder, generator}, opt})
+        --     print('Saving checkpoint to ' .. save_file)
+        --     clean_layer(m.enc); clean_layer(m.dec);
+        --     torch.save(save_file, {{m.enc, m.dec}, opt})
         -- end
     end
+end
+
+function eval(m, criterion, data)
+    m.enc:evaluate()
+    m.dec:evaluate()
+
+    local nll = 0
+    local total = 0
+
+    for i = 1, data:size() do
+        local d = data[i]
+        local target, target_out, nonzeros, source = d[1], d[2], d[3], d[4]
+        local batch_l, target_l, source_l = d[5], d[6], d[7]
+
+        -- Line up for forward_connect()
+        source = source:t()
+        target = target:t()
+
+        -- Forward prop enc
+        local enc_out = m.enc:forward(source)
+        forward_connect(m.enc_rnn, m.dec_rnn, source_l)
+
+        -- Forward prop dec
+        local dec_out = m.dec:forward(target)
+        local loss = criterion:forward(dec_out, target_out)
+
+        nll = nll + loss * batch_l
+        total = total + nonzeros
+    end
+
+    local valid = math.exp(nll / total)
+    return valid
 end
 
 ------------
@@ -477,4 +530,3 @@ function main()
 end
 
 main()
-
