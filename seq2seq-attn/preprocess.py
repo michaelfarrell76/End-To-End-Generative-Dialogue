@@ -508,7 +508,7 @@ def main(arguments):
     parser.add_argument('--targetvalfile', help="Path to target validation data.", default='data/dev_targ_words.txt')
     parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=32)
     parser.add_argument('--seqlength', help="Maximum sequence length. Sequences longer "
-                                               "than this are dropped.", type=int, default=50)
+                                               "than this are dropped.", type=int, default=5)
     parser.add_argument('--outputfile', help="Prefix of the output file names. ", type=str, default='data/conv')
     parser.add_argument('--maxwordlength', help="For the character models, words are "
                                            "(if longer than maxwordlength) or zero-padded "
@@ -527,7 +527,7 @@ def main(arguments):
                                           type = float, default = 0)
     
     args = parser.parse_args(arguments)
-    data_directory = '../data/MovieTriple/'
+    data_directory = '../data/MovieTriples/'
     train_valid_split = 0.8
     format_data(data_directory, train_valid_split, args.seqlength)
     get_data(args)

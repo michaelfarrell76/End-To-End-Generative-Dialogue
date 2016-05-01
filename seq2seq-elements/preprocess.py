@@ -527,7 +527,7 @@ def main(arguments):
                                           type = float, default = 0)
     
     args = parser.parse_args(arguments)
-    data_directory = '../data/MovieTriple/'
+    data_directory = '../data/MovieTriples/'
     train_valid_split = 0.8
     format_data(data_directory, train_valid_split, args.seqlength)
     get_data(args)
