@@ -7,3 +7,6 @@ data/MovieTriples/
 
 # Preprocessing files
 *.hdf5
+
+# Model saves
+*.t7

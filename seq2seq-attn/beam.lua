@@ -503,15 +503,15 @@ function main()
    if opt.gpuid >= 0 then
       cutorch.setDevice(opt.gpuid)
       for i = 1, #model do
-	 if opt.gpuid2 >= 0 then
-	    if i == 1 then
-	       cutorch.setDevice(opt.gpuid)
-	    else
-	       cutorch.setDevice(opt.gpuid2)
-	    end
-	 end	 	       
-	 model[i]:double():cuda()
-	 model[i]:evaluate()
+	 	if opt.gpuid2 >= 0 then
+		    if i == 1 then
+		       cutorch.setDevice(opt.gpuid)
+		    else
+		       cutorch.setDevice(opt.gpuid2)
+		    end
+		end
+		model[i]:double():cuda()
+		model[i]:evaluate()
       end
    end
 
