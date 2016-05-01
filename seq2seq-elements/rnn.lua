@@ -427,7 +427,7 @@ function train(m, criterion, train_data, valid_data)
     for epoch = opt.start_epoch, opt.num_epochs do
 
         -- Causing error after 1st epoch (likely because of clean_layer)
-        -- TODO: figure out how to fix clean_layer ASAP
+        -- TODO: figure out how to fix clean_layer
         m.enc:training()
         m.dec:training()
         local total_loss, total_nonzeros = train_batch(train_data, epoch)
@@ -448,7 +448,7 @@ function train(m, criterion, train_data, valid_data)
         -- if epoch % opt.save_every == 0 then
         if epoch == opt.num_epochs then
             print('Saving checkpoint to ' .. save_file)
-            clean_layer(m.enc); clean_layer(m.dec);
+            -- clean_layer(m.enc); clean_layer(m.dec);
             torch.save(save_file, {{m.enc, m.dec}, opt})
         end
     end
