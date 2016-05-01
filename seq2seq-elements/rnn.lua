@@ -444,12 +444,13 @@ function train(m, criterion, train_data, valid_data)
         decay_lr(epoch)
 
         -- Clean and save model
-        -- local save_file = string.format('%s_epoch%.2f_%.2f.t7', opt.save_file, epoch, valid_score)
+        local save_file = string.format('%s_epoch%.2f_%.2f.t7', opt.save_file, epoch, valid_score)
         -- if epoch % opt.save_every == 0 then
-        --     print('Saving checkpoint to ' .. save_file)
-        --     clean_layer(m.enc); clean_layer(m.dec);
-        --     torch.save(save_file, {{m.enc, m.dec}, opt})
-        -- end
+        if epoch == opt.num_epochs then
+            print('Saving checkpoint to ' .. save_file)
+            clean_layer(m.enc); clean_layer(m.dec);
+            torch.save(save_file, {{m.enc, m.dec}, opt})
+        end
     end
 end
 
