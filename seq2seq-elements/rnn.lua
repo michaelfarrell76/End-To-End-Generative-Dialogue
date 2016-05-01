@@ -29,10 +29,11 @@ cmd:text("")
 cmd:text("**Model options**")
 cmd:text("")
 
-cmd:option('-num_layers', 1, [[Number of layers in the LSTM encoder/decoder]])
-cmd:option('-hidden_size', 500, [[Size of LSTM hidden states]])
-cmd:option('-word_vec_size', 500, [[Word embedding sizes]])
+cmd:option('-num_layers', 2, [[Number of layers in the LSTM encoder/decoder]])
+cmd:option('-hidden_size', 300, [[Size of LSTM hidden states]])
+cmd:option('-word_vec_size', 300, [[Word embedding sizes]])
 cmd:option('-layer_type', 'lstm', [[Recurrent layer type (rnn, gru, lstm, fast)]])
+
 -- cmd:option('-reverse_src', 0, [[If 1, reverse the source sequence. The original 
 --                               sequence-to-sequence paper found that this was crucial to 
 --                               achieving good performance, but with attention models this
@@ -46,7 +47,7 @@ cmd:text("**Optimization options**")
 cmd:text("")
 
 -- Optimization
-cmd:option('-num_epochs', 3, [[Number of training epochs]])
+cmd:option('-num_epochs', 10, [[Number of training epochs]])
 cmd:option('-start_epoch', 1, [[If loading from a checkpoint, the epoch from which to start]])
 cmd:option('-param_init', 0.1, [[Parameters are initialized over uniform distribution with support
                                  (-param_init, param_init)]])
@@ -60,12 +61,9 @@ cmd:option('-lr_decay', 0.5, [[Decay learning rate by this much if (i) perplexit
 cmd:option('-start_decay_at', 9, [[Start decay after this epoch]])
 -- cmd:option('-curriculum', 0, [[For this many epochs, order the minibatches based on source
 --                 sequence length. Sometimes setting this to 1 will increase convergence speed.]])
-cmd:option('-pre_word_vecs_enc', '', [[If a valid path is specified, then this will load 
-                                        pretrained word embeddings (hdf5 file) on the encoder side. 
-                                        See README for specific formatting instructions.]])
-cmd:option('-pre_word_vecs_dec', '', [[If a valid path is specified, then this will load 
-                                        pretrained word embeddings (hdf5 file) on the decoder side. 
-                                        See README for specific formatting instructions.]])
+cmd:option('-pre_word_vecs', 'data/word_vecs.hdf5', [[If a valid path is specified, then this will load 
+                                      pretrained word embeddings (hdf5 file) on the encoder side. 
+                                      See README for specific formatting instructions.]])
 cmd:option('-fix_word_vecs_enc', 0, [[If = 1, fix word embeddings on the encoder side]])
 cmd:option('-fix_word_vecs_dec', 0, [[If = 1, fix word embeddings on the decoder side]])
 
@@ -157,8 +155,12 @@ function build_encoder(recurrence)
 
     enc:add(nn.SelectTable(-1))
 
-    if opt.pre_word_vecs_enc:len() > 0 then
-        print('TODO: bootstrap encoder word embeddings')
+    if opt.pre_word_vecs:len() > 0 then
+        local f = hdf5.open(opt.pre_word_vecs)     
+        local pre_word_vecs = f:read('word_vecs'):all()
+        for i = 1, pre_word_vecs:size(1) do
+            enc_embeddings.weight[i]:copy(pre_word_vecs[i])
+        end          
     end
 
     return enc, enc_rnn
@@ -188,8 +190,12 @@ function build_decoder(recurrence)
     dec:add(nn.Sequencer(nn.Linear(opt.hidden_size, opt.vocab_size_dec)))
     dec:add(nn.Sequencer(nn.LogSoftMax()))
 
-    if opt.pre_word_vecs_dec:len() > 0 then
-        print('TODO: bootstrap decoder word embeddings')
+    if opt.pre_word_vecs:len() > 0 then
+        local f = hdf5.open(opt.pre_word_vecs)     
+        local pre_word_vecs = f:read('word_vecs'):all()
+        for i = 1, pre_word_vecs:size(1) do
+            dec_embeddings.weight[i]:copy(pre_word_vecs[i])
+        end          
     end
 
     return dec, dec_rnn
@@ -222,6 +228,14 @@ function build()
     -- Criterion
     local criterion = nn.SequencerCriterion(nn.ClassNLLCriterion())
 
+    if opt.gpuid > 0 then
+        enc:cuda()
+        enc_rnn:cuda()
+        dec:cuda()
+        dec_rnn:cuda()
+        criterion:cuda()    
+    end
+
     if opt.train_from:len() == 1 then
         error('TODO: implement train_from')
     end
@@ -251,21 +265,23 @@ function build()
 
     -- GPU
     if opt.gpuid >= 0 then
-        error('TODO: implement GPU support')
-        -- for i = 1, #layers do
-        --  if opt.gpuid2 >= 0 then
-        --      if i == 1 then
-        --          cutorch.setDevice(opt.gpuid) -- Encoder on gpu1
-        --      else
-        --          cutorch.setDevice(opt.gpuid2) -- Decoder/generator on gpu2
-        --      end
-        --  end
-        --  layers[i]:cuda()
-        -- end
-        -- if opt.gpuid2 >= 0 then
-        --  cutorch.setDevice(opt.gpuid2) --criterion on gpu2
-        -- end
-        -- criterion:cuda()
+        cutorch.setDevice(opt.gpuid)
+        cutorch.manualSeed(opt.seed)
+
+        for i = 1, #layers do
+         if opt.gpuid2 >= 0 then
+             if i == 1 then
+                 cutorch.setDevice(opt.gpuid) -- Encoder on gpu1
+             else
+                 cutorch.setDevice(opt.gpuid2) -- Decoder/generator on gpu2
+             end
+         end
+         layers[i]:cuda()
+        end
+        if opt.gpuid2 >= 0 then
+         cutorch.setDevice(opt.gpuid2) --criterion on gpu2
+        end
+        criterion:cuda()
     end
 
     -- Package model for training
@@ -364,7 +380,10 @@ function train(m, criterion, train_data, valid_data)
             backward_connect(m.enc_rnn, m.dec_rnn)
 
             -- Backward prop enc
-            local zeroTensor = torch.Tensor(enc_out):zero()
+            local zeroTensor = torch.Tensor(enc_out:size()):zero()
+            if opt.gpuid >=0 then
+                zeroTensor = zeroTensor:cuda()
+            end
             m.enc:backward(source, zeroTensor)
 
             -- Total grad norm
