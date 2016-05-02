@@ -32,3 +32,4 @@ Our implementation utilizes code from the following:
 
 * [Yoon Kim's seq2seq-attn repo](https://github.com/harvardnlp/seq2seq-attn)
 * [Element rnn library](https://github.com/Element-Research/rnn)
+* [Facebook's neural attention model](https://github.com/facebook/NAMAS)

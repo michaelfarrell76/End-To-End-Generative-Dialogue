@@ -4,6 +4,8 @@ require 'hdf5'
 package.path = '?.lua;' .. package.path
 require 'data.lua'
 
+-- nn.FastLSTM.usenngraph = true
+
 ------------
 -- Options
 ------------
@@ -466,10 +468,12 @@ function train(m, criterion, train_data, valid_data)
 
         -- Clean and save model
         local save_file = string.format('%s_epoch%.2f_%.2f.t7', opt.save_file, epoch, valid_score)
-        -- if epoch % opt.save_every == 0 then
-        print('Saving checkpoint to ' .. save_file)
-        -- clean_layer(m.enc); clean_layer(m.dec);
-        torch.save(save_file, {{m.enc, m.dec}, opt})
+        if epoch % opt.save_every == 0 then
+        -- if epoch == opt.num_epochs then
+            print('Saving checkpoint to ' .. save_file)
+            -- clean_layer(m.enc); clean_layer(m.dec);
+            torch.save(save_file, {{m.enc, m.dec, m.enc_rnn, m.dec_rnn}, opt})
+        end
     end
 end
 
