@@ -523,16 +523,16 @@ def main(arguments):
 
     parser.add_argument('--srcfile', help="Path to source training data, "
                                            "where each line represents a single "
-                                           "source/target sequence.", default=args.output_directory + 'train_src_words.txt')
+                                           "source/target sequence.", default='train_src_words.txt')
     parser.add_argument('--targetfile', help="Path to target training data, "
                                            "where each line represents a single "
-                                           "source/target sequence.", default=args.output_directory + 'train_targ_words.txt')
-    parser.add_argument('--srcvalfile', help="Path to source validation data.", default=args.output_directory + 'data/dev_src_words.txt')
-    parser.add_argument('--targetvalfile', help="Path to target validation data.", default=args.output_directory + 'dev_targ_words.txt')
+                                           "source/target sequence.", default='train_targ_words.txt')
+    parser.add_argument('--srcvalfile', help="Path to source validation data.", default='data/dev_src_words.txt')
+    parser.add_argument('--targetvalfile', help="Path to target validation data.", default='dev_targ_words.txt')
     parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=32)
     parser.add_argument('--seqlength', help="Maximum sequence length. Sequences longer "
                                                "than this are dropped.", type=int, default=50)
-    parser.add_argument('--outputfile', help="Prefix of the output file names. ", type=str, default=args.output_directory + 'conv')
+    parser.add_argument('--outputfile', help="Prefix of the output file names. ", type=str, default='conv')
     parser.add_argument('--maxwordlength', help="For the character models, words are "
                                            "(if longer than maxwordlength) or zero-padded "
                                             "(if shorter) to maxwordlength", type=int, default=35)
@@ -551,6 +551,12 @@ def main(arguments):
     parser.add_argument('--data_directory', help="Folder of MovieTriples", default='../data/MovieTriples/')
     
     args = parser.parse_args(arguments)
+    args.srcfile = args.output_directory + args.srcfile
+    args.targetfile = args.output_directory + args.targetfile
+    args.srcvalfile = args.output_directory + args.srcvalfile
+    args.targetvalfile = args.output_directory + args.targetvalfile
+    args.outputfile = args.output_directory + args.outputfile
+
     data_directory = args.data_directory
     train_valid_split = 0.8
     format_data(data_directory, train_valid_split, args.seqlength)
