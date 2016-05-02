@@ -519,7 +519,6 @@ def main(arguments):
                                                 type=int, default=10000)
     parser.add_argument('--output_directory', help="Folder to hold output of data", default='data/')
 
-    args = parser.parse_args(arguments)
 
     parser.add_argument('--srcfile', help="Path to source training data, "
                                            "where each line represents a single "
@@ -539,11 +538,11 @@ def main(arguments):
     parser.add_argument('--srcvocabfile', help="If working with a preset vocab, "
                                           "then including this will ignore srcvocabsize and use the"
                                           "vocab provided here.",
-                                          type = str, default=args.output_directory + 'src.dict')
+                                          type = str, default='src.dict')
     parser.add_argument('--targetvocabfile', help="If working with a preset vocab, "
                                          "then including this will ignore targetvocabsize and "
                                          "use the vocab provided here.",
-                                          type = str, default=args.output_directory + 'targ.dict')
+                                          type = str, default='targ.dict')
     parser.add_argument('--unkfilter', help="Ignore sentences with too many UNK tokens. "
                                        "Can be an absolute count limit (if > 1) "
                                        "or a proportional limit (0 < unkfilter < 1).",
@@ -556,6 +555,8 @@ def main(arguments):
     args.srcvalfile = args.output_directory + args.srcvalfile
     args.targetvalfile = args.output_directory + args.targetvalfile
     args.outputfile = args.output_directory + args.outputfile
+    args.srcvocabfile = args.output_directory + args.srcvocabfile
+    args.targetvocabfile = args.output_directory + args.targetvocabfile
 
     data_directory = args.data_directory
     train_valid_split = 0.8
