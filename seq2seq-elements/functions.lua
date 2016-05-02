@@ -214,6 +214,79 @@ end
 -- Training
 ------------
 
+function train_ind(ind, m, criterion, data)
+    -- zero_table(grad_params, 'zero')
+    m.enc:zeroGradParameters()
+    m.dec:zeroGradParameters()
+
+    local d = data[ind]
+    local target, target_out, nonzeros, source = d[1], d[2], d[3], d[4]
+    local batch_l, target_l, source_l = d[5], d[6], d[7]
+
+
+    -- Quick hack to line up encoder/decoder connection
+    -- (we need mini-batches on dim 1)
+    -- TODO: change forward/backward_connect rather than transpose here
+    source = source:t()
+    target = target:t()
+
+
+
+     -- Forward prop enc
+    local enc_out = m.enc:forward(source)
+    forward_connect(m.enc_rnn, m.dec_rnn, source_l)
+
+    -- Forward prop dec
+    local dec_out = m.dec:forward(target)
+    local loss = criterion:forward(dec_out, target_out)
+
+    -- Backward prop dec
+    local grad_output = criterion:backward(dec_out, target_out)
+    m.dec:backward(target, grad_output)
+    backward_connect(m.enc_rnn, m.dec_rnn)
+
+    -- Backward prop enc
+    local zeroTensor = torch.Tensor(enc_out:size()):zero()
+    if opt.gpuid >=0 then
+        zeroTensor = zeroTensor:cuda()
+    end
+    m.enc:backward(source, zeroTensor)
+
+
+    -- Total grad norm
+    local grad_norm = 0
+    for j = 1, #m.grad_params do
+        grad_norm = grad_norm + m.grad_params[j]:norm()^2
+    end
+    grad_norm = grad_norm^0.5
+
+    -- Shrink norm
+    local param_norm = 0
+    local shrinkage = opt.max_grad_norm / grad_norm
+    for j = 1, #m.grad_params do
+        if opt.gpuid >= 0 and opt.gpuid2 >= 0 then
+            if j == 1 then
+                cutorch.setDevice(opt.gpuid)
+            else
+                cutorch.setDevice(opt.gpuid2)
+            end
+        end
+        if shrinkage < 1 then
+            m.grad_params[j]:mul(shrinkage)
+        end
+        -- params[j]:add(grad_params[j]:mul(-opt.learning_rate))
+        param_norm = param_norm + m.params[j]:norm()^2
+    end
+    param_norm = param_norm^0.5
+    
+    if opt.parallel then
+        return {gps = m.grad_params, batch_l = batch_l, target_l = target_l, source_l = source_l, nonzeros = nonzeros, loss = loss, param_norm = param_norm, grad_norm = grad_norm}
+    else
+        return batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
+    end
+
+end
+
 function train(m, criterion, train_data, valid_data)
     opt.print('Beginning training...')
 
@@ -256,6 +329,8 @@ function train(m, criterion, train_data, valid_data)
         end
     end
 
+
+
     function train_batch(data, epoch)
         local train_nonzeros = 0
         local train_loss = 0
@@ -264,88 +339,101 @@ function train(m, criterion, train_data, valid_data)
         local num_words_target = 0
         local num_words_source = 0
 
-        for i = 1, data:size() do
-            -- zero_table(grad_params, 'zero')
-            m.enc:zeroGradParameters()
-            m.dec:zeroGradParameters()
+        local skip = 1
 
-            local d = data[batch_order[i]]
-            local target, target_out, nonzeros, source = d[1], d[2], d[3], d[4]
-            local batch_l, target_l, source_l = d[5], d[6], d[7]
+        if opt.parallel then
+            skip = n_proc
+            parallel.children:join()
+        else
+            skip = 1
+        end
+        
 
-            -- Quick hack to line up encoder/decoder connection
-            -- (we need mini-batches on dim 1)
-            -- TODO: change forward/backward_connect rather than transpose here
-            source = source:t()
-            target = target:t()
 
-            -- Forward prop enc
-            local enc_out = m.enc:forward(source)
-            forward_connect(m.enc_rnn, m.dec_rnn, source_l)
 
-            -- Forward prop dec
-            local dec_out = m.dec:forward(target)
-            local loss = criterion:forward(dec_out, target_out)
+        local i = 1
+        for j =  1, skip do
+            local pkg = {parameters = m.params, index = batch_order[i]}
+            parallel.children[j]:send(pkg)
+            i = i + 1
+        end
+        while i <= data:size() do
+            
+            if opt.parallel then
+                -- parallel.children:join()
+                local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
+                for j =  1, skip do
 
-            -- Backward prop dec
-            local grad_output = criterion:backward(dec_out, target_out)
-            m.dec:backward(target, grad_output)
-            backward_connect(m.enc_rnn, m.dec_rnn)
+                    local reply = parallel.children[j]:receive("noblock")
+                    if reply ~= nil then
+                        for k = 1, #m.params do
+                            m.params[k]:add(-opt.learning_rate, reply.gps[k])
+                            num_words_target = num_words_target + reply.batch_l * reply.target_l
+                            num_words_source = num_words_source + reply.batch_l * reply.source_l
+                            train_nonzeros = train_nonzeros + reply.nonzeros
+                            train_loss = train_loss + reply.loss * reply.batch_l
+                        end
 
-            -- Backward prop enc
-            local zeroTensor = torch.Tensor(enc_out:size()):zero()
-            if opt.gpuid >=0 then
-                zeroTensor = zeroTensor:cuda()
-            end
-            m.enc:backward(source, zeroTensor)
+                        if i <= data:size() then
+                            local pkg = {parameters = m.params, index = batch_order[i]}
+                            parallel.children[j]:join()
+                            parallel.children[j]:send(pkg)
+                            i = i + 1
+                        end
 
-            -- Total grad norm
-            local grad_norm = 0
-            for j = 1, #m.grad_params do
-                grad_norm = grad_norm + m.grad_params[j]:norm()^2
-            end
-            grad_norm = grad_norm^0.5
 
-            -- Shrink norm
-            local param_norm = 0
-            local shrinkage = opt.max_grad_norm / grad_norm
-            for j = 1, #m.grad_params do
-                if opt.gpuid >= 0 and opt.gpuid2 >= 0 then
-                    if j == 1 then
-                        cutorch.setDevice(opt.gpuid)
-                    else
-                        cutorch.setDevice(opt.gpuid2)
+                        batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm =  reply.batch_l, reply.target_l, reply.source_l, reply.nonzeros, reply.loss, reply.param_norm, reply.grad_norm
                     end
+                    
                 end
-                if shrinkage < 1 then
-                    m.grad_params[j]:mul(shrinkage)
+                local time_taken = timer:time().real - start_time
+                if i % opt.print_every == 0  and batch_l ~= nil then
+
+                    local stats = string.format('Epoch: %d, Batch: %d/%d, Batch size: %d, LR: %.4f, ',
+                        epoch, i, data:size(), batch_l, opt.learning_rate)
+                    stats = stats .. string.format('PPL: %.2f, |Param|: %.2f, |GParam|: %.2f, ',
+                        math.exp(train_loss / train_nonzeros), param_norm, grad_norm)
+                    stats = stats .. string.format('Training: %d/%d/%d total/source/target tokens/sec',
+                        (num_words_target+num_words_source) / time_taken,
+                        num_words_source / time_taken, num_words_target / time_taken)
+                    opt.print(stats)
                 end
-                -- params[j]:add(grad_params[j]:mul(-opt.learning_rate))
-                param_norm = param_norm + m.params[j]:norm()^2
+
+
+                sys.sleep(1)
+
+                
+            else
+                local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
+                batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm = train_ind(batch_order[i], m, criterion, train_data)
+                -- Update params (also could be done as above)
+                m.dec:updateParameters(opt.learning_rate)
+                m.enc:updateParameters(opt.learning_rate)
+
+                -- Bookkeeping
+                num_words_target = num_words_target + batch_l * target_l
+                num_words_source = num_words_source + batch_l * source_l
+                train_nonzeros = train_nonzeros + nonzeros
+                train_loss = train_loss + loss * batch_l
+
+                i = i + 1  
+                local time_taken = timer:time().real - start_time
+
+               if i % opt.print_every == 0 then
+
+                    local stats = string.format('Epoch: %d, Batch: %d/%d, Batch size: %d, LR: %.4f, ',
+                        epoch, i, data:size(), batch_l, opt.learning_rate)
+                    stats = stats .. string.format('PPL: %.2f, |Param|: %.2f, |GParam|: %.2f, ',
+                        math.exp(train_loss / train_nonzeros), param_norm, grad_norm)
+                    stats = stats .. string.format('Training: %d/%d/%d total/source/target tokens/sec',
+                        (num_words_target+num_words_source) / time_taken,
+                        num_words_source / time_taken, num_words_target / time_taken)
+                    opt.print(stats)
+                end
+
             end
-            param_norm = param_norm^0.5
-
-            -- Update params (also could be done as above)
-            m.dec:updateParameters(opt.learning_rate)
-            m.enc:updateParameters(opt.learning_rate)
-
-            -- Bookkeeping
-            num_words_target = num_words_target + batch_l * target_l
-            num_words_source = num_words_source + batch_l * source_l
-            train_nonzeros = train_nonzeros + nonzeros
-            train_loss = train_loss + loss * batch_l
-            local time_taken = timer:time().real - start_time
-
-            if i % opt.print_every == 0 then
-                local stats = string.format('Epoch: %d, Batch: %d/%d, Batch size: %d, LR: %.4f, ',
-                    epoch, i, data:size(), batch_l, opt.learning_rate)
-                stats = stats .. string.format('PPL: %.2f, |Param|: %.2f, |GParam|: %.2f, ',
-                    math.exp(train_loss / train_nonzeros), param_norm, grad_norm)
-                stats = stats .. string.format('Training: %d/%d/%d total/source/target tokens/sec',
-                    (num_words_target+num_words_source) / time_taken,
-                    num_words_source / time_taken, num_words_target / time_taken)
-                opt.print(stats)
-            end
+            
+            
 
             -- Friendly reminder
             if i % 200 == 0 then
