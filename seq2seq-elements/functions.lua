@@ -153,7 +153,7 @@ function build()
             else
                 cutorch.setDevice(opt.gpuid2)
             end
-        end      
+        end
         local p, gp = layers[i]:getParameters()
         if opt.train_from:len() == 0 then
             p:uniform(-opt.param_init, opt.param_init)

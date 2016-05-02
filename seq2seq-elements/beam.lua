@@ -1,6 +1,8 @@
+require 'nn'
 require 'rnn'
 require 'string'
 require 'hdf5'
+-- require 'cutorch'
 
 require 'data.lua'
 
@@ -24,13 +26,14 @@ cmd:option('-char_dict', 'data/demo.char.dict', [[If using chars, path to charac
                                                 vocabulary (*.char.dict file)]])
 
 -- beam search options
-cmd:option('-beam', 7, [[Beam size]])
-cmd:option('-max_sent_l', 250, [[Maximum sentence length. If any sequences in srcfile are longer
+cmd:option('-beam', 20, [[Beam size]])
+cmd:option('-max_sent_l', 80, [[Maximum sentence length. If any sequences in srcfile are longer
                                than this then it will error out]])
 cmd:option('-simple', 0, [[If = 1, output prediction is simply the first time the top of the beam
                          ends with an end-of-sentence token. If = 0, the model considers all 
                          hypotheses that have been generated so far that ends with end-of-sentence 
                          token and takes the highest scoring of all of them.]])
+cmd:option('-allow_unk', 0, [[If = 1, prediction can include UNK tokens.]])
 -- cmd:option('-replace_unk', 0, [[Replace the generated UNK tokens with the source token that 
 --                               had the highest attention weight. If srctarg_dict is provided, 
 --                               it will lookup the identified source token and give the corresponding 
@@ -44,6 +47,12 @@ cmd:option('-gpuid',  -1, [[ID of the GPU to use (-1 = use CPU)]])
 cmd:option('-gpuid2', -1, [[Second GPU ID]])
 
 opt = cmd:parse(arg)
+
+-- Some cheeky globals
+PAD = 1; UNK = 2; START = 3; END = 4
+PAD_WORD = '<blank>'; UNK_WORD = '<unk>'; START_WORD = '<s>'; END_WORD = '</s>'
+MAX_SENT_L = opt.max_sent_l
+INF = 1e9
 
 ------------
 -- Misc
@@ -63,10 +72,26 @@ function copy(orig)
     return copy
 end
 
--- Convert a flat index to a row-column tuple
-function flat_to_rc(v, flat_index)
+-- Convert a flat index to a matrix
+local function flat_to_rc(v, indices, flat_index)
     local row = math.floor((flat_index - 1) / v:size(2)) + 1
-    return row, (flat_index - 1) % v:size(2) + 1
+    return row, indices[row][(flat_index - 1) % v:size(2) + 1]
+end
+
+-- Find the k max in a vector, but in a janky way cause fbcunn requires linux
+function find_k_max(mat, K)
+    local scores = torch.Tensor(mat:size(1), K)
+    local indices = torch.Tensor(mat:size(1), K)
+    for i = 1, mat:size(1) do
+        for k = 1, K do
+            local score, index = mat[i]:max(1)
+            score = score[1]; index = index[1]
+            scores[i][k] = score
+            indices[i][k] = index
+            mat[i][index] = mat[i][index] - INF
+        end
+    end
+    return scores, indices
 end
 
 function clean_sent(sent)
@@ -208,21 +233,12 @@ function get_scores(m, source, beam)
     local source_l = source:size(1)
     source = source:view(1, -1):expand(beam:size(1), source_l)
 
-    -- Forward prop enc
+    -- Forward prop enc + dec
     local enc_out = m.enc:forward(source)
     forward_connect(m.enc_rnn, m.dec_rnn, source_l)
-
-    -- Forward prop dec
-    print(source)
-    print(beam)
     local preds = m.dec:forward(beam)
-    print(preds[1]:size())
 
-    -- print(m.enc_rnn.modules[1].outputs)
-    -- for key,value in pairs(m.enc_rnn.modules[1]) do
-    --     print("found member " .. key)
-    -- end
-    m.enc_rnn:wtf()
+    return preds[1]
 end
 
 ------------
@@ -235,10 +251,6 @@ function generate_beam(m, initial, K, max_sent_l, source, gold)
         cutorch.setDevice(opt.gpuid)
     end
 
-    -- Add EOS token to source
-    local eos = torch.LongTensor({{END}})
-    source = source:cat(eos)
-
     -- Let's get all fb up in here
     -- scores[i][k] is the log prob of the k'th hyp of i words
     -- hyps[i][k] contains the words in k'th hyp at i word
@@ -248,313 +260,74 @@ function generate_beam(m, initial, K, max_sent_l, source, gold)
     local hyps = torch.zeros(n + 1, K, n + 1):long()
     hyps:fill(START)
 
-    -- Find k-max columns of a matrix
-    -- Use 2*k in case some are invalid
-    -- NB: only available through fbcunn (which doesn't support os x)
-    -- sad face
-    -- local pool = nn.TemporalKMaxPooling(2*K)
-
     -- Beam me up, Scotty!
     for i = 1, n do
-        local cur_beam = hyps[i]:narrow(2, i + 1, i)
+        -- local cur_beam = hyps[i]:narrow(2, i + 1, i)
+        local cur_beam = hyps[i]:narrow(2, 1, i)
         -- print(cur_beam)
         local cur_K = K
 
         -- Score all next words for each context in the beam
         -- log p(y_{i+1} | y_c, x) for all y_c
         local model_scores = get_scores(m, source, cur_beam)
-        cur_beam:wtf()
-        -- local input = data.make_input(article, cur_beam, cur_K)
-        -- local model_scores = self.mlp:forward(input)
 
+        -- Apply hard constraints
         local out = model_scores:clone():double()
-
-        -- If length limit is reached, next word must be end.
-        local finalized = (i == n) and self.opt.fixedLength
-        if finalized then
-            out[{{}, self.END}]:add(FINAL_VAL)
-        else
-            -- Apply hard constraints.
-            out[{{}, self.START}] = -INF
-            if not self.opt.allowUNK then
-                out[{{}, self.UNK}] = -INF
-            end
-            if self.opt.fixedLength then
-                out[{{}, self.END}] = -INF
-            end
-
-            -- Add additional extractive features.
-            feat_gen:add_features(out, cur_beam)
+        out[{{}, START}] = -INF
+        if opt.allow_unk == 0 then
+            out[{{}, UNK}] = -INF
         end
 
-      -- Only take first row when starting out.
-      if i == 1 then
-         cur_K = 1
-         out = out:narrow(1, 1, 1)
-         model_scores = model_scores:narrow(1, 1, 1)
-      end
+        -- Only take first row when starting out as beam context is uniform
+        if i == 1 then
+            cur_K = 1
+            out = out:narrow(1, 1, 1)
+            model_scores = model_scores:narrow(1, 1, 1)
+        end
 
-      -- Prob of summary is log p + log p(y_{i+1} | y_c, x)
-      for k = 1, cur_K do
-         out[k]:add(scores[i][k])
-      end
+        -- Prob of summary is log p + log p(y_{i+1} | y_c, x)
+        for k = 1, cur_K do
+            out[k]:add(scores[i][k])
+        end
 
-      -- (2) Retain the K-best words for each hypothesis using GPU.
-      -- This leaves a KxK matrix which we flatten to a K^2 vector.
-      local max_scores, mat_indices = find_k_max(pool, out:cuda())
-      local flat = max_scores:view(max_scores:size(1)
-                                      * max_scores:size(2)):float()
+        -- Keep only the K-best words for each hypothesis
+        -- This leaves a KxK matrix which we flatten to a K^2 vector
+        local max_scores, mat_indices = find_k_max(out, K)
+        local flat = max_scores:view(max_scores:size(1) *
+            max_scores:size(2)):float()
 
-      -- 3) Construct the next hypotheses by taking the next k-best.
-      local seen_ngram = {}
-      for k = 1, K do
-         for _ = 1, 100 do
-
-            -- (3a) Pull the score, index, rank, and word of the
-            -- current best in the table, and then zero it out.
+        -- Construct the next hypotheses by taking the next k-best
+        local seen_ngram = {}
+        for k = 1, K do
+            -- Pull the score, index, rank, and word of the current best
+            -- in the table, and then zero it out
             local score, index = flat:max(1)
-            if finalized then
-               score[1] = score[1] - FINAL_VAL
-            end
             scores[i+1][k] = score[1]
+
             local prev_k, y_i1 = flat_to_rc(max_scores, mat_indices, index[1])
             flat[index[1]] = -INF
 
-            -- (3b) Is this a valid next word?
-            local blocked = (self.opt.blockRepeatWords and
-                                words_used[i][prev_k][y_i1])
-
-            blocked = blocked or
-               (self.opt.extractive and not feat_gen:has_ngram({y_i1}))
-            blocked = blocked or
-               (self.opt.abstractive and feat_gen:has_ngram({y_i1}))
-
-            -- Hypothesis recombination.
-            local new_context = {}
-            if self.opt.recombine then
-               for j = i+2, i+W do
-                  table.insert(new_context, hyps[i][prev_k][j])
-               end
-               table.insert(new_context, y_i1)
-               blocked = blocked or util.has(seen_ngram, new_context)
+            -- Add the word and its score to the beam
+            -- Update tables with new hypothesis
+            for j = 1, i do
+                local pword = hyps[i][prev_k][j]
+                hyps[i+1][k][j] = pword
             end
+            hyps[i+1][k][i+1] = y_i1
 
-            -- (3c) Add the word, its score, and its features to the
-            -- beam.
-            if not blocked then
-               -- Update tables with new hypothesis.
-               for j = 1, i+W do
-                  local pword = hyps[i][prev_k][j]
-                  hyps[i+1][k][j] = pword
-                  words_used[i+1][k][pword] = true
-               end
-               hyps[i+1][k][i+W+1] = y_i1
-               words_used[i+1][k][y_i1] = true
-
-               -- Keep track of hypotheses seen.
-               if self.opt.recombine then
-                  util.add(seen_ngram, new_context)
-               end
-
-               -- Keep track of features used (For MERT)
-               feats[i+1][k]:copy(feats[i][prev_k])
-               feat_gen:compute(feats[i+1][k], hyps[i+1][k],
-                                model_scores[prev_k][y_i1], y_i1, i)
-
-               -- If we have produced an END symbol, push to stack.
-               if y_i1 == self.END then
-                  table.insert(result, {i+1, scores[i+1][k],
-                                        hyps[i+1][k]:clone(),
-                                        feats[i+1][k]:clone()})
-                  scores[i+1][k] = -INF
-               end
-               break
+            -- If we have produced an END symbol, push to stack
+            if y_i1 == END then
+                table.insert(result, {i+1, scores[i+1][k], hyps[i+1][k]:clone(),
+                    feats[i+1][k]:clone()})
+                scores[i+1][k] = -INF
             end
-         end
-      end
-   end
+        end
+    end
 
-   -- Sort by score.
-   table.sort(result, function (a, b) return a[2] > b[2] end)
-
-    -- Return the scores and hypotheses at the final stage.
-    -- return result
-
-    -- local n = max_sent_l
-    -- local prev_ks = torch.LongTensor(n, K):fill(1) -- Backpointer table
-    -- local next_ys = torch.LongTensor(n, K):fill(1) -- Current States
-    -- local scores = torch.FloatTensor(n, K) -- Current Scores
-    -- scores:zero()
-    -- local source_l = math.min(source:size(1), opt.max_sent_l)
-
-    -- local states = {} -- Store predicted word idx
-    -- states[1] = {}
-    -- table.insert(states[1], initial)
-    -- next_ys[1][1] = State.next(initial)
-    -- for k = 1, 1 do
-    --     table.insert(states[1], initial)
-    --     next_ys[1][k] = State.next(initial)
-    -- end
-
-    -- local source_input = source:view(source_l, 1)
-
-    -- local rnn_state_enc = {}
-    -- for i = 1, #init_fwd_enc do
-    --     table.insert(rnn_state_enc, init_fwd_enc[i]:zero())
-    -- end
-    -- local context = context_proto[{{}, {1, source_l}}]:clone() -- 1 x source_l x hidden_size
-
-    -- for t = 1, source_l do
-    --     local encoder_input = {source_input[t], table.unpack(rnn_state_enc)}
-    --     local out = model[1]:forward(encoder_input)
-    --     rnn_state_enc = out
-    --     context[{{},t}]:copy(out[#out])
-    -- end
-    -- context = context:expand(K, source_l, model_opt.hidden_size)
-    
-    -- if opt.gpuid >= 0 and opt.gpuid2 >= 0 then
-    --     cutorch.setDevice(opt.gpuid2)
-    --     local context2 = context_proto2[{{1, K}, {1, source_l}}]
-    --     context2:copy(context)
-    --     context = context2
-    -- end
-
-    -- rnn_state_dec = {}
-    -- for i = 1, #init_fwd_dec do
-    --     table.insert(rnn_state_dec, init_fwd_dec[i]:zero())
-    -- end
-
-    -- if model_opt.init_dec == 1 then
-    --     for L = 1, model_opt.num_layers do
-    --         rnn_state_dec[L*2]:copy(rnn_state_enc[L*2-1]:expand(K, model_opt.hidden_size))
-    --         rnn_state_dec[L*2+1]:copy(rnn_state_enc[L*2]:expand(K, model_opt.hidden_size))
-    --     end
-    -- end
-    -- out_float = torch.FloatTensor()
-    -- print(context)
-    -- context:wtf()
-
-    -- local i = 1
-    -- local done = false
-    -- local max_score = -1e9
-    -- local found_eos = false
-    -- while (not done) and (i < n) do
-    --     i = i + 1
-    --     states[i] = {}
-        
-    --     local decoder_input1 = next_ys:narrow(1,i-1,1):squeeze()
-    --     if opt.beam == 1 then
-    --         decoder_input1 = torch.LongTensor({decoder_input1})
-    --     end
-    --     local decoder_input = {decoder_input1, context, table.unpack(rnn_state_dec)}
-    --     local out_decoder = model[2]:forward(decoder_input)
-    --     local out = model[3]:forward(out_decoder[#out_decoder]) -- K x vocab_size
-
-    --     rnn_state_dec = {} -- to be modified later
-    --     table.insert(rnn_state_dec, out_decoder[#out_decoder])
-    --     for j = 1, #out_decoder - 1 do
-    --         table.insert(rnn_state_dec, out_decoder[j])
-    --     end
-    --     out_float:resize(out:size()):copy(out)
-    --     for k = 1, K do
-    --         State.disallow(out_float:select(1, k))
-    --         out_float[k]:add(scores[i-1][k])
-    --     end
-    --     -- All the scores available
-
-    --     local flat_out = out_float:view(-1)
-    --     if i == 2 then
-    --         flat_out = out_float[1] -- all outputs same for first batch
-    --     end
-       
-    --     for k = 1, K do
-    --         while true do
-    --             local score, index = flat_out:max(1)
-    --             local score = score[1]
-    --             local prev_k, y_i = flat_to_rc(out_float, index[1])
-    --             states[i][k] = State.advance(states[i-1][prev_k], y_i)
-    --             local diff = true
-    --             for k2 = 1, k-1 do
-    --                 if State.same(states[i][k2], states[i][k]) then
-    --                     diff = false
-    --                 end
-    --             end
-
-    --             if i < 2 or diff then
-    --                 local max_attn, max_index = decoder_softmax.output[prev_k]:max(1)
-    --                 attn_argmax[i][k] = State.advance(attn_argmax[i-1][prev_k],max_index[1])
-    --                 prev_ks[i][k] = prev_k
-    --                 next_ys[i][k] = y_i
-    --                 scores[i][k] = score
-    --                 flat_out[index[1]] = -1e9
-    --                 break -- move on to next k 
-    --             end
-    --             flat_out[index[1]] = -1e9
-    --         end
-    --     end
-
-    --     for j = 1, #rnn_state_dec do
-    --         rnn_state_dec[j]:copy(rnn_state_dec[j]:index(1, prev_ks[i]))
-    --     end
-    --     end_hyp = states[i][1]
-    --     end_score = scores[i][1]
-    --     end_attn_argmax = attn_argmax[i][1]
-    --     if end_hyp[#end_hyp] == END then
-    --         done = true
-    --         found_eos = true
-    --     else
-    --         for k = 1, K do
-    --             local possible_hyp = states[i][k]
-    --             if possible_hyp[#possible_hyp] == END then
-    --                 found_eos = true
-    --                 if scores[i][k] > max_score then
-    --                     max_hyp = possible_hyp
-    --                     max_score = scores[i][k]
-    --                     max_attn_argmax = attn_argmax[i][k]
-    --                 end
-    --             end
-    --         end
-    --     end
-    -- end
-
-    -- local gold_score = 0
-    -- if opt.score_gold == 1 then
-    --     rnn_state_dec = {}
-    --     for i = 1, #init_fwd_dec do
-    --         table.insert(rnn_state_dec, init_fwd_dec[i][{{1}}]:zero())
-    --     end
-    --     if model_opt.init_dec == 1 then
-    --         for L = 1, model_opt.num_layers do
-    --             rnn_state_dec[L*2]:copy(rnn_state_enc[L*2-1][{{1}}])
-    --             rnn_state_dec[L*2+1]:copy(rnn_state_enc[L*2][{{1}}])
-    --         end
-    --     end
-    --     local target_l = gold:size(1)
-    --     for t = 2, target_l do
-    --         local decoder_input1
-    --         if model_opt.use_chars_dec == 1 then
-    --             decoder_input1 = word2charidx_targ:index(1, gold[{{t-1}}])
-    --         else
-    --             decoder_input1 = gold[{{t-1}}]
-    --         end
-    --         local decoder_input = {decoder_input1, context[{{1}}], table.unpack(rnn_state_dec)}
-    --         local out_decoder = model[2]:forward(decoder_input)
-    --         local out = model[3]:forward(out_decoder[#out_decoder]) -- K x vocab_size
-    --         rnn_state_dec = {} -- to be modified later
-    --         table.insert(rnn_state_dec, out_decoder[#out_decoder])
-    --         for j = 1, #out_decoder - 1 do
-    --             table.insert(rnn_state_dec, out_decoder[j])
-    --         end
-    --         gold_score = gold_score + out[1][gold[t]]
-    --     end
-    -- end
-    -- if opt.simple == 1 or end_score > max_score or not found_eos then
-    --     max_hyp = end_hyp
-    --     max_score = end_score
-    --     max_attn_argmax = end_attn_argmax
-    -- end
-
-    -- return max_hyp, max_score, max_attn_argmax, gold_score, states[i], scores[i], attn_argmax[i]
+    -- Sort by score, and we're done
+    table.sort(result, function (a, b) return a[2] > b[2] end)
+    print(result)
+    return result
 end
 
 ------------
@@ -562,10 +335,6 @@ end
 ------------
 
 function main()
-    -- Some globals
-    PAD = 1; UNK = 2; START = 3; END = 4
-    PAD_WORD = '<blank>'; UNK_WORD = '<unk>'; START_WORD = '<s>'; END_WORD = '</s>'
-    MAX_SENT_L = opt.max_sent_l
     assert(path.exists(opt.src_file), 'src_file does not exist')
     assert(path.exists(opt.model), 'model does not exist')
    
@@ -639,36 +408,7 @@ function main()
         end
     end
 
-    -- softmax_layers = {}
-    -- model[2]:apply(get_layer)
-    -- decoder_attn:apply(get_layer)
-    -- decoder_softmax = softmax_layers[1]
-    -- attn_layer = torch.zeros(opt.beam, MAX_SENT_L)
-
     context_proto = torch.zeros(1, MAX_SENT_L, model_opt.hidden_size)
-    -- local h_init_dec = torch.zeros(opt.beam, model_opt.hidden_size)
-    -- local h_init_enc = torch.zeros(1, model_opt.hidden_size) 
-    -- if opt.gpuid >= 0 then
-    --     h_init_enc = h_init_enc:cuda()
-    --     h_init_dec = h_init_dec:cuda()
-    --     cutorch.setDevice(opt.gpuid)
-    --     if opt.gpuid2 >= 0 then
-    --         cutorch.setDevice(opt.gpuid)
-    --         context_proto = context_proto:cuda()
-    --         cutorch.setDevice(opt.gpuid2)
-    --         context_proto2 = torch.zeros(opt.beam, MAX_SENT_L, model_opt.hidden_size):cuda()
-    --     else
-    --         context_proto = context_proto:cuda()
-    --     end
-    -- end
-    -- init_fwd_enc = {}
-    -- init_fwd_dec = {h_init_dec:clone()} -- initial context
-    -- for L = 1, model_opt.num_layers do
-    --     table.insert(init_fwd_enc, h_init_enc:clone())
-    --     table.insert(init_fwd_enc, h_init_enc:clone())
-    --     table.insert(init_fwd_dec, h_init_dec:clone()) -- memory cell
-    --     table.insert(init_fwd_dec, h_init_dec:clone()) -- hidden state
-    -- end
      
     pred_score_total = 0
     gold_score_total = 0
@@ -689,6 +429,10 @@ function main()
         if opt.score_gold == 1 then
             target, target_str = sent2wordidx(gold[sent_id], word2idx_targ)
         end
+
+        -- Add EOS token to source
+        local eos = torch.LongTensor({{END}})
+        source = source:cat(eos)
 
         state = State.initial(START)
         pred, pred_score, gold_score, all_sents, all_scores = generate_beam(m,
