@@ -526,7 +526,7 @@ def main(arguments):
     parser.add_argument('--targetfile', help="Path to target training data, "
                                            "where each line represents a single "
                                            "source/target sequence.", default='train_targ_words.txt')
-    parser.add_argument('--srcvalfile', help="Path to source validation data.", default='data/dev_src_words.txt')
+    parser.add_argument('--srcvalfile', help="Path to source validation data.", default='dev_src_words.txt')
     parser.add_argument('--targetvalfile', help="Path to target validation data.", default='dev_targ_words.txt')
     parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=32)
     parser.add_argument('--seqlength', help="Maximum sequence length. Sequences longer "
