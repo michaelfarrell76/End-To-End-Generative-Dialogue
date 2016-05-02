@@ -1,92 +1,6 @@
 require 'rnn'
 require 'hdf5'
 
-package.path = '?.lua;' .. package.path
-require 'data.lua'
-
--- nn.FastLSTM.usenngraph = true
-
-------------
--- Options
-------------
-
-cmd = torch.CmdLine()
-
--- Data files
-cmd:text("")
-cmd:text("**Data options**")
-cmd:text("")
-cmd:option('-data_file','data/demo-train.hdf5',[[Path to the training *.hdf5 file 
-                                                 from preprocess.py]])
-cmd:option('-val_data_file','data/demo-val.hdf5',[[Path to validation *.hdf5 file 
-                                                 from preprocess.py]])
-cmd:option('-save_file', 'seq2seq_lstm', [[Save file name (model will be saved as 
-                         savefile_epochX_PPL.t7 where X is the X-th epoch and PPL is 
-                         the validation perplexity]])
-cmd:option('-train_from', '', [[If training from a checkpoint then this is the path to the
-                                pretrained model.]])
-
--- RNN model specs
-cmd:text("")
-cmd:text("**Model options**")
-cmd:text("")
-
-cmd:option('-num_layers', 2, [[Number of layers in the LSTM encoder/decoder]])
-cmd:option('-hidden_size', 300, [[Size of LSTM hidden states]])
-cmd:option('-word_vec_size', 300, [[Word embedding sizes]])
-cmd:option('-layer_type', 'lstm', [[Recurrent layer type (rnn, gru, lstm, fast)]])
-
--- cmd:option('-reverse_src', 0, [[If 1, reverse the source sequence. The original 
---                               sequence-to-sequence paper found that this was crucial to 
---                               achieving good performance, but with attention models this
---                               does not seem necessary. Recommend leaving it to 0]])
--- cmd:option('-init_dec', 1, [[Initialize the hidden/cell state of the decoder at time 
---                            0 to be the last hidden/cell state of the encoder. If 0, 
---                            the initial states of the decoder are set to zero vectors]])
-
-cmd:text("")
-cmd:text("**Optimization options**")
-cmd:text("")
-
--- Optimization
-cmd:option('-num_epochs', 10, [[Number of training epochs]])
-cmd:option('-start_epoch', 1, [[If loading from a checkpoint, the epoch from which to start]])
-cmd:option('-param_init', 0.1, [[Parameters are initialized over uniform distribution with support
-                                 (-param_init, param_init)]])
-cmd:option('-learning_rate', 1, [[Starting learning rate]])
-cmd:option('-max_grad_norm', 5, [[If the norm of the gradient vector exceeds this, renormalize it
-                                to have the norm equal to max_grad_norm]])
-cmd:option('-dropout', 0.3, [[Dropout probability.
-                            Dropout is applied between vertical LSTM stacks.]])
-cmd:option('-lr_decay', 0.5, [[Decay learning rate by this much if (i) perplexity does not decrease
-                        on the validation set or (ii) epoch has gone past the start_decay_at_limit]])
-cmd:option('-start_decay_at', 9, [[Start decay after this epoch]])
--- cmd:option('-curriculum', 0, [[For this many epochs, order the minibatches based on source
---                 sequence length. Sometimes setting this to 1 will increase convergence speed.]])
-cmd:option('-pre_word_vecs', 'data/word_vecs.hdf5', [[If a valid path is specified, then this will load 
-                                      pretrained word embeddings (hdf5 file) on the encoder side. 
-                                      See README for specific formatting instructions.]])
-cmd:option('-fix_word_vecs_enc', 0, [[If = 1, fix word embeddings on the encoder side]])
-cmd:option('-fix_word_vecs_dec', 0, [[If = 1, fix word embeddings on the decoder side]])
-
-cmd:text("")
-cmd:text("**Other options**")
-cmd:text("")
-
--- GPU
-cmd:option('-gpuid', -1, [[Which gpu to use. -1 = use CPU]])
-cmd:option('-gpuid2', -1, [[If this is >= 0, then the model will use two GPUs whereby the encoder
-                             is on the first GPU and the decoder is on the second GPU. 
-                             This will allow you to train with bigger batches/models.]])
-
--- Bookkeeping
-cmd:option('-save_every', 1, [[Save every this many epochs]])
-cmd:option('-print_every', 100, [[Print stats after this many batches]])
-cmd:option('-seed', 3435, [[Seed for random initialization]])
-
-opt = cmd:parse(arg)
-torch.manualSeed(opt.seed)
-
 ------------
 -- Misc
 ------------
@@ -131,6 +45,7 @@ function backward_connect(enc_rnn, dec_rnn)
     enc_rnn.gradPrevOutput = nn.rnn.recursiveCopy(enc_rnn.gradPrevOutput, dec_rnn.userGradPrevOutput)
 end
 
+
 ------------
 -- Structure
 ------------
@@ -157,15 +72,7 @@ function build_encoder(recurrence)
 
     enc:add(nn.SelectTable(-1))
 
-    if opt.pre_word_vecs:len() > 0 then
-        local f = hdf5.open(opt.pre_word_vecs)     
-        local pre_word_vecs = f:read('word_vecs'):all()
-        for i = 1, pre_word_vecs:size(1) do
-            enc_embeddings.weight[i]:copy(pre_word_vecs[i])
-        end          
-    end
-
-    return enc, enc_rnn
+    return enc, enc_rnn, enc_embeddings
 end
 
 function build_decoder(recurrence)
@@ -192,15 +99,7 @@ function build_decoder(recurrence)
     dec:add(nn.Sequencer(nn.Linear(opt.hidden_size, opt.vocab_size_dec)))
     dec:add(nn.Sequencer(nn.LogSoftMax()))
 
-    if opt.pre_word_vecs:len() > 0 then
-        local f = hdf5.open(opt.pre_word_vecs)     
-        local pre_word_vecs = f:read('word_vecs'):all()
-        for i = 1, pre_word_vecs:size(1) do
-            dec_embeddings.weight[i]:copy(pre_word_vecs[i])
-        end          
-    end
-
-    return dec, dec_rnn
+    return dec, dec_rnn, dec_embeddings
 end
 
 function build()
@@ -215,17 +114,17 @@ function build()
         recurrence = nn.FastLSTM
     end
 
-    print('\nBuilding model with specs:')
-    print('Layer type: ' .. opt.layer_type)
-    print('Embedding size: ' .. opt.word_vec_size)
-    print('Hidden layer size: ' .. opt.hidden_size)
-    print('Number of layers: ' .. opt.num_layers)
+    opt.print('\nBuilding model with specs:')
+    opt.print('Layer type: ' .. opt.layer_type)
+    opt.print('Embedding size: ' .. opt.word_vec_size)
+    opt.print('Hidden layer size: ' .. opt.hidden_size)
+    opt.print('Number of layers: ' .. opt.num_layers)
 
     -- Encoder, enc_rnn is top rnn in vertical enc stack
-    local enc, enc_rnn = build_encoder(recurrence)
+    local enc, enc_rnn, enc_embeddings = build_encoder(recurrence)
 
     -- Decoder, dec_rnn is lowest rnn in vertical dec stack
-    local dec, dec_rnn = build_decoder(recurrence)
+    local dec, dec_rnn, dec_embeddings = build_decoder(recurrence)
 
     -- Criterion
     local criterion = nn.SequencerCriterion(nn.ClassNLLCriterion())
@@ -263,7 +162,19 @@ function build()
         params[i] = p
         grad_params[i] = gp
     end
-    print('Number of parameters: ' .. num_params .. '\n')
+    
+    if opt.train_from:len() == 0 then
+        if opt.pre_word_vecs:len() > 0 then
+            local f = hdf5.open(opt.pre_word_vecs)     
+            local pre_word_vecs = f:read('word_vecs'):all()
+            for i = 1, pre_word_vecs:size(1) do
+                enc_embeddings.weight[i]:copy(pre_word_vecs[i])
+                dec_embeddings.weight[i]:copy(pre_word_vecs[i])
+            end          
+        end
+    end
+
+    opt.print('Number of parameters: ' .. num_params .. '\n')
 
     -- GPU
     if opt.gpuid >= 0 then
@@ -304,7 +215,7 @@ end
 ------------
 
 function train(m, criterion, train_data, valid_data)
-    print('Beginning training...')
+    opt.print('Beginning training...')
 
     local timer = torch.Timer()
     local start_decay = 0
@@ -433,7 +344,7 @@ function train(m, criterion, train_data, valid_data)
                 stats = stats .. string.format('Training: %d/%d/%d total/source/target tokens/sec',
                     (num_words_target+num_words_source) / time_taken,
                     num_words_source / time_taken, num_words_target / time_taken)
-                print(stats)
+                opt.print(stats)
             end
 
             -- Friendly reminder
@@ -454,10 +365,10 @@ function train(m, criterion, train_data, valid_data)
         local total_loss, total_nonzeros = train_batch(train_data, epoch)
 
         local train_score = math.exp(total_loss / total_nonzeros)
-        print('Train', train_score)
+        opt.print('Train', train_score)
 
         local valid_score = eval(m, criterion, valid_data)
-        print('Valid', valid_score)
+        opt.print('Valid', valid_score)
 
         opt.train_perf[#opt.train_perf + 1] = train_score
         opt.val_perf[#opt.val_perf + 1] = valid_score
@@ -468,11 +379,118 @@ function train(m, criterion, train_data, valid_data)
         local save_file = string.format('%s_epoch%.2f_%.2f.t7', opt.save_file, epoch, valid_score)
         if epoch % opt.save_every == 0 then
         -- if epoch == opt.num_epochs then
-            print('Saving checkpoint to ' .. save_file)
+            opt.print('Saving checkpoint to ' .. save_file)
             -- clean_layer(m.enc); clean_layer(m.dec);
             torch.save(save_file, {{m.enc, m.dec, m.enc_rnn, m.dec_rnn}, opt})
         end
     end
+end
+
+function beam_bleu_score(beam_results, target)
+    local bleu_scores = torch.zeros(opt.beam_k)
+
+    --for each of the beam examples
+    for i = 1, opt.beam_k do 
+        local pred = beam_results[i]
+
+        local scores = torch.zeros(opt.max_bleu)
+        --for each of the n-grams
+        for j = 0, opt.max_bleu - 1 do
+            local pred_counts = {}
+
+            --loop through preds by n-gram
+            for k = 1, pred:size(1) - j  do
+
+                --generate key
+                local key = ""
+                for l = 0, j do
+                    if l > 0 then
+                        key = key + " "
+                    end
+                    key = key + pred[k + l]
+                end
+
+                --update pred counts
+                if pred_counts[key] == nil then
+                    pred_counts[key] = 1
+                else
+                    pred_counts[key] = 1 + pred_counts[key]
+                end
+
+            end
+
+            local target_counts = {}
+
+             --loop through target by n-gram
+            for k = 1, target:size(1) - j do
+
+                --generate key
+                local key = ""
+                for l = 0, j do
+                    if l > 0 then
+                        key = key + " "
+                    end
+                    key = key + target[k + l]
+                end
+
+                --update target counts
+                if target_counts[key] == nil then
+                    target_counts[key] = 1
+                else
+                    target_counts[key] = 1 + target_counts[key]
+                end
+
+            end
+
+            local prec = 0
+            for key, pred_val in pairs(pred_counts) do
+                target_val = target_counts[prec]
+                if target_val ~= nil then
+                    if target_val >= pred_val then
+                        prec = prec + pred_val
+                    else
+                        prec = prec + target_val
+                    end
+                end
+            end
+
+            local score 
+            if pred:size(1) <= j then
+                score = 1
+            else
+                score = prec / (pred:size(1) - j)
+            end
+
+            scores[j + 1] = score
+        end
+
+        --add brevity penalty
+        local log_bleu = torch.min(0, 1 - (target:size(1) / pred:size(1)))
+
+        for j = 1, opt.max_bleu do
+            log_bleu = log_bleu + (1 / opt.max_bleu) * torch.log(scores[j])
+        end
+
+        bleu_scores[i] = torch.exp(log_bleu)
+    end
+    return bleu_scores
+end
+
+
+function beam_error_rate(beam_results, target)
+    local error_rates = torch.zeros(opt.beam_k)
+    for i = 1, opt.beam_k do 
+        local pred = beam_results[i]
+        local total_wrong = 0
+        for j = 1, torch.min(pred:size(1), target:size(1)) do
+            if pred[j] ~= target[j] then
+                total_wrong = total_wrong + 1
+            end
+        end
+        total_wrong = total_wrong + torch.abs(pred:size(1) - target:size(1))
+        error_rates[i] = total_wrong / target:size(1)
+    end
+    return error_rates
 end
 
 function eval(m, criterion, data)
@@ -481,6 +499,9 @@ function eval(m, criterion, data)
 
     local nll = 0
     local total = 0
+
+    local map_bleu_total, best_bleu_total = 0, 0
+    local map_error_total, best_error_total = 0, 0
 
     for i = 1, data:size() do
         local d = data[i]
@@ -499,8 +520,20 @@ function eval(m, criterion, data)
         local dec_out = m.dec:forward(target)
         local loss = criterion:forward(dec_out, target_out)
 
+        local beam_res = generateBeam(m, opt.beam_k, source)
+
+        local beam_bleu_score = calc_bleu_score(beam_res, target)
+        local beam_error_rate = calc_error_rate(beam_res, target)
+
+        --update values
         nll = nll + loss * batch_l
         total = total + nonzeros
+
+        map_bleu_total = map_bleu_total + beam_bleu_score[1]
+        map_error_total = map_error_total + beam_error_rate[1]
+
+        best_bleu_total = best_bleu_total + torch.max(beam_bleu_score)
+        best_error_total = best_error_total + torch.min(beam_error_rate)
     end
 
     local valid = math.exp(nll / total)
@@ -512,12 +545,25 @@ end
 ------------
 
 function main()
+
+
     -- Parse input params
     opt = cmd:parse(arg)
+
+
+    torch.manualSeed(opt.seed)
+
+
+    if opt.parallel then
+        opt.print = parallel.print
+    else
+        opt.print = print
+    end
+
     if opt.gpuid >= 0 then
-        print('Using CUDA on GPU ' .. opt.gpuid .. '...')
+        opt.print('Using CUDA on GPU ' .. opt.gpuid .. '...')
         if opt.gpuid2 >= 0 then
-            print('Using CUDA on second GPU ' .. opt.gpuid2 .. '...')
+            opt.print('Using CUDA on second GPU ' .. opt.gpuid2 .. '...')
         end
         require 'cutorch'
         require 'cunn'
@@ -526,16 +572,16 @@ function main()
     end
     
     -- Create the data loader classes
-    print('Loading data...')
-    train_data = data.new(opt, opt.data_file)
-    valid_data = data.new(opt, opt.val_data_file)
-    print('Done!')
+    opt.print('Loading data...')
+    local train_data = data.new(opt, opt.data_file)
+    local valid_data = data.new(opt, opt.val_data_file)
+    opt.print('Done!')
 
-    print(string.format('Source vocab size: %d, Target vocab size: %d',
+    opt.print(string.format('Source vocab size: %d, Target vocab size: %d',
         valid_data.source_size, valid_data.target_size))
     opt.max_sent_l = math.max(valid_data.source:size(2),
         valid_data.target:size(2))
-    print(string.format('Source max sent len: %d, Target max sent len: %d',
+    opt.print(string.format('Source max sent len: %d, Target max sent len: %d',
         valid_data.source:size(2), valid_data.target:size(2)))
 
     opt.vocab_size_enc = valid_data.source_size
@@ -545,10 +591,13 @@ function main()
     -- Build
     local model, criterion = build()
 
-    -- Train
-    train(model, criterion, train_data, valid_data)
+    if opt.parallel then 
+        return train_data, valid_data, model, criterion, opt
+    else
+        -- Train
+        train(model, criterion, train_data, valid_data)
+    end
 
     -- TODO: Test
+    
 end
-
-main()
