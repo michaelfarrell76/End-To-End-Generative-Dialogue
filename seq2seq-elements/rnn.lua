@@ -66,6 +66,8 @@ cmd:option('-pre_word_vecs', 'data/word_vecs.hdf5', [[If a valid path is specifi
                                       See README for specific formatting instructions.]])
 cmd:option('-fix_word_vecs_enc', 0, [[If = 1, fix word embeddings on the encoder side]])
 cmd:option('-fix_word_vecs_dec', 0, [[If = 1, fix word embeddings on the decoder side]])
+cmd:option('-beam_k', 5, [[K value to use with beam search]])
+cmd:option('-max_bleu', 4, [[The number of n-grams used in calculating the bleu score]])
 
 cmd:text("")
 cmd:text("**Other options**")
@@ -471,12 +473,122 @@ function train(m, criterion, train_data, valid_data)
     end
 end
 
+function beam_bleu_score(beam_results, target)
+    local bleu_scores = torch.zeros(opt.beam_k)
+
+    --for each of the beam examples
+    for i = 1, opt.beam_k do 
+        local pred = beam_results[i]
+
+        local scores = torch.zeros(opt.max_bleu)
+        --for each of the n-grams
+        for j = 0, opt.max_bleu - 1 do
+            local pred_counts = {}
+
+            --loop through preds by n-gram
+            for k = 1, pred:size(1) - j  do
+
+                --generate key
+                local key = ""
+                for l = 0, j do
+                    if l > 0 then
+                        key = key + " "
+                    end
+                    key = key + pred[k + l]
+                end
+
+                --update pred counts
+                if pred_counts[key] == nil then
+                    pred_counts[key] = 1
+                else
+                    pred_counts[key] = 1 + pred_counts[key]
+                end
+
+            end
+
+            local target_counts = {}
+
+             --loop through target by n-gram
+            for k = 1, target:size(1) - j do
+
+                --generate key
+                local key = ""
+                for l = 0, j do
+                    if l > 0 then
+                        key = key + " "
+                    end
+                    key = key + target[k + l]
+                end
+
+                --update target counts
+                if target_counts[key] == nil then
+                    target_counts[key] = 1
+                else
+                    target_counts[key] = 1 + target_counts[key]
+                end
+
+            end
+
+            local prec = 0
+            for key, pred_val in pairs(pred_counts) do
+                target_val = target_counts[prec]
+                if target_val ~= nil then
+                    if target_val >= pred_val then
+                        prec = prec + pred_val
+                    else
+                        prec = prec + target_val
+                    end
+                end
+            end
+
+            local score 
+            if pred:size(1) <= j then
+                score = 1
+            else
+                score = prec / (pred:size(1) - j)
+            end
+
+            scores[j + 1] = score
+        end
+
+        --add brevity penalty
+        local log_bleu = torch.min(0, 1 - (target:size(1) / pred:size(1)))
+
+        for j = 1, opt.max_bleu do
+            log_bleu = log_bleu + (1 / opt.max_bleu) * torch.log(scores[j])
+        end
+
+        bleu_scores[i] = torch.exp(log_bleu)
+    end
+    return bleu_scores
+end
+
+
+function beam_error_rate(beam_results, target)
+    local error_rates = torch.zeros(opt.beam_k)
+    for i = 1, opt.beam_k do 
+        local pred = beam_results[i]
+        local total_wrong = 0
+        for j = 1, torch.min(pred:size(1), target:size(1)) do
+            if pred[j] ~= target[j] then
+                total_wrong = total_wrong + 1
+            end
+        end
+        total_wrong = total_wrong + torch.abs(pred:size(1) - target:size(1))
+        error_rates[i] = total_wrong / target:size(1)
+    end
+    return error_rates
+end
+
 function eval(m, criterion, data)
     m.enc:evaluate()
     m.dec:evaluate()
 
     local nll = 0
     local total = 0
+
+    local map_bleu_total, best_bleu_total = 0, 0
+    local map_error_total, best_error_total = 0, 0
 
     for i = 1, data:size() do
         local d = data[i]
@@ -495,8 +607,20 @@ function eval(m, criterion, data)
         local dec_out = m.dec:forward(target)
         local loss = criterion:forward(dec_out, target_out)
 
+        local beam_res = generateBeam(m, opt.beam_k, source)
+
+        local beam_bleu_score = calc_bleu_score(beam_res, target)
+        local beam_error_rate = calc_error_rate(beam_res, target)
+
+        --update values
         nll = nll + loss * batch_l
         total = total + nonzeros
+
+        map_bleu_total = map_bleu_total + beam_bleu_score[1]
+        map_error_total = map_error_total + beam_error_rate[1]
+
+        best_bleu_total = best_bleu_total + torch.max(beam_bleu_score)
+        best_error_total = best_error_total + torch.min(beam_error_rate)
     end
 
     local valid = math.exp(nll / total)
