@@ -351,51 +351,60 @@ def format_data(directory, train_valid_split, seq_length):
 
     pattern = [word_to_indices['</s>'], word_to_indices['<s>']]
 
-    for i in range(len(train_set)):
-        break_pt = []
-        for ind in range(len(train_set[i]))[::-1]:
-            if pattern == train_set[i][ind:ind+2]:
-                break_pt.append(ind)
+    data_set_contexts = []
+    data_set_outputs = []
+    for data_set in [train_set, valid_set, test_set]:
+        PADDING = word_to_indices['<blank>']
+        END_OF_CONV = word_to_indices['<t>']
 
-        context = train_set[i][:break_pt[0]]
-        output = train_set[i][break_pt[0]+2:]
-        
-        context = context + [word_to_indices['</s>']]
-        output = [word_to_indices['<s>']] + output
-        
-        # Start of sentence and end of sentence is ONLY used at the end
-        # We create a new character that represents the start and end of a conversation
-        context = context[:break_pt[1]] + [END_OF_CONV] + context[break_pt[1]+2:]
-        
-        
-        # Cap the target and src length at 302 words to make computation simpler, goes up to ~1500
-        if len(context) > seq_length + 2:
-            continue
-        if len(output) > seq_length + 2:
-            continue
-        
-        max_len_output = max(max_len_output, len(output))
-        max_len_context = max(max_len_context, len(context))
-        max_len_output = seq_length + 2
-        max_len_context = seq_length + 2
-            
-        full_context.append(context)
-        full_output.append(output)
-        
-    # Add padding to all contexts and outputs
-    for i in range(len(full_context)):
-        full_context[i] = full_context[i] + [PADDING] * (max_len_context - len(full_context[i]))
-        full_output[i] = full_output[i] + [PADDING] * (max_len_output - len(full_output[i]))
-        
-    full_context = (full_context)
-    full_output = (full_output)
+        full_context = []
+        full_output = []
+        max_len_context = 0
+        max_len_output = 0 
 
-    # Probably shouldn't split it this way, change it so it gets split randomly
-    ind = int(train_valid_split*len(full_context))
-    train_full_context = full_context[:ind]
-    train_full_output = full_output[:ind]
-    valid_full_context = full_context[ind+1:]
-    valid_full_output = full_output[ind+1:]
+        for i in range(len(data_set)):
+            break_pt = []
+            for ind in range(len(data_set[i]))[::-1]:
+                if pattern == data_set[i][ind:ind+2]:
+                    break_pt.append(ind)
+
+            context = data_set[i][:break_pt[0]]
+            output = data_set[i][break_pt[0]+2:]
+
+            context = context + [word_to_indices['</s>']]
+            output = [word_to_indices['<s>']] + output
+
+            # Start of sentence and end of sentence is ONLY used at the end
+            # We create a new character that represents the start and end of a conversation
+            context = context[:break_pt[1]] + [END_OF_CONV] + context[break_pt[1]+2:]
+
+
+            # Cap the target and src length at 302 words to make computation simpler, goes up to ~1500
+            if len(context) > 52:
+                continue
+            if len(output) > 52:
+                continue
+
+            max_len_output = max(max_len_output, len(output))
+            max_len_context = max(max_len_context, len(context))
+            max_len_output = 52
+            max_len_context = 52
+
+            full_context.append(context)
+            full_output.append(output)
+
+        # Add padding to all contexts and outputs
+        for i in range(len(full_context)):
+            full_context[i] = full_context[i] + [PADDING] * (max_len_context - len(full_context[i]))
+            full_output[i] = full_output[i] + [PADDING] * (max_len_output - len(full_output[i]))
+
+        data_set_contexts.append(full_context)
+        data_set_outputs.append(full_output)
+        
+    train_full_context = data_set_contexts[0]
+    train_full_output = data_set_outputs[0]
+    valid_full_context = data_set_contexts[1]
+    valid_full_output = data_set_outputs[1]
 
     # This is super inefficient, put it together last minute. Don't judge :)
     f =  open('data/train_src_indices.txt', 'w')
@@ -516,7 +525,7 @@ def main(arguments):
                                            "source/target sequence.", default='data/train_targ_words.txt')
     parser.add_argument('--srcvalfile', help="Path to source validation data.", default='data/dev_src_words.txt')
     parser.add_argument('--targetvalfile', help="Path to target validation data.", default='data/dev_targ_words.txt')
-    parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=32)
+    parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=16)
     parser.add_argument('--seqlength', help="Maximum sequence length. Sequences longer "
                                                "than this are dropped.", type=int, default=50)
     parser.add_argument('--outputfile', help="Prefix of the output file names. ", type=str, default='data/conv')
