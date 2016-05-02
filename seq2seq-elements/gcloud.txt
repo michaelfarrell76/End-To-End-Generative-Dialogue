@@ -22,3 +22,13 @@ directory on your local drive, then run the below:
 gcloud compute copy-files . train-conv2:~/stash/singularity/data/MovieTriples --zone us-east1-c
 
 Next, run the command for preprocessing, and you should be good to go!
+
+------------------------------------------------------------------------------
+
+For figuring out IP adddressses between Google compute instances, you can use their instance name 
+and the nslookup command. For example, if you were in another Google Compute instance and 
+wanted to figure out the ip address for the instance model-1, you can run the command below command
+
+nslookup model-1
+
+This should return to you the local IP address of model-1 that you can use to connect with. 
