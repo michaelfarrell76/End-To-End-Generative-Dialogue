@@ -247,7 +247,7 @@ def get_data(args):
     
     print("Max sent length (before dropping): {}".format(max_sent_l))    
 
-def format_data(directory, train_valid_split, seq_length):
+def format_data(directory, train_valid_split, seq_length, args):
     # Loading all the possible files into memory
     with open(directory + 'Training.triples.pkl') as f:
         train_set = pickle.load(f)
@@ -560,7 +560,7 @@ def main(arguments):
 
     data_directory = args.data_directory
     train_valid_split = 0.8
-    format_data(data_directory, train_valid_split, args.seqlength)
+    format_data(data_directory, train_valid_split, args.seqlength, args)
     get_data(args)
 
 if __name__ == '__main__':
