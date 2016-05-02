@@ -22,7 +22,7 @@ cmd:option('-save_file', 'seq2seq_lstm_attn', [[Savefile name (model will be sav
 						 the validation perplexity]])
 cmd:option('-num_shards', 0, [[If the training data has been broken up into different shards, 
 							 then training files are in this many partitions]])
-cmd:option('-train_from', 'conv-model_final.t7', [[If training from a checkpoint then this is the path to the
+cmd:option('-train_from', '', [[If training from a checkpoint then this is the path to the
 								pretrained model.]])
 
 -- rnn model specs
@@ -31,8 +31,8 @@ cmd:text("**Model options**")
 cmd:text("")
 
 cmd:option('-num_layers', 2, [[Number of layers in the LSTM encoder/decoder]])
-cmd:option('-rnn_size', 500, [[Size of LSTM hidden states]])
-cmd:option('-word_vec_size', 500, [[Word embedding sizes]])
+cmd:option('-rnn_size', 300, [[Size of LSTM hidden states]])
+cmd:option('-word_vec_size', 300, [[Word embedding sizes]])
 cmd:option('-use_chars_enc', 0, [[If 1, use character on the encoder 
 								side (instead of word embeddings]])
 cmd:option('-use_chars_dec', 0, [[If 1, use character on the decoder 
@@ -70,7 +70,7 @@ cmd:text("**Optimization options**")
 cmd:text("")
 
 -- optimization
-cmd:option('-epochs', 10, [[Number of training epochs]])
+cmd:option('-epochs', 15, [[Number of training epochs]])
 cmd:option('-start_epoch', 1, [[If loading from a checkpoing, the epoch from which to start]])
 cmd:option('-param_init', 0.1, [[Parameters are initialized over uniform distribution with support
 							   (-param_init, param_init)]])
@@ -84,12 +84,21 @@ cmd:option('-lr_decay', 0.5, [[Decay learning rate by this much if (i) perplexit
 cmd:option('-start_decay_at', 9, [[Start decay after this epoch]])
 cmd:option('-curriculum', 0, [[For this many epochs, order the minibatches based on source
 				sequence length. Sometimes setting this to 1 will increase convergence speed.]])
-cmd:option('-pre_word_vecs_enc', '', [[If a valid path is specified, then this will load 
+
+cmd:option('-pre_word_vecs_enc', 'data/word_vecs.hdf5', [[If a valid path is specified, then this will load 
 									  pretrained word embeddings (hdf5 file) on the encoder side. 
 									  See README for specific formatting instructions.]])
-cmd:option('-pre_word_vecs_dec', '', [[If a valid path is specified, then this will load 
+cmd:option('-pre_word_vecs_dec', 'data/word_vecs.hdf5', [[If a valid path is specified, then this will load 
 									  pretrained word embeddings (hdf5 file) on the decoder side. 
 									  See README for specific formatting instructions.]])
+
+-- cmd:option('-pre_word_vecs_enc', '', [[If a valid path is specified, then this will load 
+-- 									  pretrained word embeddings (hdf5 file) on the encoder side. 
+-- 									  See README for specific formatting instructions.]])
+-- cmd:option('-pre_word_vecs_dec', '', [[If a valid path is specified, then this will load 
+-- 									  pretrained word embeddings (hdf5 file) on the decoder side. 
+-- 									  See README for specific formatting instructions.]])
+
 cmd:option('-fix_word_vecs_enc', 0, [[If = 1, fix word embeddings on the encoder side]])
 cmd:option('-fix_word_vecs_dec', 0, [[If = 1, fix word embeddings on the decoder side]])
 
@@ -110,7 +119,7 @@ cmd:option('-cudnn', 0, [[Whether to use cudnn or not for convolutions (for the 
 						 if using the character model]])
 -- bookkeeping
 cmd:option('-save_every', 1, [[Save every this many epochs]])
-cmd:option('-print_every', 50, [[Print stats after this many batches]])
+cmd:option('-print_every', 100, [[Print stats after this many batches]])
 cmd:option('-seed', 3435, [[Seed for random initialization]])
 
 opt = cmd:parse(arg)
@@ -156,18 +165,19 @@ function train(train_data, valid_data)
 		grad_params[i] = gp
 	end
 
-   if opt.pre_word_vecs_enc:len() > 0 then   
+   if opt.pre_word_vecs_enc:len() > 0 then
 	  local f = hdf5.open(opt.pre_word_vecs_enc)     
 	  local pre_word_vecs = f:read('word_vecs'):all()
 	  for i = 1, pre_word_vecs:size(1) do
-	 word_vecs_enc.weight[1]:copy(pre_word_vecs[i])
+	 	word_vecs_enc.weight[i]:copy(pre_word_vecs[i])
 	  end      
    end
-   if opt.pre_word_vecs_dec:len() > 0 then      
+
+   if opt.pre_word_vecs_dec:len() > 0 then
 	  local f = hdf5.open(opt.pre_word_vecs_dec)     
 	  local pre_word_vecs = f:read('word_vecs'):all()
 	  for i = 1, pre_word_vecs:size(1) do
-	 word_vecs_dec.weight[1]:copy(pre_word_vecs[i])
+	 word_vecs_dec.weight[i]:copy(pre_word_vecs[i])
 	  end      
    end
 
@@ -182,7 +192,7 @@ function train(train_data, valid_data)
 	  word_vecs_enc.weight[1]:zero()
 	  word_vecs_dec.weight[1]:zero()
    end
-   
+
    -- prototypes for gradients so there is no need to clone
    local encoder_grad_proto = torch.zeros(valid_data.batch_l:max(), opt.max_sent_l, opt.rnn_size)
    local encoder_grad_proto2 = torch.zeros(valid_data.batch_l:max(), opt.max_sent_l, opt.rnn_size)
