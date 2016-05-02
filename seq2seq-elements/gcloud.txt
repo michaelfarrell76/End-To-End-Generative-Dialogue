@@ -1,17 +1,40 @@
+
+sudo apt-get install git
+sudo apt-get install luarocks
+
+git config --global user.email "mkfrl09@gmail.com"
+git config --global user.name "michaelfarrell76"
+
 In order to set up your instance, you're going to need to install torch
 
 git clone https://github.com/torch/distro.git ~/torch --recursive
 cd ~/torch; bash install-deps;
 ./install.sh
 
+cd .. 
+
 You'll also need to install all relevant packages, so 
 
 luarocks install rnn
-luarocks install hdf5
+luarocks install parallel
+
+sudo apt-get install libhdf5-serial-dev hdf5-tools
+git clone https://github.com/deepmind/torch-hdf5.git
+cd torch-hdf5
+luarocks make hdf5-0-0.rockspec
+
+cd ..
 
 You'll also need to install Anaconda
 wget http://repo.continuum.io/archive/Anaconda2-4.0.0-Linux-x86_64.sh
 bash Anaconda2-4.0.0-Linux-x86_64.sh
+
+
+git clone https://github.com/michaelfarrell76/Singularity.git
+cd Singularity
+mkdir data
+cd data
+mkdir MovieTriples
 
 (Disconnect from shell, reconnect from shell if python/torch aren't loading properly)
 
@@ -22,6 +45,11 @@ directory on your local drive, then run the below:
 gcloud compute copy-files . train-conv2:~/stash/singularity/data/MovieTriples --zone us-east1-c
 
 Next, run the command for preprocessing, and you should be good to go!
+
+cd 
+cd Singularity
+cd seq2seq-elements
+python preprocess.py
 
 ------------------------------------------------------------------------------
 

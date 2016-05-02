@@ -544,9 +544,10 @@ def main(arguments):
                                        "Can be an absolute count limit (if > 1) "
                                        "or a proportional limit (0 < unkfilter < 1).",
                                           type = float, default = 0)
+    parser.add_argument('--data_directory', help="Folder of MovieTriples", default='../data/MovieTriples/')
     
     args = parser.parse_args(arguments)
-    data_directory = '../data/MovieTriples/'
+    data_directory = args.data_directory
     train_valid_split = 0.8
     format_data(data_directory, train_valid_split, args.seqlength)
     get_data(args)

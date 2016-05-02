@@ -59,6 +59,8 @@ end
 
 -- define code for parent:
 function parent()
+
+
     -- print from top process
     parallel.print('Im the parent, my ID is: ' .. parallel.id)
 
@@ -68,6 +70,8 @@ function parent()
 
     -- fork N processes
     parallel.nfork(n_proc)
+
+    setupEnvironment()
 
     -- parallel.addremote(...)
     -- parallel.calibrate()
@@ -95,3 +99,13 @@ function parent()
     parallel.children:join('break')
     parallel.print('all processes terminated')
 end
+
+function setupEnvironment()
+    print('Copying files')
+    os.execute('(echo "ls Singularity/data" | gcloud compute ssh mikes-test-instance | grep -q MovieTriples) || gcloud compute copy-files ../data/MovieTriples mikes-test-instance:~/Singularity/data')
+    os.execute('(echo "ls Singularity/seq2seq-elements/data" | gcloud compute ssh mikes-test-instance | grep -q train_src_words.txt) || echo "Need to call preprocess"')
+
+    -- print(os.execute("gcloud compute copy-files ../data/MovieTriples mikes-test-instance:~/Singularity/data"))
+
+end
+
