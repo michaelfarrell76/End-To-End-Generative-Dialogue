@@ -36,15 +36,18 @@ end
 -- Forward coupling: copy encoder cell and output to decoder RNN
 function forward_connect(enc_rnn, dec_rnn, seq_length)
     dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput, enc_rnn.outputs[seq_length])
-    dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell, enc_rnn.cells[seq_length])
+    if opt.layer_type ~= 'gru' then
+        dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell, enc_rnn.cells[seq_length])
+    end
 end
 
 -- Backward coupling: copy decoder gradients to encoder RNN
 function backward_connect(enc_rnn, dec_rnn)
-    enc_rnn.userNextGradCell = nn.rnn.recursiveCopy(enc_rnn.userNextGradCell, dec_rnn.userGradPrevCell)
+    if opt.layer_type ~= 'gru' then
+        enc_rnn.userNextGradCell = nn.rnn.recursiveCopy(enc_rnn.userNextGradCell, dec_rnn.userGradPrevCell)
+    end
     enc_rnn.gradPrevOutput = nn.rnn.recursiveCopy(enc_rnn.gradPrevOutput, dec_rnn.userGradPrevOutput)
 end
-
 
 ------------
 -- Structure
@@ -109,7 +112,6 @@ function build()
         error('RNN layer type not currently supported.')
     elseif opt.layer_type == 'gru' then
         recurrence = nn.GRU
-        error('GRU layer type not currently supported.')
     elseif opt.layer_type == 'fast' then
         recurrence = nn.FastLSTM
     end
