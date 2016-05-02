@@ -84,7 +84,7 @@ cmd:option('-gpuid2', -1, [[If this is >= 0, then the model will use two GPUs wh
 
 -- Bookkeeping
 cmd:option('-save_every', 1, [[Save every this many epochs]])
-cmd:option('-print_every', 100, [[Print stats after this many batches]])
+cmd:option('-print_every', 5, [[Print stats after this many batches]])
 cmd:option('-seed', 3435, [[Seed for random initialization]])
 cmd:option('-parallel', false, [[When true, uses the parallel library to farm out sgd]])
 
@@ -161,15 +161,7 @@ function build_encoder(recurrence)
 
     enc:add(nn.SelectTable(-1))
 
-    if opt.pre_word_vecs:len() > 0 then
-        local f = hdf5.open(opt.pre_word_vecs)     
-        local pre_word_vecs = f:read('word_vecs'):all()
-        for i = 1, pre_word_vecs:size(1) do
-            enc_embeddings.weight[i]:copy(pre_word_vecs[i])
-        end          
-    end
-
-    return enc, enc_rnn
+    return enc, enc_rnn, enc_embeddings
 end
 
 function build_decoder(recurrence)
@@ -196,15 +188,7 @@ function build_decoder(recurrence)
     dec:add(nn.Sequencer(nn.Linear(opt.hidden_size, opt.vocab_size_dec)))
     dec:add(nn.Sequencer(nn.LogSoftMax()))
 
-    if opt.pre_word_vecs:len() > 0 then
-        local f = hdf5.open(opt.pre_word_vecs)     
-        local pre_word_vecs = f:read('word_vecs'):all()
-        for i = 1, pre_word_vecs:size(1) do
-            dec_embeddings.weight[i]:copy(pre_word_vecs[i])
-        end          
-    end
-
-    return dec, dec_rnn
+    return dec, dec_rnn, dec_embeddings
 end
 
 function build()
@@ -226,10 +210,10 @@ function build()
     print('Number of layers: ' .. opt.num_layers)
 
     -- Encoder, enc_rnn is top rnn in vertical enc stack
-    local enc, enc_rnn = build_encoder(recurrence)
+    local enc, enc_rnn, enc_embeddings = build_encoder(recurrence)
 
     -- Decoder, dec_rnn is lowest rnn in vertical dec stack
-    local dec, dec_rnn = build_decoder(recurrence)
+    local dec, dec_rnn, dec_embeddings = build_decoder(recurrence)
 
     -- Criterion
     local criterion = nn.SequencerCriterion(nn.ClassNLLCriterion())
@@ -267,6 +251,18 @@ function build()
         params[i] = p
         grad_params[i] = gp
     end
+    
+    if opt.train_from:len() == 0 then
+        if opt.pre_word_vecs:len() > 0 then
+            local f = hdf5.open(opt.pre_word_vecs)     
+            local pre_word_vecs = f:read('word_vecs'):all()
+            for i = 1, pre_word_vecs:size(1) do
+                enc_embeddings.weight[i]:copy(pre_word_vecs[i])
+                dec_embeddings.weight[i]:copy(pre_word_vecs[i])
+            end          
+        end
+    end
+
     print('Number of parameters: ' .. num_params .. '\n')
 
     -- GPU
