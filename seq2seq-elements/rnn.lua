@@ -1,5 +1,6 @@
 require 'rnn'
 require 'hdf5'
+require 'parallel'
 
 package.path = '?.lua;' .. package.path
 require 'data.lua'
@@ -85,6 +86,7 @@ cmd:option('-gpuid2', -1, [[If this is >= 0, then the model will use two GPUs wh
 cmd:option('-save_every', 1, [[Save every this many epochs]])
 cmd:option('-print_every', 100, [[Print stats after this many batches]])
 cmd:option('-seed', 3435, [[Seed for random initialization]])
+cmd:option('-parallel', false, [[When true, uses the parallel library to farm out sgd]])
 
 opt = cmd:parse(arg)
 torch.manualSeed(opt.seed)
