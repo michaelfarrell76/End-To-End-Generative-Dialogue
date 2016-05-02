@@ -247,7 +247,7 @@ def get_data(args):
     
     print("Max sent length (before dropping): {}".format(max_sent_l))    
 
-def format_data(directory, train_valid_split, seq_length):
+def format_data(directory, train_valid_split, seq_length, args):
     # Loading all the possible files into memory
     with open(directory + 'Training.triples.pkl') as f:
         train_set = pickle.load(f)
@@ -407,39 +407,39 @@ def format_data(directory, train_valid_split, seq_length):
     valid_full_output = data_set_outputs[1]
 
     # This is super inefficient, put it together last minute. Don't judge :)
-    f =  open('data/train_src_indices.txt', 'w')
+    f =  open(args.output_directory + 'train_src_indices.txt', 'w')
     for context in train_full_context: 
         for ind in context:
             f.write(str(ind) + ' ')
         f.write('\n')
     f.close()
 
-    f =  open('data/train_targ_indices.txt', 'w')
+    f =  open(args.output_directory + 'train_targ_indices.txt', 'w')
     for output in train_full_output: 
         for ind in output:
             f.write(str(ind) + ' ')
         f.write('\n')
     f.close()
 
-    f =  open('data/dev_src_indices.txt', 'w')
+    f =  open(args.output_directory + 'dev_src_indices.txt', 'w')
     for context in valid_full_context: 
         for ind in context:
             f.write(str(ind) + ' ')
         f.write('\n')
     f.close()
 
-    f =  open('data/dev_targ_indices.txt', 'w')
+    f =  open(args.output_directory + 'dev_targ_indices.txt', 'w')
     for output in valid_full_output: 
         for ind in output:
             f.write(str(ind) + ' ')
         f.write('\n')
     f.close()
 
-    with open('data/targ.dict', 'w') as f: 
+    with open(args.output_directory + 'targ.dict', 'w') as f: 
         for i in range(1, len(indices_to_word)+1):
             f.write(indices_to_word[i] + ' ' + str(i) + '\n')
             
-    with open('data/src.dict', 'w') as f: 
+    with open(args.output_directory + 'src.dict', 'w') as f: 
         for i in range(1, len(indices_to_word)+1):
             f.write(indices_to_word[i] + ' ' + str(i) + '\n')
             
@@ -452,7 +452,7 @@ def format_data(directory, train_valid_split, seq_length):
             if ind not in special_indices:
                 context_words.append(indices_to_word[ind])
         train_full_context_words.append(' '.join(context_words))
-    f =  open('data/train_src_words.txt', 'w')
+    f =  open(args.output_directory + 'train_src_words.txt', 'w')
     for context in train_full_context_words: 
         f.write(str(context) + ' \n')
     f.close()
@@ -464,7 +464,7 @@ def format_data(directory, train_valid_split, seq_length):
             if ind not in special_indices:
                 context_words.append(indices_to_word[ind])
         valid_full_context_words.append(' '.join(context_words))
-    f =  open('data/dev_src_words.txt', 'w')
+    f =  open(args.output_directory + 'dev_src_words.txt', 'w')
     for context in valid_full_context_words: 
         f.write(str(context) + ' \n')
     f.close()
@@ -476,7 +476,7 @@ def format_data(directory, train_valid_split, seq_length):
             if ind not in special_indices:
                 output_words.append(indices_to_word[ind])
         train_full_output_words.append(' '.join(output_words))
-    f =  open('data/train_targ_words.txt', 'w')
+    f =  open(args.output_directory + 'train_targ_words.txt', 'w')
     for output in train_full_output_words: 
         f.write(str(output) + ' \n')
     f.close()
@@ -488,7 +488,7 @@ def format_data(directory, train_valid_split, seq_length):
             if ind not in special_indices:
                 output_words.append(indices_to_word[ind])
         valid_full_output_words.append(' '.join(output_words))
-    f =  open('data/dev_targ_words.txt', 'w')
+    f =  open(args.output_directory + 'dev_targ_words.txt', 'w')
     for output in valid_full_output_words: 
         f.write(str(output) + ' \n')
     f.close()
@@ -499,7 +499,7 @@ def format_data(directory, train_valid_split, seq_length):
     emb_wordvec_upd[3] = emb_wordvec[0][10001][:]
     emb_wordvec_upd[4] = emb_wordvec[0][10002][:]
     emb_wordvec_upd = np.roll(emb_wordvec_upd, 1, axis=0)
-    f = h5py.File('data/word_vecs.hdf5', 'w')
+    f = h5py.File(args.output_directory + 'word_vecs.hdf5', 'w')
     f['word_vecs'] = emb_wordvec_upd
     f.close()
 
@@ -517,38 +517,50 @@ def main(arguments):
                                                 "by taking the top X most frequent words. "
                                                 "Rest are replaced with special UNK tokens.",
                                                 type=int, default=10000)
+    parser.add_argument('--output_directory', help="Folder to hold output of data", default='data/')
+
+
     parser.add_argument('--srcfile', help="Path to source training data, "
                                            "where each line represents a single "
-                                           "source/target sequence.", default='data/train_src_words.txt')
+                                           "source/target sequence.", default='train_src_words.txt')
     parser.add_argument('--targetfile', help="Path to target training data, "
                                            "where each line represents a single "
-                                           "source/target sequence.", default='data/train_targ_words.txt')
-    parser.add_argument('--srcvalfile', help="Path to source validation data.", default='data/dev_src_words.txt')
-    parser.add_argument('--targetvalfile', help="Path to target validation data.", default='data/dev_targ_words.txt')
+                                           "source/target sequence.", default='train_targ_words.txt')
+    parser.add_argument('--srcvalfile', help="Path to source validation data.", default='dev_src_words.txt')
+    parser.add_argument('--targetvalfile', help="Path to target validation data.", default='dev_targ_words.txt')
     parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=32)
     parser.add_argument('--seqlength', help="Maximum sequence length. Sequences longer "
                                                "than this are dropped.", type=int, default=50)
-    parser.add_argument('--outputfile', help="Prefix of the output file names. ", type=str, default='data/conv')
+    parser.add_argument('--outputfile', help="Prefix of the output file names. ", type=str, default='conv')
     parser.add_argument('--maxwordlength', help="For the character models, words are "
                                            "(if longer than maxwordlength) or zero-padded "
                                             "(if shorter) to maxwordlength", type=int, default=35)
     parser.add_argument('--srcvocabfile', help="If working with a preset vocab, "
                                           "then including this will ignore srcvocabsize and use the"
                                           "vocab provided here.",
-                                          type = str, default='data/src.dict')
+                                          type = str, default='src.dict')
     parser.add_argument('--targetvocabfile', help="If working with a preset vocab, "
                                          "then including this will ignore targetvocabsize and "
                                          "use the vocab provided here.",
-                                          type = str, default='data/targ.dict')
+                                          type = str, default='targ.dict')
     parser.add_argument('--unkfilter', help="Ignore sentences with too many UNK tokens. "
                                        "Can be an absolute count limit (if > 1) "
                                        "or a proportional limit (0 < unkfilter < 1).",
                                           type = float, default = 0)
+    parser.add_argument('--data_directory', help="Folder of MovieTriples", default='../data/MovieTriples/')
     
     args = parser.parse_args(arguments)
-    data_directory = '../data/MovieTriples/'
+    args.srcfile = args.output_directory + args.srcfile
+    args.targetfile = args.output_directory + args.targetfile
+    args.srcvalfile = args.output_directory + args.srcvalfile
+    args.targetvalfile = args.output_directory + args.targetvalfile
+    args.outputfile = args.output_directory + args.outputfile
+    args.srcvocabfile = args.output_directory + args.srcvocabfile
+    args.targetvocabfile = args.output_directory + args.targetvocabfile
+
+    data_directory = args.data_directory
     train_valid_split = 0.8
-    format_data(data_directory, train_valid_split, args.seqlength)
+    format_data(data_directory, train_valid_split, args.seqlength, args)
     get_data(args)
 
 if __name__ == '__main__':

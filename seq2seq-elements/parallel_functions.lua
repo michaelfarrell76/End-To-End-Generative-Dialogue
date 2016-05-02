@@ -38,12 +38,20 @@ function worker()
             io.write('.') io.flush()
             collectgarbage()
 
-            parallel.print('received object with norm: ', pkg.data:norm())
+            parallel.print('received object with index: ', pkg.index)
 
+
+            for i = 1, #model.params do
+                model.params[i]:copy(pkg.parameters[i])
+            end
+
+            local pkg_o = train_ind(pkg.index, model, criterion, train_data)
 
 
             -- send some data back
-            parallel.parent:send('this is my response')
+
+            parallel.print('sending back object with index: ', pkg.index)
+            parallel.parent:send(pkg_o)
         end
     end
 end
@@ -51,13 +59,19 @@ end
 
 -- define code for parent:
 function parent()
+
+
     -- print from top process
     parallel.print('Im the parent, my ID is: ' .. parallel.id)
 
     train_data, valid_data, model, criterion, opt = main()
 
+    n_proc= 4
+
     -- fork N processes
-    parallel.nfork(4)
+    parallel.nfork(n_proc)
+
+    setupEnvironment()
 
     -- parallel.addremote(...)
     -- parallel.calibrate()
@@ -69,27 +83,29 @@ function parent()
     -- exec worker code in each process
     parallel.children:exec(worker)
 
+    --send the global parameters to the children
     parallel.children:join()
     parallel.children:send({cmd = cmd, arg = arg})
-    -- print(parallel.children[1]:receive())
     replies = parallel.children:receive()
     parallel.print(replies)
 
-    -- create a complex object to send to workers
-    t = {name='my variable', data=torch.randn(100,100)}
+    --trainmodel
+    train(model, criterion, train_data, valid_data)
 
-    -- transmit object to each worker
-    parallel.print('transmitting object with norm: ', t.data:norm())
-    for i = 1,100 do
-    parallel.children:join()
-    parallel.children:send(t)
-    -- print(parallel.children[1]:receive())
-    replies = parallel.children:receive()
-    print(replies)
-    end
+
     parallel.print('transmitted data to all children')
 
     -- sync/terminate when all workers are done
     parallel.children:join('break')
     parallel.print('all processes terminated')
 end
+
+function setupEnvironment()
+    print('Copying files')
+    os.execute('(echo "ls Singularity/data" | gcloud compute ssh mikes-test-instance | grep -q MovieTriples) || gcloud compute copy-files ../data/MovieTriples mikes-test-instance:~/Singularity/data')
+    os.execute('(echo "ls Singularity/seq2seq-elements/data" | gcloud compute ssh mikes-test-instance | grep -q train_src_words.txt) || echo "Need to call preprocess"')
+
+    -- print(os.execute("gcloud compute copy-files ../data/MovieTriples mikes-test-instance:~/Singularity/data"))
+
+end
+

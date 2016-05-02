@@ -17,14 +17,14 @@ function worker()
       m = parallel.yield()
       if m == 'break' then break end   
 
-      local sleeper = torch.uniform() * 5
-
       -- receive data
       local t = parallel.parent:receive()
-      parallel.print('received object with norm: ', t.data:norm(), sleeper)
+      io.write('.') io.flush()
+      collectgarbage()
+
+      parallel.print('received object with norm: ', t.data:norm())
       
 
-      sys.sleep(sleeper)
 
       -- send some data back
       parallel.parent:send('this is my response')
