@@ -517,29 +517,33 @@ def main(arguments):
                                                 "by taking the top X most frequent words. "
                                                 "Rest are replaced with special UNK tokens.",
                                                 type=int, default=10000)
+    parser.add_argument('--output_directory', help="Folder to hold output of data", default='data/')
+
+    args = parser.parse_args(arguments)
+
     parser.add_argument('--srcfile', help="Path to source training data, "
                                            "where each line represents a single "
-                                           "source/target sequence.", default='data/train_src_words.txt')
+                                           "source/target sequence.", default=args.output_directory + 'train_src_words.txt')
     parser.add_argument('--targetfile', help="Path to target training data, "
                                            "where each line represents a single "
-                                           "source/target sequence.", default='data/train_targ_words.txt')
-    parser.add_argument('--srcvalfile', help="Path to source validation data.", default='data/dev_src_words.txt')
-    parser.add_argument('--targetvalfile', help="Path to target validation data.", default='data/dev_targ_words.txt')
+                                           "source/target sequence.", default=args.output_directory + 'train_targ_words.txt')
+    parser.add_argument('--srcvalfile', help="Path to source validation data.", default=args.output_directory + 'data/dev_src_words.txt')
+    parser.add_argument('--targetvalfile', help="Path to target validation data.", default=args.output_directory + 'dev_targ_words.txt')
     parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=32)
     parser.add_argument('--seqlength', help="Maximum sequence length. Sequences longer "
                                                "than this are dropped.", type=int, default=50)
-    parser.add_argument('--outputfile', help="Prefix of the output file names. ", type=str, default='data/conv')
+    parser.add_argument('--outputfile', help="Prefix of the output file names. ", type=str, default=args.output_directory + 'conv')
     parser.add_argument('--maxwordlength', help="For the character models, words are "
                                            "(if longer than maxwordlength) or zero-padded "
                                             "(if shorter) to maxwordlength", type=int, default=35)
     parser.add_argument('--srcvocabfile', help="If working with a preset vocab, "
                                           "then including this will ignore srcvocabsize and use the"
                                           "vocab provided here.",
-                                          type = str, default='data/src.dict')
+                                          type = str, default=args.output_directory + 'src.dict')
     parser.add_argument('--targetvocabfile', help="If working with a preset vocab, "
                                          "then including this will ignore targetvocabsize and "
                                          "use the vocab provided here.",
-                                          type = str, default='data/targ.dict')
+                                          type = str, default=args.output_directory + 'targ.dict')
     parser.add_argument('--unkfilter', help="Ignore sentences with too many UNK tokens. "
                                        "Can be an absolute count limit (if > 1) "
                                        "or a proportional limit (0 < unkfilter < 1).",
