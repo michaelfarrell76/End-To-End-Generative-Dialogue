@@ -1,4 +1,3 @@
-require 'nn'
 require 'rnn'
 require 'string'
 require 'hdf5'
@@ -201,28 +200,29 @@ end
 ------------
 
 function forward_connect(enc_rnn, dec_rnn, seq_length)
-    print(enc_rnn.outputs)
     dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput, enc_rnn.outputs[seq_length])
     dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell, enc_rnn.cells[seq_length])
 end
 
 function get_scores(m, source, beam)
     local source_l = source:size(1)
-    source = source:view(1, -1) -- :expand(beam:size(1), source_l)
-    
+    source = source:view(1, -1):expand(beam:size(1), source_l)
+
     -- Forward prop enc
     local enc_out = m.enc:forward(source)
-    -- local final_enc_rnn = m.enc.modules[#m.enc.modules - 1]
-    -- local initial_dec_rnn = m.dec.modules[3]
-
-    for key,value in pairs(m.enc_rnn) do
-        print("found member " .. key);
-    end
     forward_connect(m.enc_rnn, m.dec_rnn, source_l)
 
     -- Forward prop dec
-    local dec_out = m.dec:forward(beam)
-    return torch.Tensor()
+    print(source)
+    print(beam)
+    local preds = m.dec:forward(beam)
+    print(preds[1]:size())
+
+    -- print(m.enc_rnn.modules[1].outputs)
+    -- for key,value in pairs(m.enc_rnn.modules[1]) do
+    --     print("found member " .. key)
+    -- end
+    m.enc_rnn:wtf()
 end
 
 ------------
@@ -602,17 +602,14 @@ function main()
     -- Format model
     local enc = model[1]
     local dec = model[2]
-
-    -- Fragile: relies on final enc rnn being 2nd module from end and initial
-    -- dec rnn being 3rd module from start
-    local final_enc_rnn = enc.modules[#enc.modules - 1]
-    local initial_dec_rnn = dec.modules[3]
+    local enc_rnn = model[3]
+    local dec_rnn = model[4]
 
     local m = {
         enc = enc,
-        enc_rnn = final_enc_rnn,
+        enc_rnn = enc_rnn,
         dec = dec,
-        dec_rnn = initial_dec_rnn
+        dec_rnn = dec_rnn
     }
     
     -- Load gold labels if they exist

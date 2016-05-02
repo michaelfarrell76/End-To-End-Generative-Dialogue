@@ -4,6 +4,8 @@ require 'hdf5'
 package.path = '?.lua;' .. package.path
 require 'data.lua'
 
+-- nn.FastLSTM.usenngraph = true
+
 ------------
 -- Options
 ------------
@@ -46,7 +48,7 @@ cmd:text("**Optimization options**")
 cmd:text("")
 
 -- Optimization
-cmd:option('-num_epochs', 3, [[Number of training epochs]])
+cmd:option('-num_epochs', 10, [[Number of training epochs]])
 cmd:option('-start_epoch', 1, [[If loading from a checkpoint, the epoch from which to start]])
 cmd:option('-param_init', 0.1, [[Parameters are initialized over uniform distribution with support
                                  (-param_init, param_init)]])
@@ -445,11 +447,11 @@ function train(m, criterion, train_data, valid_data)
 
         -- Clean and save model
         local save_file = string.format('%s_epoch%.2f_%.2f.t7', opt.save_file, epoch, valid_score)
-        -- if epoch % opt.save_every == 0 then
-        if epoch == opt.num_epochs then
+        if epoch % opt.save_every == 0 then
+        -- if epoch == opt.num_epochs then
             print('Saving checkpoint to ' .. save_file)
             -- clean_layer(m.enc); clean_layer(m.dec);
-            torch.save(save_file, {{m.enc, m.dec}, opt})
+            torch.save(save_file, {{m.enc, m.dec, m.enc_rnn, m.dec_rnn}, opt})
         end
     end
 end
