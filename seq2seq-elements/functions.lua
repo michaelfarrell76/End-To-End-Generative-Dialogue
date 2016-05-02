@@ -520,20 +520,20 @@ function eval(m, criterion, data)
         local dec_out = m.dec:forward(target)
         local loss = criterion:forward(dec_out, target_out)
 
-        local beam_res = generateBeam(m, opt.beam_k, source)
+        -- local beam_res = generateBeam(m, opt.beam_k, source)
 
-        local beam_bleu_score = calc_bleu_score(beam_res, target)
-        local beam_error_rate = calc_error_rate(beam_res, target)
+        -- local beam_bleu_score = calc_bleu_score(beam_res, target)
+        -- local beam_error_rate = calc_error_rate(beam_res, target)
 
         --update values
         nll = nll + loss * batch_l
         total = total + nonzeros
 
-        map_bleu_total = map_bleu_total + beam_bleu_score[1]
-        map_error_total = map_error_total + beam_error_rate[1]
+        -- map_bleu_total = map_bleu_total + beam_bleu_score[1]
+        -- map_error_total = map_error_total + beam_error_rate[1]
 
-        best_bleu_total = best_bleu_total + torch.max(beam_bleu_score)
-        best_error_total = best_error_total + torch.min(beam_error_rate)
+        -- best_bleu_total = best_bleu_total + torch.max(beam_bleu_score)
+        -- best_error_total = best_error_total + torch.min(beam_error_rate)
     end
 
     local valid = math.exp(nll / total)

@@ -26,7 +26,7 @@ cmd:option('-char_dict', 'data/demo.char.dict', [[If using chars, path to charac
                                                 vocabulary (*.char.dict file)]])
 
 -- beam search options
-cmd:option('-beam', 20, [[Beam size]])
+cmd:option('-beam', 5, [[Beam size]])
 cmd:option('-max_sent_l', 80, [[Maximum sentence length. If any sequences in srcfile are longer
                                than this then it will error out]])
 cmd:option('-simple', 0, [[If = 1, output prediction is simply the first time the top of the beam
@@ -225,8 +225,10 @@ end
 ------------
 
 function forward_connect(enc_rnn, dec_rnn, seq_length)
-    dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput, enc_rnn.outputs[seq_length])
-    dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell, enc_rnn.cells[seq_length])
+    dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput,
+        enc_rnn.outputs[seq_length])
+    dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell,
+        enc_rnn.cells[seq_length])
 end
 
 function get_scores(m, source, beam)
@@ -238,7 +240,8 @@ function get_scores(m, source, beam)
     forward_connect(m.enc_rnn, m.dec_rnn, source_l)
     local preds = m.dec:forward(beam)
 
-    return preds[1]
+    -- Return log probability distribution for next words
+    return preds[#preds]
 end
 
 ------------
@@ -255,6 +258,7 @@ function generate_beam(m, initial, K, max_sent_l, source, gold)
     -- scores[i][k] is the log prob of the k'th hyp of i words
     -- hyps[i][k] contains the words in k'th hyp at i word
     local n = max_sent_l
+    local full = false
     local result = {}
     local scores = torch.zeros(n + 1, K):float()
     local hyps = torch.zeros(n + 1, K, n + 1):long()
@@ -262,9 +266,10 @@ function generate_beam(m, initial, K, max_sent_l, source, gold)
 
     -- Beam me up, Scotty!
     for i = 1, n do
+        if full then break end
+
         -- local cur_beam = hyps[i]:narrow(2, i + 1, i)
         local cur_beam = hyps[i]:narrow(2, 1, i)
-        -- print(cur_beam)
         local cur_K = K
 
         -- Score all next words for each context in the beam
@@ -317,9 +322,12 @@ function generate_beam(m, initial, K, max_sent_l, source, gold)
 
             -- If we have produced an END symbol, push to stack
             if y_i1 == END then
-                table.insert(result, {i+1, scores[i+1][k], hyps[i+1][k]:clone(),
-                    feats[i+1][k]:clone()})
+                table.insert(result, {i+1, scores[i+1][k], hyps[i+1][k]:clone()})
                 scores[i+1][k] = -INF
+                if #result == K then
+                    full = true
+                    break
+                end
             end
         end
     end
