@@ -204,8 +204,10 @@ function build()
     local m = {
         enc = enc,
         enc_rnn = enc_rnn,
+        enc_embeddings = enc_embeddings,
         dec = dec,
         dec_rnn = dec_rnn,
+        dec_embeddings = dec_embeddings,
         params = params,
         grad_params = grad_params
     }
@@ -218,7 +220,6 @@ end
 ------------
 
 function train_ind(ind, m, criterion, data)
-    -- zero_table(grad_params, 'zero')
     m.enc:zeroGradParameters()
     m.dec:zeroGradParameters()
 
@@ -232,8 +233,6 @@ function train_ind(ind, m, criterion, data)
     -- TODO: change forward/backward_connect rather than transpose here
     source = source:t()
     target = target:t()
-
-
 
      -- Forward prop enc
     local enc_out = m.enc:forward(source)
@@ -254,7 +253,6 @@ function train_ind(ind, m, criterion, data)
         zeroTensor = zeroTensor:cuda()
     end
     m.enc:backward(source, zeroTensor)
-
 
     -- Total grad norm
     local grad_norm = 0
@@ -281,6 +279,12 @@ function train_ind(ind, m, criterion, data)
         param_norm = param_norm + m.params[j]:norm()^2
     end
     param_norm = param_norm^0.5
+
+    -- Fix word embeddings
+    if opt.fix_word_vecs == 1 then
+    	m.enc_embeddings.gradWeight:zero()
+    	m.dec_embeddings.gradWeight:zero()
+    end
     
     if opt.parallel then
         return {gps = m.grad_params, batch_l = batch_l, target_l = target_l, source_l = source_l, nonzeros = nonzeros, loss = loss, param_norm = param_norm, grad_norm = grad_norm}
@@ -382,7 +386,6 @@ function train(m, criterion, train_data, valid_data)
                 end
                 local time_taken = timer:time().real - start_time
                 if i % opt.print_every == 0  and batch_l ~= nil then
-
                     local stats = string.format('Epoch: %d, Batch: %d/%d, Batch size: %d, LR: %.4f, ',
                         epoch, i, data:size(), batch_l, opt.learning_rate)
                     stats = stats .. string.format('PPL: %.2f, |Param|: %.2f, |GParam|: %.2f, ',
@@ -392,14 +395,11 @@ function train(m, criterion, train_data, valid_data)
                         num_words_source / time_taken, num_words_target / time_taken)
                     opt.print(stats)
                 end
-
-
                 sys.sleep(1)
-
-                
             else
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
                 batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm = train_ind(batch_order[i], m, criterion, train_data)
+
                 -- Update params (also could be done as above)
                 m.dec:updateParameters(opt.learning_rate)
                 m.enc:updateParameters(opt.learning_rate)
@@ -413,8 +413,7 @@ function train(m, criterion, train_data, valid_data)
                 i = i + 1  
                 local time_taken = timer:time().real - start_time
 
-               if i % opt.print_every == 0 then
-
+               	if i % opt.print_every == 0 then
                     local stats = string.format('Epoch: %d, Batch: %d/%d, Batch size: %d, LR: %.4f, ',
                         epoch, i, data:size(), batch_l, opt.learning_rate)
                     stats = stats .. string.format('PPL: %.2f, |Param|: %.2f, |GParam|: %.2f, ',
@@ -424,10 +423,7 @@ function train(m, criterion, train_data, valid_data)
                         num_words_source / time_taken, num_words_target / time_taken)
                     opt.print(stats)
                 end
-
             end
-            
-            
 
             -- Friendly reminder
             if i % 200 == 0 then

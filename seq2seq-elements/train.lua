@@ -60,8 +60,7 @@ cmd:option('-start_decay_at', 9, [[Start decay after this epoch]])
 cmd:option('-pre_word_vecs', 'data/word_vecs.hdf5', [[If a valid path is specified, then this will load 
                                       pretrained word embeddings (hdf5 file) on the encoder side. 
                                       See README for specific formatting instructions.]])
-cmd:option('-fix_word_vecs_enc', 0, [[If = 1, fix word embeddings on the encoder side]])
-cmd:option('-fix_word_vecs_dec', 0, [[If = 1, fix word embeddings on the decoder side]])
+cmd:option('-fix_word_vecs', 0, [[If = 1, fix lookup table word embeddings]])
 cmd:option('-beam_k', 5, [[K value to use with beam search]])
 cmd:option('-max_bleu', 4, [[The number of n-grams used in calculating the bleu score]])
 
