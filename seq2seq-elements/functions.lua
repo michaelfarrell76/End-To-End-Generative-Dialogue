@@ -1,5 +1,6 @@
 require 'rnn'
 require 'hdf5'
+require 'beam'
 
 ------------
 -- Misc
@@ -331,8 +332,6 @@ function train(m, criterion, train_data, valid_data)
         end
     end
 
-
-
     function train_batch(data, epoch)
         local train_nonzeros = 0
         local train_loss = 0
@@ -341,26 +340,19 @@ function train(m, criterion, train_data, valid_data)
         local num_words_target = 0
         local num_words_source = 0
 
-        local skip = 1
-
+        local skip = 0
         if opt.parallel then
             skip = n_proc
             parallel.children:join()
-        else
-            skip = 1
         end
-        
-
-
 
         local i = 1
-        for j =  1, skip do
+        for j = 1, skip do
             local pkg = {parameters = m.params, index = batch_order[i]}
             parallel.children[j]:send(pkg)
             i = i + 1
         end
         while i <= data:size() do
-            
             if opt.parallel then
                 -- parallel.children:join()
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
@@ -476,22 +468,22 @@ function train(m, criterion, train_data, valid_data)
     end
 end
 
-function beam_bleu_score(beam_results, target)
+function calc_bleu_score(beam_results, target)
     local bleu_scores = torch.zeros(opt.beam_k)
 
-    --for each of the beam examples
+    -- For each of the beam examples
     for i = 1, opt.beam_k do 
         local pred = beam_results[i]
 
         local scores = torch.zeros(opt.max_bleu)
-        --for each of the n-grams
+        -- For each of the n-grams
         for j = 0, opt.max_bleu - 1 do
             local pred_counts = {}
 
-            --loop through preds by n-gram
+            -- Loop through preds by n-gram
             for k = 1, pred:size(1) - j  do
 
-                --generate key
+                -- Generate key
                 local key = ""
                 for l = 0, j do
                     if l > 0 then
@@ -500,21 +492,20 @@ function beam_bleu_score(beam_results, target)
                     key = key + pred[k + l]
                 end
 
-                --update pred counts
+                -- Update pred counts
                 if pred_counts[key] == nil then
                     pred_counts[key] = 1
                 else
                     pred_counts[key] = 1 + pred_counts[key]
                 end
-
             end
 
             local target_counts = {}
 
-             --loop through target by n-gram
+             -- Loop through target by n-gram
             for k = 1, target:size(1) - j do
 
-                --generate key
+                -- Generate key
                 local key = ""
                 for l = 0, j do
                     if l > 0 then
@@ -523,13 +514,12 @@ function beam_bleu_score(beam_results, target)
                     key = key + target[k + l]
                 end
 
-                --update target counts
+                -- Update target counts
                 if target_counts[key] == nil then
                     target_counts[key] = 1
                 else
                     target_counts[key] = 1 + target_counts[key]
                 end
-
             end
 
             local prec = 0
@@ -554,9 +544,8 @@ function beam_bleu_score(beam_results, target)
             scores[j + 1] = score
         end
 
-        --add brevity penalty
+        -- Add brevity penalty
         local log_bleu = torch.min(0, 1 - (target:size(1) / pred:size(1)))
-
         for j = 1, opt.max_bleu do
             log_bleu = log_bleu + (1 / opt.max_bleu) * torch.log(scores[j])
         end
@@ -567,7 +556,7 @@ function beam_bleu_score(beam_results, target)
 end
 
 
-function beam_error_rate(beam_results, target)
+function calc_error_rate(beam_results, target)
     local error_rates = torch.zeros(opt.beam_k)
     for i = 1, opt.beam_k do 
         local pred = beam_results[i]
@@ -610,12 +599,17 @@ function eval(m, criterion, data)
         local dec_out = m.dec:forward(target)
         local loss = criterion:forward(dec_out, target_out)
 
-        -- local beam_res = generateBeam(m, opt.beam_k, source)
+        -- TODO: This does not yet support batches but it will v soon!
+        -- Worry not younglings
+        -- It does however work one example at a time
+        -- opt.allow_unk = 0
+     	-- local sbeam = beam.new(opt, m)
+     	-- local k_best = sbeam:generate_k(opt.beam_k, source[1])
 
-        -- local beam_bleu_score = calc_bleu_score(beam_res, target)
-        -- local beam_error_rate = calc_error_rate(beam_res, target)
+        -- local beam_bleu_score = calc_bleu_score(k_best, target)
+        -- local beam_error_rate = calc_error_rate(k_best, target)
 
-        --update values
+        -- Update values
         nll = nll + loss * batch_l
         total = total + nonzeros
 
@@ -635,14 +629,9 @@ end
 ------------
 
 function main()
-
-
     -- Parse input params
     opt = cmd:parse(arg)
-
-
     torch.manualSeed(opt.seed)
-
 
     if opt.parallel then
         opt.print = parallel.print
@@ -681,13 +670,12 @@ function main()
     -- Build
     local model, criterion = build()
 
+    -- Train
     if opt.parallel then 
         return train_data, valid_data, model, criterion, opt
     else
-        -- Train
         train(model, criterion, train_data, valid_data)
     end
 
     -- TODO: Test
-    
 end
