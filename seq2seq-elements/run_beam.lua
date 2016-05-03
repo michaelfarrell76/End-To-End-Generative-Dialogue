@@ -7,7 +7,7 @@ require 'beam.lua'
 
 cmd = torch.CmdLine()
 
--- file location
+-- File location
 cmd:option('-model', 'seq2seq_lstm.t7.', [[Path to model .t7 file]])
 cmd:option('-src_file', '', [[Source sequence to decode (one line per sequence)]])
 cmd:option('-targ_file', '', [[True target sequence (optional)]])
@@ -16,7 +16,7 @@ cmd:option('-output_file', 'pred.txt', [[Path to output the predictions (each li
 cmd:option('-src_dict', 'data/demo.src.dict', [[Path to source vocabulary (*.src.dict file)]])
 cmd:option('-targ_dict', 'data/demo.targ.dict', [[Path to target vocabulary (*.targ.dict file)]])
 
--- beam search options
+-- Beam search options
 cmd:option('-k', 5, [[Beam size]])
 cmd:option('-max_sent_l', 80, [[Maximum sentence length. If any sequences in srcfile are longer
                                than this then it will error out]])

@@ -1,7 +1,4 @@
 require 'rnn'
-require 'string'
-
-stringx = require('pl.stringx')
 
 -- Some cheeky globals
 PAD = 1; UNK = 2; START = 3; END = 4
