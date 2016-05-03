@@ -134,7 +134,7 @@ function parent()
 
     train_data, valid_data, model, criterion, opt = main()
 
-    n_proc= 8
+    n_proc= 4
     -- parallel.ip = "XX.XX.XX.XX"
 
     -- fork N processes
