@@ -37,18 +37,35 @@ end
 -- Forward coupling: copy encoder cell and output to decoder RNN
 function forward_connect(enc_rnn, dec_rnn, seq_length)
     dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput, enc_rnn.outputs[seq_length])
-    if opt.layer_type ~= 'gru' then
+    if opt.layer_type ~= 'gru' and opt.layer_type ~= 'rnn' then
         dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell, enc_rnn.cells[seq_length])
     end
 end
 
 -- Backward coupling: copy decoder gradients to encoder RNN
 function backward_connect(enc_rnn, dec_rnn)
-    if opt.layer_type ~= 'gru' then
+    if opt.layer_type ~= 'gru' and opt.layer_type ~= 'rnn' then
         enc_rnn.userNextGradCell = nn.rnn.recursiveCopy(enc_rnn.userNextGradCell, dec_rnn.userGradPrevCell)
     end
-    enc_rnn.gradPrevOutput = nn.rnn.recursiveCopy(enc_rnn.gradPrevOutput, dec_rnn.userGradPrevOutput)
+    if opt.layer_type == 'rnn' then
+        enc_rnn.gradPrevOutput = nn.rnn.recursiveCopy(enc_rnn.gradPrevOutput, dec_rnn.gradPrevOutput)
+    else
+        enc_rnn.gradPrevOutput = nn.rnn.recursiveCopy(enc_rnn.gradPrevOutput, dec_rnn.userGradPrevOutput)
+    end
 end
+
+function rnn_layer(inp, hidden_size)
+    rm =  nn.Sequential()
+     :add(nn.ParallelTable()
+        :add(inp == hidden_size and nn.Identity() or nn.Linear(inp, 300)) -- input layer
+        :add(nn.Linear(hidden_size, hidden_size))) -- recurrent layer
+        :add(nn.CAddTable()) -- merge
+        :add(nn.Sigmoid()) -- transfer
+    rnn = nn.Sequential()
+      :add(nn.Recurrence(rm, hidden_size, 1))      
+    return rnn
+end
+
 
 ------------
 -- Structure
@@ -109,8 +126,7 @@ end
 function build()
     local recurrence = nn.LSTM
     if opt.layer_type == 'rnn' then
-        recurrence = nn.Recurrent
-        error('RNN layer type not currently supported.')
+        recurrence = rnn_layer
     elseif opt.layer_type == 'gru' then
         recurrence = nn.GRU
     elseif opt.layer_type == 'fast' then
@@ -138,6 +154,11 @@ function build()
         dec:cuda()
         dec_rnn:cuda()
         criterion:cuda()    
+    end
+
+    if opt.layer_type == 'rnn' then
+        enc_rnn = enc_rnn['modules'][1]
+        dec_rnn = dec_rnn['modules'][1]
     end
 
     if opt.train_from:len() == 1 then

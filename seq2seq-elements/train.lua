@@ -90,6 +90,7 @@ opt = cmd:parse(arg)
 
 if opt.parallel then
     require 'parallel'
+    require 'torch'
     --load in functions used for parallel
     parallel_funcs = loadfile("parallel_functions.lua")
     parallel_funcs()
