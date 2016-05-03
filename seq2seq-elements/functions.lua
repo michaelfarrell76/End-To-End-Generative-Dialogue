@@ -155,11 +155,6 @@ function build()
         criterion:cuda()    
     end
 
-    if opt.layer_type == 'rnn' then
-        enc_rnn = enc_rnn['modules'][1]
-        --dec_rnn = dec_rnn['modules'][1]
-    end
-
     if opt.train_from:len() == 1 then
         error('TODO: implement train_from')
     end
