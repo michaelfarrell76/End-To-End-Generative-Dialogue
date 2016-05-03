@@ -2,6 +2,14 @@
 
 We have officially solved AI
 
+____
+
+Run in parallel
+	
+	cd Singularity/seq2seq-elements
+	th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid -1 -parallel
+
+
 ----
 ####Primary contributors
 

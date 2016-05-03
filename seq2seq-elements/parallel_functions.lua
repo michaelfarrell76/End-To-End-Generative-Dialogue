@@ -1,6 +1,10 @@
--- define code for workers:
+-- -- define code for workers:
 function worker()
-    print(os.execute("pwd"))
+    require 'sys'
+   require 'torch'
+     parallel.print('Im a worker, my ID is: ' .. parallel.id .. ' and my IP: ' .. parallel.ip)
+    parallel.print('HELLOTHERE')
+    parallel.print(os.execute("pwd"))
     funcs = loadfile("functions.lua")
     funcs()
 
@@ -9,7 +13,7 @@ function worker()
     data = datafun()
 
     -- print from worker:
-    parallel.print('Im a worker, my ID is: ' .. parallel.id .. ' and my IP: ' .. parallel.ip)
+   
 
     first = true
 
@@ -56,9 +60,35 @@ function worker()
     end
 end
 
+-- worker = [[
+--       -- a worker starts with a blank stack, we need to reload
+--       -- our libraries
+--       require 'sys'
+--       require 'torch'
 
+--       -- print from worker:
+--       parallel.print('Im a worker, my ID is: ' .. parallel.id .. ' and my IP: ' .. parallel.ip)
+
+--       -- define a storage to receive data from top process
+--       while true do
+--          -- yield = allow parent to terminate me
+--          m = parallel.yield()
+--          if m == 'break' then break end
+
+--          -- receive data
+--          local t = parallel.parent:receive()
+--          parallel.print('received object with norm: ', t.data:norm())
+
+--          -- send some data back
+--          parallel.parent:send('this is my response')
+--       end
+-- ]]
 -- define code for parent:
 function parent()
+    require "package"
+    
+
+    
 
     local instances = { ['104.154.22.185'] ='mikes-instance-group-4phn',   
                         ['104.197.9.84'] = 'mikes-instance-group-8mir', 
@@ -104,96 +134,67 @@ function parent()
 
     train_data, valid_data, model, criterion, opt = main()
 
-    n_proc= 1
+    n_proc= 8
+    -- parallel.ip = "XX.XX.XX.XX"
 
-    -- -- fork N processes
+    -- fork N processes
     -- parallel.nfork(n_proc)
 
 
-    parallel.print('adding remote')
+    -- parallel.print('adding remote')
 
-    -- parallel.addremote( {ip='104.154.22.185', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh mikes-instance-group-4phn'},
-    --                     {ip='104.197.9.84', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh mikes-instance-group-8mir'},
-    --                     {ip='104.154.82.175', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh mikes-instance-group-9dze'},
-    --                     {ip='104.197.9.244', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh mikes-instance-group-de2i'},
-    --                     {ip='146.148.102.75', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh mikes-instance-group-m6dp'},
-    --                     {ip='104.197.179.152', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh mikes-instance-group-qwur'},
-    --                     {ip='104.197.244.249', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh mikes-instance-group-uh3b'},
-    --                     {ip='199.223.233.216', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh mikes-instance-group-usjf'},
-    --                     {ip='104.197.44.175', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh mikes-instance-group-vlvn'})
 
-    -- local bin_name = jit and 'luajit' or 'lua'
-    -- parallel.addremote( {ip='mikes-instance-group-4phn', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-8mir', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-9dze', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-de2i', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-m6dp', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-qwur', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-uh3b', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-usjf', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-vlvn', cores=8, lua='/home/michaelfarrell/torch', protocol='gcloud compute ssh'})
+    -- old_path = package.path
+    -- old_cpath = package.cpath
 
--- '/home/michaelfarrell/torch/install/bin/torch-activate'
+    -- package.path = "/home/michaelfarrell/.luarocks/share/lua/5.1/?.lua;/home/michaelfarrell/.luarocks/share/lua/5.1/?/init.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?/init.lua;./?.lua;/home/michaelfarrell/Singularity/seq2seq-elements/?.lua;/home/michaelfarrell/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
+    -- package.cpath = "/home/michaelfarrell/.luarocks/lib/lua/5.1/?.so;/home/michaelfarrell/torch/install/lib/lua/5.1/?.so;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
 
-    -- parallel.addremote( {ip='104.154.22.185', cores=8, lua='/home/michaelfarrell/torch', protocol='ssh -Y -i ~/.ssh/my-ssh-key'},
-    --                     {ip='104.197.9.84', cores=8, lua='/home/michaelfarrell/torch', protocol='ssh -Y -i ~/.ssh/my-ssh-key'},
-    --                     {ip='104.154.82.175', cores=8, lua='/home/michaelfarrell/torch', protocol='ssh -Y -i ~/.ssh/my-ssh-key'},
-    --                     {ip='104.197.9.244', cores=8, lua='/home/michaelfarrell/torch', protocol='ssh -Y -i ~/.ssh/my-ssh-key'},
-    --                     {ip='146.148.102.75', cores=8, lua='/home/michaelfarrell/torch', protocol='ssh -Y -i ~/.ssh/my-ssh-key'},
-    --                     {ip='104.197.179.152', cores=8, lua='/home/michaelfarrell/torch', protocol='ssh -Y -i ~/.ssh/my-ssh-key'},
-    --                     {ip='104.197.244.249', cores=8, lua='/home/michaelfarrell/torch', protocol='ssh -Y -i ~/.ssh/my-ssh-key'},
-    --                     {ip='199.223.233.216', cores=8, lua='/home/michaelfarrell/torch', protocol='ssh -Y -i ~/.ssh/my-ssh-key'},
-    --                     {ip='104.197.44.175', cores=8, lua='/home/michaelfarrell/torch', protocol='ssh -Y -i ~/.ssh/my-ssh-key'})
 
-    -- parallel.addremote( {ip='kyang01@104.154.22.185', cores=8, lua='/home/michaelfarrell/torch/install/bin/torch-activate', protocol='ssh -i ~/.ssh/my-ssh-key'},
-    --                     {ip='kyang01@104.197.9.84', cores=8, lua='/home/michaelfarrell/torch/install/bin/torch-activate', protocol='ssh -i ~/.ssh/my-ssh-key'},
-    --                     {ip='kyang01@104.154.82.175', cores=8, lua='/home/michaelfarrell/torch/install/bin/torch-activate', protocol='ssh -i ~/.ssh/my-ssh-key'},
-    --                     {ip='kyang01@104.197.9.244', cores=8, lua='/home/michaelfarrell/torch/install/bin/torch-activate', protocol='ssh -i ~/.ssh/my-ssh-key'},
-    --                     {ip='kyang01@146.148.102.75', cores=8, lua='/home/michaelfarrell/torch/install/bin/torch-activate', protocol='ssh -i ~/.ssh/my-ssh-key'},
-    --                     {ip='kyang01@104.197.179.152', cores=8, lua='/home/michaelfarrell/torch/install/bin/torch-activate', protocol='ssh -i ~/.ssh/my-ssh-key'},
-    --                     {ip='kyang01@104.197.244.249', cores=8, lua='/home/michaelfarrell/torch/install/bin/torch-activate', protocol='ssh -i ~/.ssh/my-ssh-key'},
-    --                     {ip='kyang01@199.223.233.216', cores=8, lua='/home/michaelfarrell/torch/install/bin/torch-activate', protocol='ssh -i ~/.ssh/my-ssh-key'},
-    --                     {ip='kyang01@104.197.44.175', cores=8, lua='/home/michaelfarrell/torch/install/bin/torch-activate', protocol='ssh -i ~/.ssh/my-ssh-key'})
-    parallel.addremote( {ip='michaelfarrell@104.197.157.136 "bash startup.sh; cd Singularity/seq2seq-elements/; source ~/.profile; source ~/.bashrc; (echo require [[env]] > testf.lua); th testf.lua; echo hi;  pwd; bash"', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -ttq -i ~/.ssh/my-ssh-key'})   --,
+    -- -- parallel.print('ALERT', old_path)
+    -- parallel.print('ALERT', package.path)
+    -- parallel.addremote( {ip='michaelfarrell@104.197.157.136', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -ttq -i ~/.ssh/my-ssh-key'})   --,
 
-                        -- {ip='localhost', cores=8, lua='/Users/michaelfarrell/torch/install/bin/th'})
+    --                     -- {ip='localhost', cores=8, lua='/Users/michaelfarrell/torch/install/bin/th'})
 
-    -- parallel.addremote( {ip='michaelfarrell@104.197.157.136', cores=8, lua='~/torch/install/bin/th', protocol='ssh -ttq -i ~/.ssh/my-ssh-key'},
-    --                     {ip='michaelfarrell@104.197.111.94', cores=8, lua='~/torch/install/bin/th', protocol='ssh -ttq -i ~/.ssh/my-ssh-key'}) --,
-                        -- {ip='michaelfarrell@199.223.233.216', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'},
-                        -- {ip='michaelfarrell@104.197.143.177', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'},
-                        -- {ip='michaelfarrell@104.197.179.152', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'},
-                        -- {ip='michaelfarrell@104.197.9.84', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'},
-                        -- {ip='michaelfarrell@104.154.16.196', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'},
-                        -- {ip='michaelfarrell@104.154.82.175', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'},
-                        -- {ip='michaelfarrell@104.197.9.244', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'})
+    -- -- parallel.addremote( {ip='michaelfarrell@104.197.157.136', cores=8, lua='~/torch/install/bin/th', protocol='ssh -ttq -i ~/.ssh/my-ssh-key'},
+    -- --                     {ip='michaelfarrell@104.197.111.94', cores=8, lua='~/torch/install/bin/th', protocol='ssh -ttq -i ~/.ssh/my-ssh-key'}) --,
+    --                     -- {ip='michaelfarrell@199.223.233.216', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'},
+    --                     -- {ip='michaelfarrell@104.197.143.177', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'},
+    --                     -- {ip='michaelfarrell@104.197.179.152', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'},
+    --                     -- {ip='michaelfarrell@104.197.9.84', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'},
+    --                     -- {ip='michaelfarrell@104.154.16.196', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'},
+    --                     -- {ip='michaelfarrell@104.154.82.175', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'},
+    --                     -- {ip='michaelfarrell@104.197.9.244', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -i ~/.ssh/my-ssh-key'})
 
-      -- parallel.addremote( {ip='mikes-instance-group-4phn', cores=8, protocol='gcloud compute ssh'},
-      --                   {ip='mikes-instance-group-8mir', cores=8, protocol='gcloud compute ssh'},
-      --                   {ip='mikes-instance-group-9dze', cores=8,  protocol='gcloud compute ssh'},
-      --                   {ip='mikes-instance-group-de2i', cores=8,  protocol='gcloud compute ssh'},
-      --                   {ip='mikes-instance-group-m6dp', cores=8,  protocol='gcloud compute ssh'},
-      --                   {ip='mikes-instance-group-qwur', cores=8,  protocol='gcloud compute ssh'},
-      --                   {ip='mikes-instance-group-uh3b', cores=8,  protocol='gcloud compute ssh'},
-      --                   {ip='mikes-instance-group-usjf', cores=8,  protocol='gcloud compute ssh'},
-      --                   {ip='mikes-instance-group-vlvn', cores=8,  protocol='gcloud compute ssh'})
 
-    -- parallel.addremote( {ip='mikes-instance-group-4phn', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-8mir', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-9dze', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-de2i', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-m6dp', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-qwur', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-uh3b', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-usjf', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
-    --                     {ip='mikes-instance-group-vlvn', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'})
+    -- -- parallel.addremote( {ip='mikes-instance-group-4phn', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
+    -- --                     {ip='mikes-instance-group-8mir', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
+    -- --                     {ip='mikes-instance-group-9dze', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
+    -- --                     {ip='mikes-instance-group-de2i', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
+    -- --                     {ip='mikes-instance-group-m6dp', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
+    -- --                     {ip='mikes-instance-group-qwur', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
+    -- --                     {ip='mikes-instance-group-uh3b', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
+    -- --                     {ip='mikes-instance-group-usjf', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'},
+    -- --                     {ip='mikes-instance-group-vlvn', cores=8, lua=paths.findprogram(bin_name), protocol='gcloud compute ssh'})
 
     
-    -- parallel.calibrate()
-    parallel.print('Forking')
-    forked = parallel.sfork(n_proc)
+    -- -- parallel.calibrate()
+    -- parallel.print('Forking')
+    -- parallel.print(n_proc)
+    -- package.cpath = '/home/michaelfarrell/torch/install/lib/lua/5.1/?.so;' ..package.cpath
+    -- -- package.path = '/home/michaelfarrell/torch/install/share/lua/5.1/?/init.lua;' .. package.path
+    -- package.path = '/home/michaelfarrell/lua---?/init.lua;' .. package.path
+    
+    parallel.sfork(n_proc)
+    -- parallel.print(parallel.nchildren)
     -- forked = parallel.sfork(parallel.remotes.cores)
     parallel.print('Forked')
+
+
+    -- package.path = old_path
+    -- package.cpath = old_cpath
+
 
     -- exec worker code in each process
     parallel.children:exec(worker)
