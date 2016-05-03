@@ -2,7 +2,7 @@
 -- Manages encoder/decoder data matrices.
 --
 
-local data = torch.class("data")
+local data = torch.class('data')
 
 function data:__init(opt, data_file)
    local f = hdf5.open(data_file, 'r')
@@ -88,7 +88,7 @@ function data:size()
 end
 
 function data.__index(self, idx)
-   if type(idx) == "string" then
+   if type(idx) == 'string' then
       return data[idx]
    else
       local target_input = self.batches[idx][1]

@@ -1,5 +1,4 @@
-package.path = '?.lua;' .. package.path
-require 'data.lua'
+require 'data'
 
 ------------
 -- Options
