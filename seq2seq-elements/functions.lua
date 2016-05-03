@@ -61,8 +61,7 @@ function rnn_layer(inp, hidden_size)
         :add(nn.Linear(hidden_size, hidden_size))) -- recurrent layer
         :add(nn.CAddTable()) -- merge
         :add(nn.Sigmoid()) -- transfer
-    rnn = nn.Sequential()
-      :add(nn.Recurrence(rm, hidden_size, 1))      
+    rnn = nn.Recurrence(rm, hidden_size, 1)    
     return rnn
 end
 
@@ -158,7 +157,7 @@ function build()
 
     if opt.layer_type == 'rnn' then
         enc_rnn = enc_rnn['modules'][1]
-        dec_rnn = dec_rnn['modules'][1]
+        --dec_rnn = dec_rnn['modules'][1]
     end
 
     if opt.train_from:len() == 1 then
