@@ -185,6 +185,7 @@ function build()
         if opt.pre_word_vecs:len() > 0 then
             local f = hdf5.open(opt.pre_word_vecs)     
             local pre_word_vecs = f:read('word_vecs'):all()
+            print('Using pre-trained word embeddings from ' .. opt.pre_word_vecs)
             for i = 1, pre_word_vecs:size(1) do
                 enc_embeddings.weight[i]:copy(pre_word_vecs[i])
                 dec_embeddings.weight[i]:copy(pre_word_vecs[i])
