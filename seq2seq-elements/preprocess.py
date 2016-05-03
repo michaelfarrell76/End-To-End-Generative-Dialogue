@@ -406,6 +406,10 @@ def format_data(directory, train_valid_split, seq_length, args):
     valid_full_context = data_set_contexts[1]
     valid_full_output = data_set_outputs[1]
 
+
+    if not os.path.exists(args.output_directory):
+        os.makedirs(args.output_directory)
+
     # This is super inefficient, put it together last minute. Don't judge :)
     f =  open(args.output_directory + 'train_src_indices.txt', 'w')
     for context in train_full_context: 
@@ -493,7 +497,12 @@ def format_data(directory, train_valid_split, seq_length, args):
         f.write(str(output) + ' \n')
     f.close()
 
-    emb_wordvec_upd = np.vstack((emb_wordvec[0], np.zeros((300, 2)).T))
+    # Additional embeddings
+    np.random.seed(9844)
+    additional_vectors = np.random.uniform(-0.1, 0.1, (2, 300))
+    additional_vectors = additional_vectors / np.linalg.norm(additional_vectors)
+
+    emb_wordvec_upd = np.vstack((emb_wordvec[0], additional_vectors))
     emb_wordvec_upd[10001] = emb_wordvec[0][3][:]
     emb_wordvec_upd[10002] = emb_wordvec[0][4][:]
     emb_wordvec_upd[3] = emb_wordvec[0][10001][:]

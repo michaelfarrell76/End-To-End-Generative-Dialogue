@@ -8,7 +8,7 @@ PAD = 1; UNK = 2; START = 3; END = 4
 PAD_WORD = '<blank>'; UNK_WORD = '<unk>'; START_WORD = '<s>'; END_WORD = '</s>'
 INF = 1e9
 
-local beam_proto = torch.class('beam')
+local beam = torch.class('beam')
 
 ------------
 -- Misc
@@ -47,35 +47,31 @@ local function forward_connect(enc_rnn, dec_rnn, seq_length)
         enc_rnn.cells[seq_length])
 end
 
-local function get_scores(m, source, beam)
+local function get_scores(m, source, cur_beam)
     local source_l = source:size(1)
     source = source:contiguous()
-    source = source:view(1, -1):expand(beam:size(1), source_l)
+    source = source:view(1, -1):expand(cur_beam:size(1), source_l)
 
     -- Forward prop enc + dec
     local enc_out = m.enc:forward(source)
     forward_connect(m.enc_rnn, m.dec_rnn, source_l)
-    local preds = m.dec:forward(beam)
+    local preds = m.dec:forward(cur_beam)
 
     -- Return log probability distribution for next words
     return preds[#preds]
 end
 
 ------------
--- Init
+-- Beam class
 ------------
 
-function beam_proto:__init(opt, model)
+function beam:__init(opt, model)
     self.opt = opt
     self.m = model
 end
 
-------------
--- Beam magic
-------------
-
 -- Generates K most likely output utterances given an input source
-function beam_proto:generate(K, source, gold)
+function beam:generate(K, source, gold)
     -- Let's get all fb up in here
     -- scores[i][k] is the log prob of the k'th hyp of i words
     -- hyps[i][k] contains the words in k'th hyp at i word
@@ -160,7 +156,7 @@ function beam_proto:generate(K, source, gold)
 end
 
 -- Generates most likely output utterance (map) given an input source
-function beam_proto:generate_map(source, gold)
+function beam:generate_map(source, gold)
     local result = self:generate(self.opt.k or 5, source, gold)
     local len = result[1][1]
     local sent = result[1][3]
@@ -168,7 +164,7 @@ function beam_proto:generate_map(source, gold)
 end
 
 -- For external use
-function beam_proto:generate_k(k, source)
+function beam:generate_k(k, source)
     local result = self:generate(k, source, nil)
     local outputs = {}
     for i = 1, #result do
@@ -181,4 +177,4 @@ function beam_proto:generate_k(k, source)
     return outputs
 end
 
-return beam_proto
+return beam
