@@ -2,13 +2,21 @@
 
  A neural conversational model.
 
-____
+----
+#### To run
+```
+cd End-To-End-Generative-Dialogue/src
+python preprocess.py
+python preprocess.py # seqlength 5 # For micro dataset (~500 sentences)
 
-Run in parallel
-	
-	cd End-To-End-Generative-Dialogue/seq2seq-elements
-	th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid -1 -parallel
+th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid 1
 
+th run_beam.lua -model conv-model.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
+```
+To run in parallel
+```
+th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid -1 -parallel
+```
 
 ----
 ####Primary contributors
@@ -39,21 +47,7 @@ Run in parallel
 - https://cloud.google.com/compute/docs/troubleshooting
 
 ----
-#### Instructions.txt
-
-Run the preprocess/preprocess-movies notebook all the way through to generate the train/validation data files
-
-	python preprocess.py
-
-	python preprocess.py --seqlength 5 # For micro dataset (~500 sentences)
-
-	th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid 1
-
-	th run_beam.lua -model conv-model_final.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
-----
 #### TODO
-
-TODO:
 
 - get beam working
 - run each of the models for 10 epochs-ish? -> save the model, record results
@@ -64,7 +58,7 @@ TODO:
 - experiment with HRED model
 
 
-- add subTle dataset stuff
+- add subTle dataset pretraining
 - heirarchical model 
 - add in error rate stuff
 
