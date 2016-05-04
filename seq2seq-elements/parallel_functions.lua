@@ -2,9 +2,10 @@
 function worker()
     require 'sys'
    require 'torch'
+   parallel.print(os.execute("cd Singularity/seq2seq-elements/"))
      parallel.print('Im a worker, my ID is: ' .. parallel.id .. ' and my IP: ' .. parallel.ip)
+     parallel.print('parallel.parent ', parallel.parent)
     parallel.print('HELLOTHERE')
-    parallel.print(os.execute("pwd"))
     funcs = loadfile("functions.lua")
     funcs()
 
@@ -134,7 +135,7 @@ function parent()
 
     train_data, valid_data, model, criterion, opt = main()
 
-    n_proc= 4
+    n_proc= 1
     -- parallel.ip = "XX.XX.XX.XX"
 
     -- fork N processes
@@ -144,18 +145,31 @@ function parent()
     -- parallel.print('adding remote')
 
 
-    -- old_path = package.path
-    -- old_cpath = package.cpath
+    old_path = package.path
+    old_cpath = package.cpath
 
-    -- package.path = "/home/michaelfarrell/.luarocks/share/lua/5.1/?.lua;/home/michaelfarrell/.luarocks/share/lua/5.1/?/init.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?/init.lua;./?.lua;/home/michaelfarrell/Singularity/seq2seq-elements/?.lua;/home/michaelfarrell/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
-    -- package.cpath = "/home/michaelfarrell/.luarocks/lib/lua/5.1/?.so;/home/michaelfarrell/torch/install/lib/lua/5.1/?.so;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
-
+   
 
     -- -- parallel.print('ALERT', old_path)
     -- parallel.print('ALERT', package.path)
-    -- parallel.addremote( {ip='michaelfarrell@104.197.157.136', cores=8, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -ttq -i ~/.ssh/my-ssh-key'})   --,
 
-    --                     -- {ip='localhost', cores=8, lua='/Users/michaelfarrell/torch/install/bin/th'})
+     package.path = "/home/michaelfarrell/.luarocks/share/lua/5.1/?.lua;/home/michaelfarrell/.luarocks/share/lua/5.1/?/init.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?/init.lua;./?.lua;/home/michaelfarrell/Singularity/seq2seq-elements/?.lua;/home/michaelfarrell/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
+    package.cpath = "/home/michaelfarrell/.luarocks/lib/lua/5.1/?.so;/home/michaelfarrell/torch/install/lib/lua/5.1/?.so;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
+
+    parallel.addremote( {ip='mikes-instance-group-4phn', cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol="gcloud compute ssh"})--'ssh -ttq -i ~/.ssh/my-ssh-key'})   --,
+    
+    -- michaelfarrell@104.197.157.136
+
+    
+   -- package.path = "/home/michaelfarrell/.luarocks/share/lua/5.1/?.lua;/home/michaelfarrell/.luarocks/share/lua/5.1/?/init.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?/init.lua;./?.lua;/home/michaelfarrell/Singularity/seq2seq-elements/?.lua;/home/michaelfarrell/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
+   --  package.cpath = "/home/michaelfarrell/.luarocks/lib/lua/5.1/?.so;/home/michaelfarrell/torch/install/lib/lua/5.1/?.so;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
+
+ --      package.path = "/Users/candokevin/.luarocks/share/lua/5.1/?.lua;/Users/candokevin/.luarocks/share/lua/5.1/?/init.lua;/Users/candokevin/torch/install/share/lua/5.1/?.lua;/Users/candokevin/torch/install/share/lua/5.1/?/init.lua;./?.lua;/Users/candokevin/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
+ -- package.cpath = " /Users/candokevin/.luarocks/lib/lua/5.1/?.so;/Users/candokevin/torch/install/lib/lua/5.1/?.so;/Users/candokevin/torch/install/lib/?.dylib;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
+    
+ --    parallel.addremote({ip='candokevin@10.251.57.175', cores=4, lua='/Users/candokevin/torch/install/bin/th', protocol='ssh -ttq'})
+
+    -- parallel.addremote({ip='michaelfarrell@10.251.54.86', cores=4, lua='/Users/michaelfarrell/torch/install/bin/th', protocol='ssh -ttq'})
 
     -- -- parallel.addremote( {ip='michaelfarrell@104.197.157.136', cores=8, lua='~/torch/install/bin/th', protocol='ssh -ttq -i ~/.ssh/my-ssh-key'},
     -- --                     {ip='michaelfarrell@104.197.111.94', cores=8, lua='~/torch/install/bin/th', protocol='ssh -ttq -i ~/.ssh/my-ssh-key'}) --,
@@ -190,10 +204,11 @@ function parent()
     -- parallel.print(parallel.nchildren)
     -- forked = parallel.sfork(parallel.remotes.cores)
     parallel.print('Forked')
+    parallel.print('parallel.id ', parallel.id)
+    parallel.print('parallel.parent ', parallel.parent)
 
-
-    -- package.path = old_path
-    -- package.cpath = old_cpath
+    package.path = old_path
+    package.cpath = old_cpath
 
 
     -- exec worker code in each process
