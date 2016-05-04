@@ -58,7 +58,6 @@ NB: the MovieTriples dataset is not publicly available. Support for training on 
 - modify preprocess.py in seq2seq-elements to make the data directory if doesnt exist
 - experiment with HRED model
 
-
 - add subTle dataset pretraining
 - heirarchical model 
 - add in error rate stuff
