@@ -205,14 +205,21 @@ function main()
 
         local eos = torch.LongTensor({END})
         source = source:cat(eos)
-        local pred = sbeam:generate_map(source)
+        -- local pred = sbeam:generate_map(source)
+        local k = 5
+        local preds = sbeam:generate_k(k, source)
+        for i = 1, k do
+        	local pred_sent = wordidx2sent(preds[i], idx2word_targ, source_str, true)
+        	print('PRED (' .. i .. ') ' .. sent_id .. ': ' .. pred_sent)
+        end
 
         -- pred_score_total = pred_score_total + pred_score
-        pred_words_total = pred_words_total + pred:size(1)
-        pred_sent = wordidx2sent(pred, idx2word_targ, source_str, true)
-        out_file:write(pred_sent .. '\n')
+        -- pred_words_total = pred_words_total + pred:size(1)
+        -- local pred_sent = wordidx2sent(pred, idx2word_targ, source_str, true)
+        -- out_file:write(pred_sent .. '\n')
 
-        print('PRED ' .. sent_id .. ': ' .. pred_sent)
+        print('GOLD ' .. sent_id .. ': ' .. gold[sent_id])
+        -- print('PRED ' .. sent_id .. ': ' .. pred_sent)
         -- if gold ~= nil then
         --     print('GOLD ' .. sent_id .. ': ' .. gold[sent_id])
         --     if opt.score_gold == 1 then
