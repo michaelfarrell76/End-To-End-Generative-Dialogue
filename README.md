@@ -1,4 +1,4 @@
-# End-to-End Dialogue System
+# End-to-End Generative Dialogue
 
  A neural conversational model.
 
