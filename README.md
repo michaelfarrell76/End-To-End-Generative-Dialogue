@@ -33,7 +33,7 @@ Run in parallel
 - https://www.reddit.com/r/datasets/comments/3bxlg7/i_have_every_publicly_available_reddit_comment/
 - https://www.reddit.com/r/MachineLearning/comments/3ukvc6/datasets_of_one_to_one_conversations/
 ----
-###Instructions.txt
+#### Instructions.txt
 
 Make sure that your directory looks like this and that the paths of the Move Triple is the same relative to other directories:
 
@@ -98,6 +98,24 @@ python preprocess.py --seqlength 5 # For micro dataset (~500 sentences)
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid 1
 
 th run_beam.lua -model conv-model_final.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
+----
+#### TODO
+
+TODO:
+
+- get beam working
+- run each of the models for 10 epochs-ish? -> save the model, record results
+- implement RNN model
+
+- implement a way to demo the stuff using chat interface, demo can be done using terminal
+- modify preprocess.py in seq2seq-elements to make the data directory if doesnt exist
+- experiment with HRED model
+
+
+- add subTle dataset stuff
+- heirarchical model 
+- add in error rate stuff
+
 ----
 #### Acknowledgments
 
