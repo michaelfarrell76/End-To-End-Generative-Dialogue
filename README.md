@@ -1,12 +1,12 @@
-# Singularity
+# End-to-End Generative Dialogue
 
-We have officially solved AI
+ A neural conversational model.
 
 ____
 
 Run in parallel
 	
-	cd Singularity/seq2seq-elements
+	cd End-To-End-Generative-Dialogue/seq2seq-elements
 	th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid -1 -parallel
 
 
@@ -32,6 +32,41 @@ Run in parallel
 - http://arxiv.org/pdf/1603.09457v1.pdf
 - https://www.reddit.com/r/datasets/comments/3bxlg7/i_have_every_publicly_available_reddit_comment/
 - https://www.reddit.com/r/MachineLearning/comments/3ukvc6/datasets_of_one_to_one_conversations/
+- http://arxiv.org/pdf/1412.3555v1.pdf
+- https://github.com/clementfarabet/lua---parallel
+- http://www.aclweb.org/anthology/P02-1040.pdf
+- http://victor.chahuneau.fr/notes/2012/07/03/kenlm.html
+- https://cloud.google.com/compute/docs/troubleshooting
+
+----
+#### Instructions.txt
+
+Run the preprocess/preprocess-movies notebook all the way through to generate the train/validation data files
+
+	python preprocess.py
+
+	python preprocess.py --seqlength 5 # For micro dataset (~500 sentences)
+
+	th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid 1
+
+	th run_beam.lua -model conv-model_final.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
+----
+#### TODO
+
+TODO:
+
+- get beam working
+- run each of the models for 10 epochs-ish? -> save the model, record results
+- implement RNN model
+
+- implement a way to demo the stuff using chat interface, demo can be done using terminal
+- modify preprocess.py in seq2seq-elements to make the data directory if doesnt exist
+- experiment with HRED model
+
+
+- add subTle dataset stuff
+- heirarchical model 
+- add in error rate stuff
 
 ----
 #### Acknowledgments
