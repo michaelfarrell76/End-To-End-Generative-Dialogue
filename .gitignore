@@ -1,9 +1,9 @@
 # Annoying files
 .DS_Store
 .ipynb_checkpoints
+Icon
 
 # MovieTriples + other data
-data/MovieTriples/
 data/
 
 # Preprocessing files

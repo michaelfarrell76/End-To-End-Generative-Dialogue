@@ -32,72 +32,19 @@ Run in parallel
 - http://arxiv.org/pdf/1603.09457v1.pdf
 - https://www.reddit.com/r/datasets/comments/3bxlg7/i_have_every_publicly_available_reddit_comment/
 - https://www.reddit.com/r/MachineLearning/comments/3ukvc6/datasets_of_one_to_one_conversations/
+
 ----
 #### Instructions.txt
 
-Make sure that your directory looks like this and that the paths of the Move Triple is the same relative to other directories:
-
-
-
-Macbook-Pro-4:singularity candokevin$ tree
-.
-├── README.md
-├── data
-│   └── MovieTriple
-│       ├── Dataset.txt
-│       ├── Dataset_Labels.txt
-│       ├── MT_WordEmb.pkl
-│       ├── MetaInfo.ods
-│       ├── MetaInfo.txt
-│       ├── Readme.txt
-│       ├── Shuffled_Dataset.txt
-│       ├── Shuffled_Dataset_Labels.txt
-│       ├── Shuffled_Subtle_Dataset.txt
-│       ├── Subtle_Dataset.triples.pkl
-│       ├── Test.genres.pkl
-│       ├── Test.triples.pkl
-│       ├── Test_Shuffled_Dataset.txt
-│       ├── Test_Shuffled_Dataset_Labels.txt
-│       ├── Training.dict.pkl
-│       ├── Training.genres.pkl
-│       ├── Training.triples.pkl
-│       ├── Training_Shuffled_Dataset.txt
-│       ├── Training_Shuffled_Dataset_Labels.txt
-│       ├── UniqueGenres.txt
-│       ├── Validation.genres.pkl
-│       ├── Validation.triples.pkl
-│       ├── Validation_Shuffled_Dataset.txt
-│       ├── Validation_Shuffled_Dataset_Labels.txt
-│       ├── Word2Vec_WordEmb.pkl
-│       └── WordsList.txt
-├── preprocess
-│   └── preprocess-movies.ipynb
-└── seq2seq-attn
-    ├── LICENSE
-    ├── README.md
-    ├── beam.lua
-    ├── conv-model_epoch1.00_236.72.t7
-    ├── conv-model_final.t7
-    ├── convert_to_cpu.lua
-    ├── data
-    ├── data.lua
-    ├── model_utils.lua
-    ├── models.lua
-    ├── pred.txt
-    ├── preprocess.py
-    ├── train.lua
-    └── util.lua
-
-
 Run the preprocess/preprocess-movies notebook all the way through to generate the train/validation data files
 
-python preprocess.py
+	python preprocess.py
 
-python preprocess.py --seqlength 5 # For micro dataset (~500 sentences)
+	python preprocess.py --seqlength 5 # For micro dataset (~500 sentences)
 
-th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid 1
+	th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid 1
 
-th run_beam.lua -model conv-model_final.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
+	th run_beam.lua -model conv-model_final.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
 ----
 #### TODO
 
