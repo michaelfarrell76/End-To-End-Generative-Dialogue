@@ -1,0 +1,229 @@
+\setbeamertemplate{navigation symbols}{}
+\let\tempone\itemize
+\let\temptwo\enditemize
+\renewenvironment{itemize}{\tempone\addtolength{\itemsep}{0.5\baselineskip}}{\temptwo}
+% \usepackage{beamerthemeshadow}
+\usepackage{ulem}
+    % \usepackage{movie15}
+\usepackage{mathpazo}
+% \usepackage{palatino}
+
+\usepackage{tikz}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{pgffor}
+\usepackage{booktabs}
+\usepackage{amssymb}
+\usepackage{tikz,etoolbox}
+\usepackage{subcaption}
+\usepackage{url}
+\usepackage{pgf}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{algorithm}
+\usepackage{amsmath}
+\usepackage{tabularx}
+\usepackage{mathtools}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\usetikzlibrary{arrows,positioning,automata,positioning,spy,matrix,scopes,chains}
+
+\setbeamersize{text margin left=6mm}
+\setbeamersize{text margin right=6mm}
+\renewcommand{\insertnavigation}[1]{}
+\setbeamertemplate{headline}{}
+\setbeamertemplate{footline}{}
+% \usefonttheme{professionalfonts}
+% make itemize things larger
+%\setbeamerfont*{itemize/enumerate body}{size=\Large}
+%\setbeamerfont*{itemize/enumerate subbody}{size=\large}
+\setbeamercovered{transparent}
+\mode<presentation>
+%\mode<handout>
+\linespread{1.25}
+
+\usepackage{color}
+\usepackage{multirow}
+\usepackage{rotating}
+\usepackage[all,dvips]{xy}
+\usepackage{colortbl}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage{framed}
+\usepackage{natbib}
+\usepackage[labelformat=empty]{caption}
+\newcommand{\air}{\vspace{0.25cm}}
+% \newcommand{\mair}{\vspace{-0.25cm}}
+
+\setbeamertemplate{navigation symbols}{}%remove navigation symbols
+\renewcommand{\rmdefault}{crm}
+\newcommand{\lnbrack}{{\normalfont [}}
+\newcommand{\rnbrack}{{\normalfont ]}\thinspace}
+\newcommand{\lbbrack}{\textcolor{red}{\textbf{[}}}
+\newcommand{\rbbrack}{\textcolor{red}{\textbf{]}}\thinspace}
+\definecolor{vermillion}{RGB}{213,94,0}
+
+\definecolor{orange}{RGB}{230,159,0}
+\definecolor{skyblue}{RGB}{86,180,233}
+\definecolor{bluegreen}{RGB}{0,158,115}
+\definecolor{myyellow}{RGB}{240,228,66} % i dunno if this is the same as standard yellow
+\definecolor{myblue}{RGB}{0,114,178}
+\definecolor{vermillion}{RGB}{213,94,0}
+\definecolor{redpurple}{RGB}{204,121,167}
+\definecolor{lightgrey}{RGB}{234,234,234}
+
+\AtBeginSection[]
+{
+  \begin{frame}
+  \frametitle{Contents}
+  \tableofcontents[currentsection]
+  \end{frame}
+}
+% \AtBeginSection[]{
+%   \begin{frame}
+%   \vfill
+%   \centering
+%   \begin{beamercolorbox}[sep=8pt,center,shadow=true,rounded=true]{title}
+%     \usebeamerfont{title}\insertsectionhead\par%
+%   \end{beamercolorbox}
+%   \vfill
+%   \end{frame}
+% }
+
+\newcommand{\boldA}{\mathbf{A}}
+\newcommand{\boldB}{\mathbf{B}}
+\newcommand{\boldC}{\mathbf{C}}
+\newcommand{\boldD}{\mathbf{D}}
+\newcommand{\boldE}{\mathbf{E}}
+\newcommand{\boldF}{\mathbf{F}}
+\newcommand{\boldG}{\mathbf{G}}
+\newcommand{\boldH}{\mathbf{H}}
+\newcommand{\boldI}{\mathbf{I}}
+\newcommand{\boldJ}{\mathbf{J}}
+\newcommand{\boldK}{\mathbf{K}}
+\newcommand{\boldL}{\mathbf{L}}
+\newcommand{\boldM}{\mathbf{M}}
+\newcommand{\boldN}{\mathbf{N}}
+\newcommand{\boldO}{\mathbf{O}}
+\newcommand{\boldP}{\mathbf{P}}
+\newcommand{\boldQ}{\mathbf{Q}}
+\newcommand{\boldR}{\mathbf{R}}
+\newcommand{\boldS}{\mathbf{S}}
+\newcommand{\boldT}{\mathbf{T}}
+\newcommand{\boldU}{\mathbf{U}}
+\newcommand{\boldV}{\mathbf{V}}
+\newcommand{\boldW}{\mathbf{W}}
+\newcommand{\boldX}{\mathbf{X}}
+\newcommand{\boldY}{\mathbf{Y}}
+\newcommand{\boldZ}{\mathbf{Z}}
+\newcommand{\bolda}{\mathbf{a}}
+\newcommand{\boldb}{\mathbf{b}}
+\newcommand{\boldc}{\mathbf{c}}
+\newcommand{\boldd}{\mathbf{d}}
+\newcommand{\bolde}{\mathbf{e}}
+\newcommand{\boldf}{\mathbf{f}}
+\newcommand{\boldg}{\mathbf{g}}
+\newcommand{\boldh}{\mathbf{h}}
+\newcommand{\boldi}{\mathbf{i}}
+\newcommand{\boldj}{\mathbf{j}}
+\newcommand{\boldk}{\mathbf{k}}
+\newcommand{\boldl}{\mathbf{l}}
+\newcommand{\boldm}{\mathbf{m}}
+\newcommand{\boldn}{\mathbf{n}}
+\newcommand{\boldo}{\mathbf{o}}
+\newcommand{\boldp}{\mathbf{p}}
+\newcommand{\boldq}{\mathbf{q}}
+\newcommand{\boldr}{\mathbf{r}}
+\newcommand{\bolds}{\mathbf{s}}
+\newcommand{\boldt}{\mathbf{t}}
+\newcommand{\boldu}{\mathbf{u}}
+\newcommand{\boldv}{\mathbf{v}}
+\newcommand{\boldw}{\mathbf{w}}
+\newcommand{\boldx}{\mathbf{x}}
+\newcommand{\boldy}{\mathbf{y}}
+\newcommand{\boldz}{\mathbf{z}}
+
+\newcommand{\bolddelta}{\boldsymbol{\delta}}
+\newcommand{\indicator}{\mathbf{1}}
+\newcommand{\mcA}{\mathcal{A}}
+\newcommand{\mcB}{\mathcal{B}}
+\newcommand{\mcC}{\mathcal{C}}
+\newcommand{\mcD}{\mathcal{D}}
+\newcommand{\mcE}{\mathcal{E}}
+\newcommand{\mcF}{\mathcal{F}}
+\newcommand{\mcG}{\mathcal{G}}
+\newcommand{\mcH}{\mathcal{H}}
+\newcommand{\mcI}{\mathcal{I}}
+\newcommand{\mcJ}{\mathcal{J}}
+\newcommand{\mcK}{\mathcal{K}}
+\newcommand{\mcL}{\mathcal{L}}
+\newcommand{\mcM}{\mathcal{M}}
+\newcommand{\mcN}{\mathcal{N}}
+\newcommand{\mcO}{\mathcal{O}}
+\newcommand{\mcP}{\mathcal{P}}
+\newcommand{\mcQ}{\mathcal{Q}}
+\newcommand{\mcR}{\mathcal{R}}
+\newcommand{\mcS}{\mathcal{S}}
+\newcommand{\mcT}{\mathcal{T}}
+\newcommand{\mcU}{\mathcal{U}}
+\newcommand{\mcV}{\mathcal{V}}
+\newcommand{\mcW}{\mathcal{W}}
+\newcommand{\mcX}{\mathcal{X}}
+\newcommand{\mcY}{\mathcal{Y}}
+\newcommand{\mcZ}{\mathcal{Z}}
+
+\newcommand{\reals}{\ensuremath{\mathbb{R}}}
+\newcommand{\integers}{\ensuremath{\mathbb{Z}}}
+\newcommand{\rationals}{\ensuremath{\mathbb{Q}}}
+\newcommand{\naturals}{\ensuremath{\mathbb{N}}}
+\newcommand{\trans}{\ensuremath{\mathsf{T}}}
+\newcommand{\ident}{\mathbf{I}}
+\newcommand{\bzero}{\mathbf{0}}
+
+\newcommand{\balpha}{\boldsymbol{\alpha}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}
+\newcommand{\boldeta}{\boldsymbol{\eta}}
+\newcommand{\bkappa}{\boldsymbol{\kappa}}
+\newcommand{\bgamma}{\boldsymbol{\gamma}}
+\newcommand{\bmu}{\boldsymbol{\mu}}
+\newcommand{\bphi}{\boldsymbol{\phi}}
+\newcommand{\bpi}{\boldsymbol{\pi}}
+\newcommand{\bpsi}{\boldsymbol{\psi}}
+\newcommand{\bsigma}{\boldsymbol{\sigma}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bxi}{\boldsymbol{\xi}}
+\newcommand{\bGamma}{\boldsymbol{\Gamma}}
+\newcommand{\bLambda}{\boldsymbol{\Lambda}}
+\newcommand{\bOmega}{\boldsymbol{\Omega}}
+\newcommand{\bPhi}{\boldsymbol{\Phi}}
+\newcommand{\bPi}{\boldsymbol{\Pi}}
+\newcommand{\bPsi}{\boldsymbol{\Psi}}
+\newcommand{\bSigma}{\boldsymbol{\Sigma}}
+\newcommand{\bTheta}{\boldsymbol{\Theta}}
+\newcommand{\bUpsilon}{\boldsymbol{\Upsilon}}
+\newcommand{\bXi}{\boldsymbol{\Xi}}
+\newcommand{\bepsilon}{\boldsymbol{\epsilon}}
+
+\def\argmin{\operatornamewithlimits{arg\,min}}
+\def\argmax{\operatornamewithlimits{arg\,max}}
+\def\softmax{\operatornamewithlimits{softmax}}
+\def\relu{\operatornamewithlimits{ReLU}}
+
+\newcommand{\given}{\,|\,}
+\newcommand{\distNorm}{\mathcal{N}}
+
+
+
+\newcommand{\din}{{d_{\mathrm{in}}}}
+\newcommand{\dhid}{{d_{\mathrm{hid}}}}
+\newcommand{\dwin}{{d_{\mathrm{win}}}}
+\newcommand{\dout}{{d_{\mathrm{out}}}}
+\newcommand{\demb}{{d_{\mathrm{emb}}}}
+
+\algtext*{EndWhile}% Remove "end while" text
+\algtext*{EndFor}% Remove "end while" text
+\algtext*{EndIf}% Remove "end if" text
+\algtext*{EndProcedure}% Remove "end while" text
