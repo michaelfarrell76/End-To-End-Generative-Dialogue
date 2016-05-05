@@ -114,7 +114,7 @@ NB: the MovieTriples dataset is not publicly available. Training on arbitrary di
 - Modify preprocessing code to have longer sequences (rather than just (U_1, U_2, U_3), have (U_1, ..., U_n) for some n. With this we could try to add more memory to the model we currently have now)
 - Modify preprocessing code to return entire conversations (rather than fixing n, have the entire back and forth of a conversation together. This could be useful for trying to train a model more specific to our objective. This could be used for testing how the model does for a specific conversation )
 - Finish cleaning up file (i.e. finish factoring code. I started this but things are going to be modified when subTle is added so I never finished. It shouldn't be bad at all)
-- 
+
 #### Parallel (parallel_functions.lua)
 - Add way to do localhost without password on server
 - Get working on google servers
