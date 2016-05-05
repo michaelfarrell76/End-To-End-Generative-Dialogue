@@ -33,7 +33,6 @@ end
 ------------
 
 -- TODO: expand to work with non lstm modules
-
 -- Forward coupling: copy encoder cell and output to decoder RNN
 function forward_connect(enc_rnn, dec_rnn, seq_length)
     dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput, enc_rnn.outputs[seq_length])
@@ -55,16 +54,15 @@ function backward_connect(enc_rnn, dec_rnn)
 end
 
 function rnn_layer(inp, hidden_size)
-    rm =  nn.Sequential()
-     :add(nn.ParallelTable()
+    rm = nn.Sequential()
+     	:add(nn.ParallelTable()
         :add(inp == hidden_size and nn.Identity() or nn.Linear(inp, 300)) -- input layer
         :add(nn.Linear(hidden_size, hidden_size))) -- recurrent layer
         :add(nn.CAddTable()) -- merge
         :add(nn.Sigmoid()) -- transfer
-    rnn = nn.Recurrence(rm, hidden_size, 1)    
+    rnn = nn.Recurrence(rm, hidden_size, 1)
     return rnn
 end
-
 
 ------------
 -- Structure
@@ -416,7 +414,7 @@ function train(m, criterion, train_data, valid_data)
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
                 batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm = train_ind(batch_order[i], m, criterion, train_data)
 
-                -- Update params (also could be done as above)
+                -- Update params
                 m.dec:updateParameters(opt.learning_rate)
                 m.enc:updateParameters(opt.learning_rate)
 
@@ -611,7 +609,7 @@ function eval(m, criterion, data)
         local dec_out = m.dec:forward(target)
         local loss = criterion:forward(dec_out, target_out)
 
-        -- TODO: This does not yet support batches but it will v soon!
+        -- TODO: This does not yet support batches but it could soon!
         -- Worry not younglings
         -- It does however work one example at a time
         -- opt.allow_unk = 0
