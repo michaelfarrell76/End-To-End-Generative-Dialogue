@@ -68,10 +68,14 @@ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -
 ```
 #### In dev: through remote gcloud servers
 
-You must first set up an ssh key to connect to the servers. (You should probably just connected as me for now):
+You must first set up an ssh key to connect to the servers. 
+
+Replace USERNAME with your own username.
+
+i.e. USERNAME = michaelfarrell
 
 ```
-ssh-keygen -t rsa -f ~/.ssh/gcloud-sshkey -C michaelfarrell
+ssh-keygen -t rsa -f ~/.ssh/gcloud-sshkey -C USERNAME
 ```
 Hit enter twice and a key should have been generated.
 
@@ -94,6 +98,21 @@ Restrict access:
 ```
 chmod 400 ~/.ssh/gcloud-sshkey
 ```
+
+Next create your own instance group if you have not created one already. 
+
+- Go to the 'Instance groups' tab
+- Create instance group
+- Give the group a name, i.e. training-group-dev
+- Give a description
+- Set zone to us-central1-b
+- Use instance template
+- Choose "mike-instance-template-1"
+- Set the number of instances
+- Create
+- Wait for the instances to launch
+- 
+
 
 
 Currently attempting to run with the parallel workers running remotely on the servers with the code below.
