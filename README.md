@@ -68,6 +68,34 @@ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -
 ```
 #### In dev: through remote gcloud servers
 
+You must first set up an ssh key to connect to the servers. (You should probably just connected as me for now):
+
+```
+ssh-keygen -t rsa -f ~/.ssh/gcloud-sshkey -C michaelfarrell
+```
+Hit enter twice and a key should have been generated.
+
+```
+cat ~/.ssh/gcloud-sshkey.pub
+```
+And then copy the key that is printed out.
+
+Next you must add the key to the set of public keys. 
+
+- Login to our google compute account. 
+- Go to compute engine dashboard
+- Go to metdata tab
+- Go to ssh-key subtab
+- Click edit
+- Add the key you copied as a new line
+
+Restrict access:
+
+```
+chmod 400 ~/.ssh/gcloud-sshkey
+```
+
+
 Currently attempting to run with the parallel workers running remotely on the servers with the code below.
 ```
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4 -remote -extension End-To-End-Generative-Dialogue/src/
