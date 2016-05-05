@@ -115,7 +115,31 @@ Next create your own instance group if you have not created one already.
 - Set the number of instances
 - Create
 - Wait for the instances to launch
-- 
+- Once there is a green checkmark, click on the new instance
+- You can connect to one of the servers by running
+
+```
+ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey USERNAME@IP_ADDR
+```
+where username is your username, i.e. michaelfarrell
+
+and IP_ADDR is the ip address of the machine listed under "External ip", i.e. 104.197.9.84 
+
+the -o "StrictHostKeyChecking no" automatically adds the host to your list and does not prompt yes or no.
+
+If you get an error like this:
+```
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+```
+then you'll want to
+```
+vim ~/.ssh/known_hosts
+```
+and delete the last few lines that were added. They should look like some ip address and then something that starts with AAAA. You can delete lines in vim by typing dd to delete the current line.
+
+This normally happens when you restart the servers and they change ip addresses or something.
 
 ##### Running the remote server
 
