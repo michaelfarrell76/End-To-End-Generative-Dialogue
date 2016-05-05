@@ -6,7 +6,9 @@
 ## To run
 ```
 cd End-To-End-Generative-Dialogue/src
+
 python preprocess.py
+
 python preprocess.py # --seqlength 5 # For micro dataset (~500 sentences)
 
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid 1
