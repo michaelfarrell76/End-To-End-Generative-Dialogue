@@ -13,8 +13,10 @@ cd End-To-End-Generative-Dialogue/src
 
 ```
 python preprocess.py
-
-python preprocess.py # --seqlength 5 # For micro dataset (~500 sentences)
+```
+For micro dataset
+```
+python preprocess.py --seqlength 5 # For micro dataset (~500 sentences)
 ```
 #### Running the model
 ```
