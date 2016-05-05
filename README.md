@@ -24,7 +24,8 @@ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -
 
 ```
 To run a worker with 4 parallel clients on your own computer running through localhost (which is more similar to how things will work when running through the google server).
-You have to specify the location of the src folder from the home directory of your computer:
+
+Note: You have to specify the location of the src folder from the home directory of your computer:
 i.e. PATH_TO_SRC = Desktop/GoogleDrive/FinalProject/Singularity/src/
 ```
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4 -localhost -extension PATH_TO_SRC
@@ -32,7 +33,7 @@ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -
 ```
 Currently attempting to run with the parallel workers running remotely on the servers with the code below.
 ```
-th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4 -localhost -extension End-To-End-Generative-Dialogue/src/
+th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4 -remote -extension End-To-End-Generative-Dialogue/src/
 
 ```
 ### Notes:
