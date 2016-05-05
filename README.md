@@ -38,10 +38,10 @@ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -
 
 To run a worker with 1 parallel client on your own computer running through localhost (which is more similar to how things will work when running through the google server). There is only 1 parallel client since it requires that you input your password while connecting to your own computer through ssh. I didn't want to deal with passwords so I just spawn one worker,input the password, and see if it works. There is no point to use this in practice since its just slightly more inefficient than the previous command. Use this as a benchmark for developing the remote server training. 
 
-In order for this to work, you must first enable Remote Login in System Preferences/Sharing
+In order for this to work, you must first **enable Remote Login in System Preferences/Sharing**
 
-Note: You have to specify the location of the src folder from the home directory of your computer:
-i.e. PATH_TO_SRC = Desktop/GoogleDrive/FinalProject/Singularity/src/
+**Note**: You have to specify the location of the src folder from the home directory of your computer:
+i.e. **PATH_TO_SRC = Desktop/GoogleDrive/FinalProject/Singularity/src/**
 ```
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -localhost -extension PATH_TO_SRC
 
