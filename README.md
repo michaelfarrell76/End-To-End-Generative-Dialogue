@@ -16,7 +16,7 @@ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -
 th run_beam.lua -model conv-model.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
 ```
 
-### Running code in parallel
+#### Running code in parallel
 
 To run a worker with 4 parallel clients on your own computer:
 ```
