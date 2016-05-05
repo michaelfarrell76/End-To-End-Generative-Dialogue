@@ -15,12 +15,15 @@ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -
 
 th run_beam.lua -model conv-model.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
 ```
-To run a worker with 4 parallel workers on your own computer
+
+### Running code in parallel
+
+To run a worker with 4 parallel clients on your own computer:
 ```
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid -1 -parallel -n_proc 4
 
 ```
-To run a worker with 4 parallel workers on your own computer running through localhost (which is more similar to how things will work when running through the google server).
+To run a worker with 4 parallel clients on your own computer running through localhost (which is more similar to how things will work when running through the google server).
 You have to specify the location of the src folder from the home directory of your computer:
 i.e. PATH_TO_SRC = Desktop/GoogleDrive/FinalProject/Singularity/src/
 ```
@@ -29,11 +32,10 @@ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -
 ```
 Currently attempting to run with the parallel workers running remotely on the servers with the code below.
 ```
-th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid -1 -parallel -n_proc 4 -localhost -extension Singularity/src/
+th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid -1 -parallel -n_proc 4 -localhost -extension End-To-End-Generative-Dialogue/src/
 
 ```
-
-Desktop/GoogleDrive/FinalProject/Singularity/src/
+### Notes:
 
 NB: the MovieTriples dataset is not publicly available. Training on arbitrary dialogue will be supported soon.
 
