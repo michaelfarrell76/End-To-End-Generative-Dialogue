@@ -2,16 +2,25 @@
 
  A neural conversational model.
 
-____
+----
+## To run
+```
+cd End-To-End-Generative-Dialogue/src
+python preprocess.py
+python preprocess.py # --seqlength 5 # For micro dataset (~500 sentences)
 
-Run in parallel
-	
-	cd End-To-End-Generative-Dialogue/seq2seq-elements
-	th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid -1 -parallel
+th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid 1
 
+th run_beam.lua -model conv-model.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
+```
+To run in parallel
+```
+th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid -1 -parallel
+```
+NB: the MovieTriples dataset is not publicly available. Support for training on arbitrary dialogue will be supported soon.
 
 ----
-####Primary contributors
+## Primary contributors
 
 [Kevin Yang](https://github.com/kyang01)
 
@@ -20,7 +29,7 @@ Run in parallel
 [Colton Gyulay](https://github.com/cgyulay)
 
 ----
-#### Relevant links
+## Relevant links
 
 - https://medium.com/chat-bots/the-complete-beginner-s-guide-to-chatbots-8280b7b906ca#.u1jngyhzc
 - https://www.youtube.com/watch?v=IK0t38Al4_E
@@ -39,37 +48,26 @@ Run in parallel
 - https://cloud.google.com/compute/docs/troubleshooting
 
 ----
-#### Instructions.txt
+## TODO
 
-Run the preprocess/preprocess-movies notebook all the way through to generate the train/validation data files
+#### Preprocessing (preprocess.py)
 
-	python preprocess.py
+- Add subTle datset cleaning to preprocessing code (and any other additional datasets we may need)
+- Modify preprocessing code to have longer sequences (rather than just (U_1, U_2, U_3), have (U_1, ..., U_n) for some n. With this we could try to add more memory to the model we currently have now)
+- Modify preprocessing code to return entire conversations (rather than fixing n, have the entire back and forth of a conversation together. This could be useful for trying to train a model more specific to our objective. This could be used for testing how the model does for a specific conversation )
+- Finish cleaning up file (i.e. finish factoring code. I started this but things are going to be modified when subTle is added so I never finished. It shouldn't be bad at all)
 
-	python preprocess.py --seqlength 5 # For micro dataset (~500 sentences)
-
-	th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid 1
-
-	th run_beam.lua -model conv-model_final.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
-----
-#### TODO
-
-TODO:
+#### LUA
 
 - get beam working
 - run each of the models for 10 epochs-ish? -> save the model, record results
 - implement RNN model
-
-- implement a way to demo the stuff using chat interface, demo can be done using terminal
-- modify preprocess.py in seq2seq-elements to make the data directory if doesnt exist
 - experiment with HRED model
-
-
-- add subTle dataset stuff
 - heirarchical model 
 - add in error rate stuff
 
 ----
-#### Acknowledgments
+## Acknowledgments
 
 Our implementation utilizes code from the following:
 
