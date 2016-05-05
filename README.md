@@ -19,7 +19,7 @@ To run in parallel
 ```
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid -1 -parallel
 ```
-NB: the MovieTriples dataset is not publicly available. Support for training on arbitrary dialogue will be supported soon.
+NB: the MovieTriples dataset is not publicly available. Training on arbitrary dialogue will be supported soon.
 
 ----
 ## Primary contributors
