@@ -5,6 +5,25 @@
 ----
 ## Running Code
 
+Before anything can be run, the MovieTriples dataset is first required. 
+
+First create the data directory
+```
+mkdir data
+```
+and copy into the directory the MovieTriples. 
+
+Your directory should look like:
+```
+.
+├── data	     
+│   └── MovieTriples
+|        ├── ...
+|        ...
+├── src
+...
+```
+
 Code is run from the /src folder
 ```
 cd End-To-End-Generative-Dialogue/src
