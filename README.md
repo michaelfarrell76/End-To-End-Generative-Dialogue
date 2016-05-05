@@ -50,15 +50,19 @@ NB: the MovieTriples dataset is not publicly available. Support for training on 
 ----
 #### TODO
 
+## Preprocessing (preprocess.py)
+
+- Add subTle datset cleaning to preprocessing code (and any other additional datasets we may need)
+- Modify preprocessing code to have longer sequences (rather than just (U_1, U_2, U_3), have (U_1, ..., U_n) for some n. With this we could try to add more memory to the model we currently have now)
+- Modify preprocessing code to return entire conversations (rather than fixing n, have the entire back and forth of a conversation together. This could be useful for trying to train a model more specific to our objective. This could be used for testing how the model does for a specific conversation )
+- Finish cleaning up file (i.e. finish factoring code. I started this but things are going to be modified when subTle is added so I never finished. It shouldn't be bad at all)
+
+## LUA
+
 - get beam working
 - run each of the models for 10 epochs-ish? -> save the model, record results
 - implement RNN model
-
-- implement a way to demo the stuff using chat interface, demo can be done using terminal
-- modify preprocess.py in seq2seq-elements to make the data directory if doesnt exist
 - experiment with HRED model
-
-- add subTle dataset pretraining
 - heirarchical model 
 - add in error rate stuff
 
