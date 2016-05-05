@@ -3,7 +3,7 @@
  A neural conversational model.
 
 ----
-#### To run
+## To run
 ```
 cd End-To-End-Generative-Dialogue/src
 python preprocess.py
@@ -20,7 +20,7 @@ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -
 NB: the MovieTriples dataset is not publicly available. Support for training on arbitrary dialogue will be supported soon.
 
 ----
-####Primary contributors
+## Primary contributors
 
 [Kevin Yang](https://github.com/kyang01)
 
@@ -29,7 +29,7 @@ NB: the MovieTriples dataset is not publicly available. Support for training on 
 [Colton Gyulay](https://github.com/cgyulay)
 
 ----
-#### Relevant links
+## Relevant links
 
 - https://medium.com/chat-bots/the-complete-beginner-s-guide-to-chatbots-8280b7b906ca#.u1jngyhzc
 - https://www.youtube.com/watch?v=IK0t38Al4_E
@@ -48,16 +48,16 @@ NB: the MovieTriples dataset is not publicly available. Support for training on 
 - https://cloud.google.com/compute/docs/troubleshooting
 
 ----
-#### TODO
+## TODO
 
-## Preprocessing (preprocess.py)
+#### Preprocessing (preprocess.py)
 
 - Add subTle datset cleaning to preprocessing code (and any other additional datasets we may need)
 - Modify preprocessing code to have longer sequences (rather than just (U_1, U_2, U_3), have (U_1, ..., U_n) for some n. With this we could try to add more memory to the model we currently have now)
 - Modify preprocessing code to return entire conversations (rather than fixing n, have the entire back and forth of a conversation together. This could be useful for trying to train a model more specific to our objective. This could be used for testing how the model does for a specific conversation )
 - Finish cleaning up file (i.e. finish factoring code. I started this but things are going to be modified when subTle is added so I never finished. It shouldn't be bad at all)
 
-## LUA
+#### LUA
 
 - get beam working
 - run each of the models for 10 epochs-ish? -> save the model, record results
@@ -67,7 +67,7 @@ NB: the MovieTriples dataset is not publicly available. Support for training on 
 - add in error rate stuff
 
 ----
-#### Acknowledgments
+## Acknowledgments
 
 Our implementation utilizes code from the following:
 
