@@ -41,6 +41,7 @@ To run a worker with 1 parallel client on your own computer running through loca
 In order for this to work, you must first **enable Remote Login in System Preferences/Sharing**
 
 **Note**: You have to specify the location of the src folder from the home directory of your computer:
+
 i.e. **PATH_TO_SRC = Desktop/GoogleDrive/FinalProject/Singularity/src/**
 ```
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -localhost -extension PATH_TO_SRC
