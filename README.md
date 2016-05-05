@@ -68,7 +68,7 @@ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -
 ```
 #### DEV: Running remotely on gcloud servers
 
-###### Setup an ssh key to connect to our servers
+##### Setup an ssh key to connect to our servers
 
 You must first set up an ssh key to connect to the servers. 
 
@@ -101,7 +101,7 @@ Restrict access:
 chmod 400 ~/.ssh/gcloud-sshkey
 ```
 
-###### Generate an instance group of machines if you have not yet done so
+##### Generate an instance group of machines if you have not yet done so
 
 Next create your own instance group if you have not created one already. 
 
@@ -117,7 +117,7 @@ Next create your own instance group if you have not created one already.
 - Wait for the instances to launch
 - 
 
-###### Running the remote server
+##### Running the remote server
 
 Currently attempting to run with the parallel workers running remotely on the servers with the code below.
 ```
