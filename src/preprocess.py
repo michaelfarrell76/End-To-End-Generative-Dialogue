@@ -247,97 +247,149 @@ def get_data(args):
     
     print("Max sent length (before dropping): {}".format(max_sent_l))    
 
-def format_data(directory, train_valid_split, seq_length, args):
-    # Loading all the possible files into memory
-    with open(directory + 'Training.triples.pkl') as f:
-        train_set = pickle.load(f)
-        
-    with open(directory + 'Validation.triples.pkl') as f:
-        valid_set = pickle.load(f)
-        
-    with open(directory + 'Test.triples.pkl') as f:
-        test_set = pickle.load(f)
-        
-    with open(directory + 'Word2Vec_WordEmb.pkl') as f:
-        emb_wordvec = pickle.load(f)
-        
-    with open(directory + 'MT_WordEmb.pkl') as f:
-        emb_mt = pickle.load(f)
 
-    # Implement the word indices according to the format for the seq2seq model
 
-    # Make sure that the word_indices are 1 indexed for lua
 
-    # Do a swap with the embeddings and word_indices so it follows the conventions for indices 
-    # self.d = {self.PAD: 1, self.UNK: 2, self.BOS: 3, self.EOS: 4}
+def format_data(args):
+    '''
+        Formats the data so it can be passed into get_data function
+    '''
 
-    with open(directory + 'Training.dict.pkl') as f:
-        word_mappings = pickle.load(f)
+    def clean_word_mappings(data_dict):
+        '''
+            Function makes necessary changes to the word_mappings
+            so that they match up with the MovieTriples design. 
+            The changes to the mappings are then applied to the
+            training validation and test set of MovieTriples.
 
-    # All the swaps necessary to make the formatting consistent with seq2seq (sorry, it's so messy)
-    del_ind = []
-    for i in range(len(word_mappings)):
-        word_mapping = word_mappings[i]
-        if word_mapping[0] == '<unk>' or word_mapping[0] == '<s>' or \
-            word_mapping[0] == '</s>' or word_mapping[0] == '.' or \
-            word_mapping[0] == "'":
-                del_ind.append(i)
+            Function could be changed to remove some of the hard-coding
+        '''
 
-    del_ind.sort(reverse=True)
-    for ind in del_ind:
-        del word_mappings[ind]
-            
-    word_mappings.append(('<blank>', 1, 0, 0))
-    word_mappings.append(('<unk>', 2, 190588, 89059))
-    word_mappings.append(('<s>', 3, 588827, 785135))
-    word_mappings.append(('</s>', 4, 588827, 785135))
-    word_mappings.append(('.', 10003, 855616, 192250))
-    word_mappings.append(("'", 10004, 457542, 160249))
-    word_mappings.append(('<t>', 10005, 0, 0))
+        # Words that need to be altered
+        bad_words = ['<unk>', '<s>', '</s>', '.', "'"]
 
-    # Sanity check
-    check_mappings = range(1, len(word_mappings)+1)
-    for word_mapping in word_mappings:
-        check_mappings.remove(word_mapping[1])
-    assert check_mappings == []
+        #the new mappings that need to be added
+        new_mappings = [('<blank>', 1, 0, 0), ('<unk>', 2, 190588, 89059), ('<s>', 3, 588827, 785135), ('</s>', 4, 588827, 785135), ('.', 10003, 855616, 192250), ("'", 10004, 457542, 160249), ('<t>', 10005, 0, 0)]
 
-    # The changes that need to occur in the actual text examples are: 
-    # ., 3 -> 10003
-    # ', 4-> 10004
-    # <unk>, 0 -> 2
-    # <s>, 1 -> 3
-    # </s>, 2 -> 4
+        # Bad incides
+        del_ind = []
+        for i in range(len(data_dict['MovieTriples']['word_mappings'])):
+            word_mapping = data_dict['MovieTriples']['word_mappings'][i]
+            if word_mapping[0] in bad_words:
+                    del_ind.append(i)
 
-    data_sets = [train_set, valid_set, test_set]
-    for i in range(len(data_sets)):
-        for j in range(len(data_sets[i])):
-            line = data_sets[i][j]
-            for k in range(len(line)):
-                ind = line[k]
-                if ind == 3:
-                    line[k] = 10003
-                elif ind == 4:
-                    line[k] = 10004
-                elif ind == 0:
-                    line[k] = 2
-                elif ind == 1:
-                    line[k] = 3
-                elif ind == 2:
-                    line[k] = 4
-            data_sets[i][j] = line
+        # Delete the bad indicies in reverse order
+        del_ind.sort(reverse=True)
+        for ind in del_ind:
+            del data_dict['MovieTriples']['word_mappings'][ind]
 
-    # Move through the list of words and indices and generate a dictionary
-    # matching the indices to words
+        # Add the new mappings
+        for n_m in new_mappings:    
+            data_dict['MovieTriples']['word_mappings'].append(n_m)
+
+        # Sanity check
+        check_mappings = range(1, len(data_dict['MovieTriples']['word_mappings']) + 1)
+        for word_mapping in data_dict['MovieTriples']['word_mappings']:
+            check_mappings.remove(word_mapping[1])
+        assert check_mappings == []
+
+        # Make changes to the dataset
+        data_sets = [data_dict['MovieTriples']['train_set'], data_dict['MovieTriples']['valid_set'], data_dict['MovieTriples']['test_set']]
+        for i in range(len(data_sets)):
+            for j in range(len(data_sets[i])):
+                line = data_sets[i][j]
+                for k in range(len(line)):
+                    ind = line[k]
+                    if ind == 3:
+                        line[k] = 10003
+                    elif ind == 4:
+                        line[k] = 10004
+                    elif ind == 0:
+                        line[k] = 2
+                    elif ind == 1:
+                        line[k] = 3
+                    elif ind == 2:
+                        line[k] = 4
+                data_sets[i][j] = line
+
+        return data_dict
+
+
+    def load_data():
+        ''' 
+            Assuming all inputs files are .pkl files 
+
+            Loads all data files into a data_dict thats first layer
+            is the name of the data folder that is processed, and the 
+            second layer is the variable name of the loaded file. 
+
+            i.e. 
+
+            data_dict['MovieTriples']['train_set'] = pickle.load(...)
+        '''
+        data_dict = {}
+        for data_set in args.input_files:
+            data_dict[data_set] = {}
+            for var_name, data_file in args.input_files[data_set].iteritems():
+                with open('%s%s/%s' % (args.input_directory, data_set, data_file)) as f:
+                    data_dict[data_set][var_name] = pickle.load(f)
+
+        return data_dict
+
+    def write_indicies_to_file(filename, y):
+        '''
+            Write the contents of y into filename
+        '''
+        f =  open(filename, 'w')
+        for context in y: 
+            for ind in context:
+                f.write(str(ind) + ' ')
+            f.write('\n')
+        f.close()
+
+    def write_vocab_to_file(filename):
+        ''' 
+            Write the vocabulary to filename
+        '''
+        with open(filename, 'w') as f: 
+            for i in range(1, len(indices_to_word)+1):
+                f.write(indices_to_word[i] + ' ' + str(i) + '\n')
+
+    def write_words_to_file(filename, indices_dict):
+        '''
+            Write the examples to files as words, removing special
+            indices
+        '''
+        lst = []
+        for context in indices_dict:
+            context_words = []
+            for ind in context:
+                if ind not in special_indices:
+                    context_words.append(indices_to_word[ind])
+            lst.append(' '.join(context_words))
+
+
+        f =  open(filename, 'w')
+        for context in lst: 
+            f.write(str(context) + ' \n')
+        f.close()
+
+    # Load in datafiles
+    data_dict = load_data()
+
+    # Fix the wordmappings for Movie Triples
+    data_dict = clean_word_mappings(data_dict)
 
     # indices -> word
     indices_to_word = {}
-    for word_ex in word_mappings: 
+    for word_ex in data_dict['MovieTriples']['word_mappings']: 
         indices_to_word[word_ex[1]] = word_ex[0]
         
     # word -> indices
     word_to_indices = {}
-    for word_ex in word_mappings: 
+    for word_ex in data_dict['MovieTriples']['word_mappings']: 
         word_to_indices[word_ex[0]] = word_ex[1]
+    
 
     # Apply above basic parsing to all contexts and outputs
 
@@ -353,7 +405,8 @@ def format_data(directory, train_valid_split, seq_length, args):
 
     data_set_contexts = []
     data_set_outputs = []
-    for data_set in [train_set, valid_set, test_set]:
+    data_sets = [data_dict['MovieTriples']['train_set'], data_dict['MovieTriples']['valid_set'], data_dict['MovieTriples']['test_set']]
+    for data_set in data_sets:
         PADDING = word_to_indices['<blank>']
         END_OF_CONV = word_to_indices['<t>']
 
@@ -410,103 +463,35 @@ def format_data(directory, train_valid_split, seq_length, args):
     if not os.path.exists(args.output_directory):
         os.makedirs(args.output_directory)
 
-    # This is super inefficient, put it together last minute. Don't judge :)
-    f =  open(args.output_directory + 'train_src_indices.txt', 'w')
-    for context in train_full_context: 
-        for ind in context:
-            f.write(str(ind) + ' ')
-        f.write('\n')
-    f.close()
 
-    f =  open(args.output_directory + 'train_targ_indices.txt', 'w')
-    for output in train_full_output: 
-        for ind in output:
-            f.write(str(ind) + ' ')
-        f.write('\n')
-    f.close()
+    
 
-    f =  open(args.output_directory + 'dev_src_indices.txt', 'w')
-    for context in valid_full_context: 
-        for ind in context:
-            f.write(str(ind) + ' ')
-        f.write('\n')
-    f.close()
+    write_indicies_to_file(args.srcfile_ind, train_full_context)
+    write_indicies_to_file(args.targetfile_ind, train_full_output)
+    write_indicies_to_file(args.srcvalfile_ind, valid_full_context)
+    write_indicies_to_file(args.targetvalfile_ind, valid_full_output)
 
-    f =  open(args.output_directory + 'dev_targ_indices.txt', 'w')
-    for output in valid_full_output: 
-        for ind in output:
-            f.write(str(ind) + ' ')
-        f.write('\n')
-    f.close()
-
-    with open(args.output_directory + 'targ.dict', 'w') as f: 
-        for i in range(1, len(indices_to_word)+1):
-            f.write(indices_to_word[i] + ' ' + str(i) + '\n')
-            
-    with open(args.output_directory + 'src.dict', 'w') as f: 
-        for i in range(1, len(indices_to_word)+1):
-            f.write(indices_to_word[i] + ' ' + str(i) + '\n')
-            
+    write_vocab_to_file(args.targetvocabfile)
+    write_vocab_to_file(args.srcvocabfile)
             
     special_indices = [1, 2, 3, 4,]
-    train_full_context_words = []
-    for context in train_full_context:
-        context_words = []
-        for ind in context:
-            if ind not in special_indices:
-                context_words.append(indices_to_word[ind])
-        train_full_context_words.append(' '.join(context_words))
-    f =  open(args.output_directory + 'train_src_words.txt', 'w')
-    for context in train_full_context_words: 
-        f.write(str(context) + ' \n')
-    f.close()
 
-    valid_full_context_words = []
-    for context in valid_full_context:
-        context_words = []
-        for ind in context:
-            if ind not in special_indices:
-                context_words.append(indices_to_word[ind])
-        valid_full_context_words.append(' '.join(context_words))
-    f =  open(args.output_directory + 'dev_src_words.txt', 'w')
-    for context in valid_full_context_words: 
-        f.write(str(context) + ' \n')
-    f.close()
-
-    train_full_output_words = []
-    for output in train_full_output:
-        output_words = []
-        for ind in output:
-            if ind not in special_indices:
-                output_words.append(indices_to_word[ind])
-        train_full_output_words.append(' '.join(output_words))
-    f =  open(args.output_directory + 'train_targ_words.txt', 'w')
-    for output in train_full_output_words: 
-        f.write(str(output) + ' \n')
-    f.close()
-
-    valid_full_output_words = []
-    for output in valid_full_output:
-        output_words = []
-        for ind in output:
-            if ind not in special_indices:
-                output_words.append(indices_to_word[ind])
-        valid_full_output_words.append(' '.join(output_words))
-    f =  open(args.output_directory + 'dev_targ_words.txt', 'w')
-    for output in valid_full_output_words: 
-        f.write(str(output) + ' \n')
-    f.close()
-
+    write_words_to_file(args.srcfile, train_full_context)
+    write_words_to_file(args.srcvalfile, valid_full_context)
+    write_words_to_file(args.targetfile, train_full_output)
+    write_words_to_file(args.targetvalfile, valid_full_output)
+            
+   
     # Additional embeddings
     np.random.seed(9844)
     additional_vectors = np.random.uniform(-0.1, 0.1, (2, 300))
     additional_vectors = additional_vectors / np.linalg.norm(additional_vectors)
 
-    emb_wordvec_upd = np.vstack((emb_wordvec[0], additional_vectors))
-    emb_wordvec_upd[10001] = emb_wordvec[0][3][:]
-    emb_wordvec_upd[10002] = emb_wordvec[0][4][:]
-    emb_wordvec_upd[3] = emb_wordvec[0][10001][:]
-    emb_wordvec_upd[4] = emb_wordvec[0][10002][:]
+    emb_wordvec_upd = np.vstack((data_dict['MovieTriples']['emb_wordvec'][0], additional_vectors))
+    emb_wordvec_upd[10001] = data_dict['MovieTriples']['emb_wordvec'][0][3][:]
+    emb_wordvec_upd[10002] = data_dict['MovieTriples']['emb_wordvec'][0][4][:]
+    emb_wordvec_upd[3] = data_dict['MovieTriples']['emb_wordvec'][0][10001][:]
+    emb_wordvec_upd[4] = data_dict['MovieTriples']['emb_wordvec'][0][10002][:]
     emb_wordvec_upd = np.roll(emb_wordvec_upd, 1, axis=0)
     f = h5py.File(args.output_directory + 'word_vecs.hdf5', 'w')
     f['word_vecs'] = emb_wordvec_upd
@@ -514,10 +499,28 @@ def format_data(directory, train_valid_split, seq_length, args):
 
     print('Done formatting the data from Movie Triples dataset')
 
+
 def main(arguments):
+    '''
+        Main function parses the command arguments and sets up the 
+        paths to each of the input/output files. Output files can be set
+        via command line while input files should be hard coded into the 
+        preprocessing file
+    '''
     parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+                description=__doc__,
+                formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    # Directories of input raw files and output processed files
+    parser.add_argument('--input_directory', help="Path to the folder that contains all of "
+                                                   "the raw data files to be used for preprocessing", 
+                                                   default='../data/')
+    parser.add_argument('--output_directory', help="Path to the folder that will hold all of "
+                                                    "the datafiles generated by this program",
+                                                default='data/')
+    parser.add_argument('--outputfile', help="Prefix of the output file names. ", type=str, default='conv')
+
+    # Vocabularys
     parser.add_argument('--srcvocabsize', help="Size of source vocabulary, constructed "
                                                 "by taking the top X most frequent words. "
                                                 " Rest are replaced with special UNK tokens.",
@@ -526,24 +529,6 @@ def main(arguments):
                                                 "by taking the top X most frequent words. "
                                                 "Rest are replaced with special UNK tokens.",
                                                 type=int, default=10000)
-    parser.add_argument('--output_directory', help="Folder to hold output of data", default='data/')
-
-
-    parser.add_argument('--srcfile', help="Path to source training data, "
-                                           "where each line represents a single "
-                                           "source/target sequence.", default='train_src_words.txt')
-    parser.add_argument('--targetfile', help="Path to target training data, "
-                                           "where each line represents a single "
-                                           "source/target sequence.", default='train_targ_words.txt')
-    parser.add_argument('--srcvalfile', help="Path to source validation data.", default='dev_src_words.txt')
-    parser.add_argument('--targetvalfile', help="Path to target validation data.", default='dev_targ_words.txt')
-    parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=32)
-    parser.add_argument('--seqlength', help="Maximum sequence length. Sequences longer "
-                                               "than this are dropped.", type=int, default=50)
-    parser.add_argument('--outputfile', help="Prefix of the output file names. ", type=str, default='conv')
-    parser.add_argument('--maxwordlength', help="For the character models, words are "
-                                           "(if longer than maxwordlength) or zero-padded "
-                                            "(if shorter) to maxwordlength", type=int, default=35)
     parser.add_argument('--srcvocabfile', help="If working with a preset vocab, "
                                           "then including this will ignore srcvocabsize and use the"
                                           "vocab provided here.",
@@ -552,24 +537,67 @@ def main(arguments):
                                          "then including this will ignore targetvocabsize and "
                                          "use the vocab provided here.",
                                           type = str, default='targ.dict')
+
+    # Filenames of processed files filled with words
+    parser.add_argument('--srcfile', help="Filename of source training data, "
+                                           "where each line represents a single "
+                                           "source/target sequence. Will be placed in "
+                                           "the args.output_directory folder",
+                                           default='train_src_words.txt')
+    parser.add_argument('--targetfile', help="Path to target training data, "
+                                           "where each line represents a single "
+                                           "source/target sequence. Will be placed in "
+                                           "the args.output_directory folder", 
+                                           default='train_targ_words.txt')
+    parser.add_argument('--srcvalfile', help="Filename of source validation data.", default='dev_src_words.txt')
+    parser.add_argument('--targetvalfile', help="Filename of target validation data.", default='dev_targ_words.txt')
+
+    # Filenames of processed files filled with indices
+    parser.add_argument('--srcfile_ind', help="Filename of source training data, "
+                                           "where each line represents a single "
+                                           "source/target sequence. Will be placed in "
+                                           "the args.output_directory folder",
+                                           default='train_src_indices.txt')
+    parser.add_argument('--targetfile_ind', help="Path to target training data, "
+                                           "where each line represents a single "
+                                           "source/target sequence. Will be placed in "
+                                           "the args.output_directory folder", 
+                                           default='train_targ_indices.txt')
+    parser.add_argument('--srcvalfile_ind', help="Filename of source validation data.", default='dev_src_indices.txt')
+    parser.add_argument('--targetvalfile_ind', help="Filename of target validation data.", default='dev_targ_indices.txt')
+
+    # Preprocess Modifications
+    parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=32)
+    parser.add_argument('--seqlength', help="Maximum sequence length. Sequences longer "
+                                               "than this are dropped.", type=int, default=50)
+    parser.add_argument('--maxwordlength', help="For the character models, words are "
+                                           "(if longer than maxwordlength) or zero-padded "
+                                            "(if shorter) to maxwordlength", type=int, default=35)
     parser.add_argument('--unkfilter', help="Ignore sentences with too many UNK tokens. "
                                        "Can be an absolute count limit (if > 1) "
                                        "or a proportional limit (0 < unkfilter < 1).",
                                           type = float, default = 0)
-    parser.add_argument('--data_directory', help="Folder of MovieTriples", default='../data/MovieTriples/')
     
     args = parser.parse_args(arguments)
-    args.srcfile = args.output_directory + args.srcfile
-    args.targetfile = args.output_directory + args.targetfile
-    args.srcvalfile = args.output_directory + args.srcvalfile
-    args.targetvalfile = args.output_directory + args.targetvalfile
-    args.outputfile = args.output_directory + args.outputfile
-    args.srcvocabfile = args.output_directory + args.srcvocabfile
-    args.targetvocabfile = args.output_directory + args.targetvocabfile
 
-    data_directory = args.data_directory
-    train_valid_split = 0.8
-    format_data(data_directory, train_valid_split, args.seqlength, args)
+    # Dictionary holding the locations of the input files
+    args.input_files = { 'MovieTriples' : { 'train_set' : 'Training.triples.pkl', 
+                                           'valid_set' : 'Validation.triples.pkl',
+                                           'test_set' : 'Test.triples.pkl',
+                                           'emb_wordvec' : 'Word2Vec_WordEmb.pkl',
+                                           'emb_mt' : 'MT_WordEmb.pkl',
+                                           'word_mappings' : 'Training.dict.pkl'
+                                          }
+                        }
+
+    # Append on output directory to the output files
+    output_files = ['srcfile', 'targetfile', 'srcvalfile', 'targetvalfile', 'srcfile_ind', 'targetfile_ind', 'srcvalfile_ind', 'targetvalfile_ind', 'outputfile', 'srcvocabfile', 'targetvocabfile']
+    for o_f in output_files:
+        setattr(args, o_f, args.output_directory + getattr(args, o_f))
+
+    # print args.output_directory
+    # Call preprocessing code
+    format_data(args)
     get_data(args)
 
 if __name__ == '__main__':
