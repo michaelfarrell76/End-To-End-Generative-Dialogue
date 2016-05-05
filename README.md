@@ -11,7 +11,7 @@ First create the data directory
 ```
 mkdir data
 ```
-and copy into the directory the MovieTriples. 
+and copy into the directory the MovieTriples dataset. 
 
 Your directory should look like:
 ```
