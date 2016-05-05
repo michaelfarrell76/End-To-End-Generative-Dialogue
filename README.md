@@ -9,30 +9,30 @@ Code is run from the /src folder
 ```
 cd End-To-End-Generative-Dialogue/src
 ```
-### Preprocessing Code
+#### Preprocessing Code
 
 ```
 python preprocess.py
 
 python preprocess.py # --seqlength 5 # For micro dataset (~500 sentences)
 ```
-### Running the model
+#### Running the model
 ```
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid 1 #Runs on gpu
 
 th run_beam.lua -model conv-model.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
 ```
 
-## Running Code in Parallel
+### Running Code in Parallel
 
-### Locally
+#### Locally
 
 To run a worker with 4 parallel clients on your own computer:
 ```
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4
 
 ```
-### Locally through localhost
+#### Locally through localhost
 
 To run a worker with 1 parallel client on your own computer running through localhost (which is more similar to how things will work when running through the google server). There is only 1 parallel client since it requires that you input your password while connecting to your own computer through ssh. I didn't want to deal with passwords so I just spawn one worker,input the password, and see if it works. There is no point to use this in practice since its just slightly more inefficient than the previous command. Use this as a benchmark for developing the remote server training. 
 
@@ -44,7 +44,7 @@ i.e. PATH_TO_SRC = Desktop/GoogleDrive/FinalProject/Singularity/src/
 th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4 -localhost -extension PATH_TO_SRC
 
 ```
-### In dev: through remote gcloud servers
+#### In dev: through remote gcloud servers
 
 Currently attempting to run with the parallel workers running remotely on the servers with the code below.
 ```
