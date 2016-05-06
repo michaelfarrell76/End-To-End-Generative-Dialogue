@@ -49,7 +49,7 @@ Here we are setting the flag `gpuid` to 1, which trains using the GPU. You can t
 
 Given a checkpoint file, we can generate responses to input dialogue examples:
 ```bash
-$ th run_beam.lua -model conv-model_epoch7.00_40.89.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
+$ th run_beam.lua -model conv-model_epoch4.00_39.19.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
 ```
 
 ### Chatting
