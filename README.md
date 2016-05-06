@@ -3,21 +3,154 @@
  A neural conversational model.
 
 ----
-## To run
+## Running Code
+
+Before anything can be run, the MovieTriples dataset is first required. 
+
+First create the data directory
+```
+mkdir data
+```
+and copy into the directory the MovieTriples dataset. 
+
+Your directory should look like:
+```
+.
+├── data	     
+│   └── MovieTriples
+|        ├── ...
+|        ...
+├── src
+...
+```
+
+Code is run from the /src folder
 ```
 cd End-To-End-Generative-Dialogue/src
-python preprocess.py
-python preprocess.py # --seqlength 5 # For micro dataset (~500 sentences)
+```
+#### Preprocessing Code
 
-th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid 1
+```
+python preprocess.py
+```
+For micro dataset
+```
+python preprocess.py --seqlength 5 # For micro dataset (~500 sentences)
+```
+#### Running the model
+```
+th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid 1 #Runs on gpu
 
 th run_beam.lua -model conv-model.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
 ```
-To run in parallel
+
+### Running Code in Parallel
+
+#### Locally
+
+To run a worker with 4 parallel clients on your own computer:
 ```
-th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -gpuid -1 -parallel
+th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4
+
 ```
-NB: the MovieTriples dataset is not publicly available. Support for training on arbitrary dialogue will be supported soon.
+#### Locally through localhost
+
+To run a worker with 1 parallel client on your own computer running through localhost (which is more similar to how things will work when running through the google server). There is only 1 parallel client since it requires that you input your password while connecting to your own computer through ssh. I didn't want to deal with passwords so I just spawn one worker,input the password, and see if it works. There is no point to use this in practice since its just slightly more inefficient than the previous command. Use this as a benchmark for developing the remote server training. 
+
+In order for this to work, you must first **enable Remote Login in System Preferences/Sharing**
+
+**Note**: You have to specify the location of the src folder from the home directory of your computer:
+
+i.e. **PATH_TO_SRC = Desktop/GoogleDrive/FinalProject/Singularity/src/**
+```
+th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -localhost -extension PATH_TO_SRC
+
+```
+#### DEV: Running remotely on gcloud servers
+
+##### Setup an ssh key to connect to our servers
+
+You must first set up an ssh key to connect to the servers. 
+
+Replace USERNAME with your own username.
+
+i.e. USERNAME = michaelfarrell
+
+```
+ssh-keygen -t rsa -f ~/.ssh/gcloud-sshkey -C USERNAME
+```
+Hit enter twice and a key should have been generated.
+
+```
+cat ~/.ssh/gcloud-sshkey.pub
+```
+And then copy the key that is printed out.
+
+Next you must add the key to the set of public keys. 
+
+- Login to our google compute account. 
+- Go to compute engine dashboard
+- Go to metdata tab
+- Go to ssh-key subtab
+- Click edit
+- Add the key you copied as a new line
+
+Restrict access:
+
+```
+chmod 400 ~/.ssh/gcloud-sshkey
+```
+
+##### Generate an instance group of machines if you have not yet done so
+
+Next create your own instance group if you have not created one already. 
+
+- Go to the 'Instance groups' tab
+- Create instance group
+- Give the group a name, i.e. training-group-dev
+- Give a description
+- Set zone to us-central1-b
+- Use instance template
+- Choose "mike-instance-template-1"
+- Set the number of instances
+- Create
+- Wait for the instances to launch
+- Once there is a green checkmark, click on the new instance
+- You can connect to one of the servers by running
+
+```
+ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey USERNAME@IP_ADDR
+```
+where username is your username, i.e. michaelfarrell
+
+and IP_ADDR is the ip address of the machine listed under "External ip", i.e. 104.197.9.84 
+
+the -o "StrictHostKeyChecking no" automatically adds the host to your list and does not prompt yes or no.
+
+If you get an error like this:
+```
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+```
+then you'll want to
+```
+vim ~/.ssh/known_hosts
+```
+and delete the last few lines that were added. They should look like some ip address and then something that starts with AAAA. You can delete lines in vim by typing dd to delete the current line.
+
+This normally happens when you restart the servers and they change ip addresses or something.
+
+##### Running the remote server
+
+Currently attempting to run with the parallel workers running remotely on the servers with the code below.
+```
+th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4 -remote -extension End-To-End-Generative-Dialogue/src/
+
+```
+### Notes:
+
+NB: the MovieTriples dataset is not publicly available. Training on arbitrary dialogue will be supported soon.
 
 ----
 ## Primary contributors
@@ -57,83 +190,19 @@ NB: the MovieTriples dataset is not publicly available. Support for training on 
 - Modify preprocessing code to return entire conversations (rather than fixing n, have the entire back and forth of a conversation together. This could be useful for trying to train a model more specific to our objective. This could be used for testing how the model does for a specific conversation )
 - Finish cleaning up file (i.e. finish factoring code. I started this but things are going to be modified when subTle is added so I never finished. It shouldn't be bad at all)
 
-#### LUA
+#### Parallel (parallel_functions.lua)
+- Add way to do localhost without password on server
+- Get working on google servers
+- Make sure server setup is correctly done
 
-- get beam working
-- run each of the models for 10 epochs-ish? -> save the model, record results
+#### General 
+
+- Start result collection of some sort. Maybe have some datasheet and when we run a good model we record the results?
+- run each of the models for 10 epochs-ish? -> save the model, record results ^
 - implement RNN model
 - experiment with HRED model
 - heirarchical model 
-- add in error rate stuff
-
-----
-## GCLOUD stuff
-
-sudo apt-get install git
-sudo apt-get install luarocks
-
-git config --global user.email "mkfrl09@gmail.com"
-git config --global user.name "michaelfarrell76"
-
-In order to set up your instance, you're going to need to install torch
-
-git clone https://github.com/torch/distro.git ~/torch --recursive
-cd ~/torch; bash install-deps;
-./install.sh
-
-cd .. 
-
-You'll also need to install all relevant packages, so 
-
-luarocks install rnn
-luarocks install parallel
-
-
-sudo apt-get install libhdf5-serial-dev hdf5-tools
-git clone https://github.com/deepmind/torch-hdf5.git
-cd torch-hdf5
-luarocks make hdf5-0-0.rockspec
-
-cd ..
-
-You'll also need to install Anaconda
-wget http://repo.continuum.io/archive/Anaconda2-4.0.0-Linux-x86_64.sh
-bash Anaconda2-4.0.0-Linux-x86_64.sh
-
-
-git clone https://github.com/michaelfarrell76/Singularity.git
-cd Singularity
-mkdir data
-cd data
-mkdir MovieTriples
-
-(Disconnect from shell, reconnect from shell if python/torch aren't loading properly)
-
-Afterwards, you'll want to clone the repo and git pull. 
-
-Next, you'll want to put the MovieTriples dataset into the correct director. First navigate into the MovieTriples
-directory on your local drive, then run the below:
-gcloud compute copy-files . train-conv2:~/stash/singularity/data/MovieTriples --zone us-east1-c
-
-Next, run the command for preprocessing, and you should be good to go!
-
-cd 
-cd Singularity
-cd seq2seq-elements
-python preprocess.py
-
-------------------------------------------------------------------------------
-
-For figuring out IP adddressses between Google compute instances, you can use their instance name 
-and the nslookup command. For example, if you were in another Google Compute instance and 
-wanted to figure out the ip address for the instance model-1, you can run the command below command
-
-nslookup model-1
-
-This should return to you the local IP address of model-1 that you can use to connect with. 
-
-
-https://cloud.google.com/compute/docs/instances/connecting-to-instance#generatesshkeypairx
+- add in error rate stuff when reporting
 
 ----
 ## Acknowledgments

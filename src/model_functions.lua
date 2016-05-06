@@ -1,6 +1,5 @@
 require 'rnn'
 require 'hdf5'
-require 'beam'
 
 ------------
 -- Misc
@@ -181,7 +180,7 @@ function build()
     
     if opt.train_from:len() == 0 then
         if opt.pre_word_vecs:len() > 0 then
-            local f = hdf5.open(opt.pre_word_vecs)     
+            local f = hdf5.open(ext .. opt.pre_word_vecs)   
             local pre_word_vecs = f:read('word_vecs'):all()
             print('Using pre-trained word embeddings from ' .. opt.pre_word_vecs)
             for i = 1, pre_word_vecs:size(1) do
@@ -360,7 +359,7 @@ function train(m, criterion, train_data, valid_data)
 
         local skip = 0
         if opt.parallel then
-            skip = n_proc
+            skip = opt.n_proc
             parallel.children:join()
         end
 
@@ -647,6 +646,7 @@ function main()
         opt.print = parallel.print
     else
         opt.print = print
+        ext = ""
     end
 
     if opt.gpuid >= 0 then
@@ -662,8 +662,8 @@ function main()
     
     -- Create the data loader classes
     opt.print('Loading data...')
-    local train_data = data.new(opt, opt.data_file)
-    local valid_data = data.new(opt, opt.val_data_file)
+    local train_data = data.new(opt, ext .. opt.data_file)
+    local valid_data = data.new(opt, ext .. opt.val_data_file)
     opt.print('Done!')
 
     opt.print(string.format('Source vocab size: %d, Target vocab size: %d',
