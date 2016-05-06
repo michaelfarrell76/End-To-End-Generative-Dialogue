@@ -47,7 +47,7 @@ opt = cmd:parse(arg)
 function main()
     assert(path.exists(opt.src_file), 'src_file does not exist')
     assert(path.exists(opt.model), 'model does not exist')
-   
+
     -- Parse input params
     opt = cmd:parse(arg)
     if opt.gpuid >= 0 then
@@ -114,7 +114,7 @@ function main()
     local gold_score_total = 0
     local pred_words_total = 0
     local gold_words_total = 0
-   
+
     local sent_id = 0
     local pred_sents = {}
     local file = io.open(opt.src_file, 'r')
@@ -130,17 +130,11 @@ function main()
             target, target_str = sent2wordidx(gold[sent_id], word2idx_targ)
         end
 
-        local function append(source, token)
-            token = torch.LongTensor({token})
-            return source:cat(token)
-        end
-
         local eos = torch.LongTensor({END})
         source = source:cat(eos)
         -- local pred = sbeam:generate_map(source)
-        local k = 5
-        local preds = sbeam:generate_k(k, source)
-        for i = 1, k do
+        local preds = sbeam:generate_k(opt.k, source)
+        for i = 1, opt.k do
         	local pred_sent = wordidx2sent(preds[i], idx2word_targ, source_str, true)
         	print('PRED (' .. i .. ') ' .. sent_id .. ': ' .. pred_sent)
         end

@@ -29,7 +29,7 @@ end
 function rnn_layer(inp, hidden_size)
     rm = nn.Sequential()
      	:add(nn.ParallelTable()
-        :add(inp == hidden_size and nn.Identity() or nn.Linear(inp, 300)) -- input layer
+        :add(inp == hidden_size and nn.Identity() or nn.Linear(inp, hidden_size)) -- input layer
         :add(nn.Linear(hidden_size, hidden_size))) -- recurrent layer
         :add(nn.CAddTable()) -- merge
         :add(nn.Sigmoid()) -- transfer
