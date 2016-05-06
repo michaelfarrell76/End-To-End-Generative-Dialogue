@@ -12,7 +12,6 @@
 --          b) call the main() function and run in serial.
 ------------------------------------------------------------------------
 
-
 require 'data'
 
 ------------
@@ -71,7 +70,6 @@ cmd:option('-pre_word_vecs',    'data/word_vecs.hdf5', 'If a valid path is speci
 -- cmd:option('-curriculum',    0,      'For this many epochs, order the minibatches based on source
 --                                       sequence length. Sometimes setting this to 1 will increase convergence speed.')
 
-
 cmd:text("")
 cmd:text("**Other options**")
 cmd:text("")
@@ -95,11 +93,7 @@ cmd:option('-remote',           false,   'When true, the farmed out processes ar
 cmd:option('-torch_path',       '/Users/michaelfarrell/torch/install/bin/th',   'The path to the torch directory')
 cmd:option('-extension',       '',   'The location from the home directory to the helper functions')
 
-
-
-
-
---load in general functions
+-- Load in general functions
 funcs = loadfile("model_functions.lua")
 funcs()
 
@@ -108,12 +102,12 @@ opt = cmd:parse(arg)
 if opt.parallel then
     require 'parallel'
 
-    --load in functions used for parallel
+    -- Load in functions used for parallel
     parallel_funcs = loadfile("parallel_functions.lua")
     parallel_funcs()
 
-    -- protected execution of parllalel script:
-    ok,err = pcall(parent)
+    -- Protected execution of parllalel script:
+    ok, err = pcall(parent)
     if not ok then print(err) parallel.close() end
 else
     main()

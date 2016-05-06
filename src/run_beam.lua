@@ -34,7 +34,7 @@ cmd:option('-allow_unk', 0, [[If = 1, prediction can include UNK tokens.]])
 cmd:option('-srctarg_dict', 'data/en-de.dict', [[Path to source-target dictionary to replace UNK 
                              tokens. See README.md for the format this file should be in]])
 -- cmd:option('-score_gold', 1, [[If = 1, score the log likelihood of the gold as well]])
-cmd:option('-n_best', 1, [[If > 1, it will also output an n_best list of decoded sentences]])
+cmd:option('-k_best', 1, [[If > 1, it will also output a k_best list of decoded sentences]])
 cmd:option('-gpuid',  -1, [[ID of the GPU to use (-1 = use CPU)]])
 cmd:option('-gpuid2', -1, [[Second GPU ID]])
 
@@ -50,11 +50,6 @@ function main()
 
     -- Parse input params
     opt = cmd:parse(arg)
-    if opt.gpuid >= 0 then
-        require 'cutorch'
-        require 'cunn'
-        require 'cudnn'
-    end
 
     print('Loading ' .. opt.model .. '...')
     local checkpoint = torch.load(opt.model)
@@ -107,7 +102,7 @@ function main()
         end
     end
 
-    -- Create beam and start making predictions
+    -- Initialize beam and start making predictions
     local sbeam = beam.new(opt, m)
      
     local pred_score_total = 0
@@ -155,8 +150,8 @@ function main()
         --     end
         -- end
 
-        -- if opt.n_best > 1 then
-        --     for n = 1, opt.n_best do
+        -- if opt.k_best > 1 then
+        --     for n = 1, opt.k_best do
         --         pred_sent_n = wordidx2sent(all_sents[n], idx2word_targ, source_str, false)
         --         local out_n = string.format("%d ||| %s ||| %.4f", n, pred_sent_n, all_scores[n])
         --         print(out_n)
