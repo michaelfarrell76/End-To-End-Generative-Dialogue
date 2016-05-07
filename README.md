@@ -23,7 +23,7 @@ $ luarocks install penlight
 
 ### Data
 
-Input data is stored in the `data/` directory. At the moment, this code is only compatible with the MovieTriples dataset, as defined by [Serban et al., 2015](http://arxiv.org/abs/1507.04808). Unzip the MovieTriples dataset and place its contents into `data/MovieTriples`. *Note: the MovieTriples dataset is not publicly available, though training on arbitrary dialogue will be supported soon.*
+Input data is stored in the `data` directory. At the moment, this code is only compatible with the MovieTriples dataset, as defined by [Serban et al., 2015](http://arxiv.org/abs/1507.04808). Unzip the MovieTriples dataset and place its contents into `data/MovieTriples`. *Note: the MovieTriples dataset is not publicly available, though training on arbitrary dialogue will be supported soon.*
 
 **Preprocessing** is done using Python:
 ```bash
@@ -49,7 +49,7 @@ Here we are setting the flag `gpuid` to 1, which trains using the GPU. You can t
 
 Given a checkpoint file, we can generate responses to input dialogue examples:
 ```bash
-$ th run_beam.lua -model conv-model_epoch7.00_40.89.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
+$ th run_beam.lua -model conv-model_epoch4.00_39.19.t7 -src_file data/dev_src_words.txt -targ_file data/dev_targ_words.txt -output_file pred.txt -src_dict data/src.dict -targ_dict data/targ.dict
 ```
 
 ### Chatting
@@ -65,9 +65,7 @@ Coming soon :)
 $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4
 ```
 
-**Locally through localhost**:
-
-You can run a worker with 1 parallel client on your own computer through localhost (which is more similar to how things will work when running through a server). There is only 1 parallel client since it requires that you input your password while connecting to your own computer through ssh. This should not be used in practice as it's more inefficient than the previous command. This can, however, be a useful benchmark for developing remote server training.
+**Locally through localhost**: you can run a worker with 1 parallel client on your own computer through localhost (which is more similar to how things will work when running through a server). There is only 1 parallel client since it requires that you input your password while connecting to your own computer through ssh. This should not be used in practice as it's more inefficient than the previous command. This can, however, be a useful benchmark for developing remote server training.
 
 First you must enable Remote Login in System Preferences > Sharing. You must also specify the location of the src folder from your home directory:
 ```bash
@@ -93,6 +91,7 @@ Next you must add the key to the set of public keys:
 - Go to ssh-key subtab
 - Click edit
 - Add the key you copied as a new line
+
 Restrict external access to the key:
 ```bash
 $ chmod 400 ~/.ssh/gcloud-sshkey
