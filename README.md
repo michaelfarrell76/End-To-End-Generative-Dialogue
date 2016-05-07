@@ -54,7 +54,11 @@ $ th run_beam.lua -model conv-model_epoch4.00_39.19.t7 -src_file data/dev_src_wo
 
 ### Chatting
 
-Coming soon :)
+It's also possible to chat directly with a checkpoint:
+```bash
+$ th chat.lua -model conv-model_epoch4.00_39.19.t7 -targ_dict data/targ.dict
+```
+These models have a tendency to respond tersely and vaguely. It's a work in progress!
 
 ## Advanced Usage
 
