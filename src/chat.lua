@@ -92,7 +92,14 @@ function chat(sbeam)
 
         -- Generate contextual response
         local ctx = build_context(dialogue, ctx_length)
+
+        -- Pick the best one
         local pred = remove_pad(sbeam:generate_map(ctx))
+
+        -- Or pick randomly from k best?
+        -- local k_best = sbeam:generate_k(5, ctx)
+        -- local pred = remove_pad(k_best[math.random(#k_best)])
+
         local pred_sent = wordidx2sent(pred, idx2word_targ, false)
         table.insert(dialogue, pred)
         print('\n' .. pred_sent .. '\n')
