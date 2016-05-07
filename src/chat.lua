@@ -1,5 +1,6 @@
 require 'hdf5'
-require 'pl'
+local lexer = require 'pl.lexer'
+local stringx = require 'pl.stringx'
 
 require 'beam'
 require 'dict'
@@ -30,8 +31,40 @@ opt = cmd:parse(arg)
 -- Misc
 ------------
 
-function split(sent)
+function clean_input(sent)
+    -- First split on spaces
+    local split = stringx.split(string.lower(sent))
+    local clean = {}
 
+    -- Now partition on punctuation
+    for i = 1, #split do
+        for t, v in lexer.lua(split[i]) do
+            table.insert(clean, v)
+        end
+    end
+
+    return table.concat(clean, ' ')
+end
+
+function prep_input(sent)
+    local clean = clean_input(sent)
+    return sent2wordidx(clean, word2idx_targ)
+end
+
+function build_context(dialogue, length)
+    local ctx = torch.LongTensor(1)
+    local start = 1
+    if #dialogue == 1 then return pad_both(dialogue[1]) end
+    if #dialogue > length then start = #dialogue - length + 1 end
+    
+    -- Concatenate prior context, separated by utterance end tokens
+    for i = start, #dialogue do
+        local sep = torch.LongTensor({END_UTTERANCE})
+        ctx = ctx:cat(dialogue[i]:cat(sep))
+    end
+
+    -- Remove inixial idx and final separator, then apply start and end tokens
+    return pad_both(remove_pad(ctx))
 end
 
 ------------
@@ -39,33 +72,33 @@ end
 ------------
 
 function chat(sbeam)
+    print("\nYou're now chatting with " .. opt.model .. ". Say hello!\n")
+
 	local dialogue = {}
 	local chatting = true
+    local ctx_length = 2 -- For MovieTriples, use 2 prior utterances
 
-    local hello = 'hello!'
-    local idx = sent2wordidx(hello, word2idx_targ)
-    print(idx)
+    while chatting do
+        -- Get next user input
+        local response
+        repeat
+            -- io.write('you: ')
+            io.flush()
+            response = io.read()
+        until response ~= nil and strip(response) ~= ''
 
-	-- while chatting then
+        local prepped = prep_input(response)
+        table.insert(dialogue, prepped)
 
-	-- end
+        -- Generate contextual response
+        local ctx = build_context(dialogue, ctx_length)
+        local pred = remove_pad(sbeam:generate_map(ctx))
+        local pred_sent = wordidx2sent(pred, idx2word_targ, false)
+        table.insert(dialogue, pred)
+        print('\n' .. pred_sent .. '\n')
 
-	for line in file:lines() do
-	    line = clean_sent(line)
-	    print('SENT ' .. sent_id .. ': ' ..line)
-
-	    local source, source_str = sent2wordidx(line, word2idx_src)
-	    if opt.score_gold == 1 then
-	        target, target_str = sent2wordidx(gold[sent_id], word2idx_targ)
-	    end
-
-	    local eos = torch.LongTensor({END})
-	    source = source:cat(eos)
-	    local pred = sbeam:generate_map(source)
-	    -- local preds = sbeam:generate_k(opt.k, source)
-
-	    local pred_sent = wordidx2sent(preds[i], idx2word_targ, source_str, true)
-	end
+        -- TODO: add logical way to end discourse
+    end
 end
 
 ------------
@@ -73,7 +106,6 @@ end
 ------------
 
 function main()
-    error('Chat not yet implemented.')
     assert(path.exists(opt.model), 'model does not exist')
 
     -- Parse input params
