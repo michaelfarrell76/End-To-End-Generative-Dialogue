@@ -644,8 +644,8 @@ function main()
     -- Create the data loader classes
     print(opt.data_file)
     opt.print('Loading data...')
-    local train_data = data.new(opt, ext .. opt.data_file)
-    local valid_data = data.new(opt, ext .. opt.val_data_file)
+    local train_data = data.new(opt, opt.data_file)
+    local valid_data = data.new(opt, opt.val_data_file)
     opt.print('Done!')
 
     opt.print(string.format('Source vocab size: %d, Target vocab size: %d',
