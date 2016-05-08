@@ -2,32 +2,6 @@ require 'rnn'
 require 'hdf5'
 
 ------------
--- Misc
-------------
-
--- To renormalize grad params
-function renorm_grad(data, th)
-    local norm = data:norm()
-    if norm > th then
-        data:div(norm / th)
-    end
-end
-
--- Zeros all tensors in table
-function zero_table(t)
-    for i = 1, #t do
-        if opt.gpuid >= 0 and opt.gpuid2 >= 0 then
-            if i == 1 then
-                cutorch.setDevice(opt.gpuid)
-            else
-                cutorch.setDevice(opt.gpuid2)
-            end
-        end
-        t[i]:zero()
-    end
-end
-
-------------
 -- Coupling
 ------------
 
@@ -55,7 +29,7 @@ end
 function rnn_layer(inp, hidden_size)
     rm = nn.Sequential()
      	:add(nn.ParallelTable()
-        :add(inp == hidden_size and nn.Identity() or nn.Linear(inp, 300)) -- input layer
+        :add(inp == hidden_size and nn.Identity() or nn.Linear(inp, hidden_size)) -- input layer
         :add(nn.Linear(hidden_size, hidden_size))) -- recurrent layer
         :add(nn.CAddTable()) -- merge
         :add(nn.Sigmoid()) -- transfer
@@ -688,6 +662,4 @@ function main()
     else
         train(model, criterion, train_data, valid_data)
     end
-
-    -- TODO: Test
 end

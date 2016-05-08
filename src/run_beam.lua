@@ -1,5 +1,6 @@
 require 'hdf5'
-require 'beam.lua'
+require 'beam'
+require 'dict'
 
 ------------
 -- Options
@@ -33,80 +34,11 @@ cmd:option('-allow_unk', 0, [[If = 1, prediction can include UNK tokens.]])
 cmd:option('-srctarg_dict', 'data/en-de.dict', [[Path to source-target dictionary to replace UNK 
                              tokens. See README.md for the format this file should be in]])
 -- cmd:option('-score_gold', 1, [[If = 1, score the log likelihood of the gold as well]])
-cmd:option('-n_best', 1, [[If > 1, it will also output an n_best list of decoded sentences]])
+cmd:option('-k_best', 1, [[If > 1, it will also output a k_best list of decoded sentences]])
 cmd:option('-gpuid',  -1, [[ID of the GPU to use (-1 = use CPU)]])
 cmd:option('-gpuid2', -1, [[Second GPU ID]])
 
 opt = cmd:parse(arg)
-
-------------
--- Misc
-------------
-
-local function clean_sent(sent)
-    local s = stringx.replace(sent, UNK_WORD, '')
-    s = stringx.replace(s, START_WORD, '')
-    s = stringx.replace(s, END_WORD, '')
-    return s
-end
-
-local function strip(s)
-    return s:gsub("^%s+",""):gsub("%s+$","")
-end
-
-local function flip_table(u)
-    local t = {}
-    for key, value in pairs(u) do
-        t[value] = key
-    end
-    return t   
-end
-
-------------
--- Indexing
-------------
-
-local function idx2key(file)
-    local f = io.open(file,'r')
-    local t = {}
-    for line in f:lines() do
-        local c = {}
-        for w in line:gmatch'([^%s]+)' do
-            table.insert(c, w)
-        end
-        t[tonumber(c[2])] = c[1]
-    end
-    return t
-end
-
-local function sent2wordidx(sent, word2idx)
-    local t = {}
-    local u = {}
-    
-    for word in sent:gmatch'([^%s]+)' do
-        local idx = word2idx[word] or UNK 
-        table.insert(t, idx)
-        table.insert(u, word)
-    end
-    
-    return torch.LongTensor(t), u
-end
-
-local function wordidx2sent(sent, idx2word, source_str, skip_end)
-    local t = {}
-    local start_i, end_i
-    
-    if skip_end then
-        end_i = sent:size(1) - 1
-    else
-        end_i = sent:size(1)
-    end
-
-    for i = 2, end_i do -- Skip START and END
-        table.insert(t, idx2word[sent[i]])
-    end
-    return table.concat(t, ' ')
-end
 
 ------------
 -- Set up
@@ -115,14 +47,9 @@ end
 function main()
     assert(path.exists(opt.src_file), 'src_file does not exist')
     assert(path.exists(opt.model), 'model does not exist')
-   
+
     -- Parse input params
     opt = cmd:parse(arg)
-    if opt.gpuid >= 0 then
-        require 'cutorch'
-        require 'cunn'
-        require 'cudnn'
-    end
 
     print('Loading ' .. opt.model .. '...')
     local checkpoint = torch.load(opt.model)
@@ -175,14 +102,14 @@ function main()
         end
     end
 
-    -- Create beam and start making predictions
+    -- Initialize beam and start making predictions
     local sbeam = beam.new(opt, m)
      
     local pred_score_total = 0
     local gold_score_total = 0
     local pred_words_total = 0
     local gold_words_total = 0
-   
+
     local sent_id = 0
     local pred_sents = {}
     local file = io.open(opt.src_file, 'r')
@@ -198,24 +125,17 @@ function main()
             target, target_str = sent2wordidx(gold[sent_id], word2idx_targ)
         end
 
-        local function append(source, token)
-            token = torch.LongTensor({token})
-            return source:cat(token)
-        end
-
-        local eos = torch.LongTensor({END})
-        source = source:cat(eos)
+        source = pad_end(source)
         -- local pred = sbeam:generate_map(source)
-        local k = 5
-        local preds = sbeam:generate_k(k, source)
-        for i = 1, k do
-        	local pred_sent = wordidx2sent(preds[i], idx2word_targ, source_str, true)
+        local preds = sbeam:generate_k(opt.k, source)
+        for i = 1, opt.k do
+        	local pred_sent = wordidx2sent(preds[i], idx2word_targ, true)
         	print('PRED (' .. i .. ') ' .. sent_id .. ': ' .. pred_sent)
         end
 
         -- pred_score_total = pred_score_total + pred_score
         -- pred_words_total = pred_words_total + pred:size(1)
-        -- local pred_sent = wordidx2sent(pred, idx2word_targ, source_str, true)
+        -- local pred_sent = wordidx2sent(pred, idx2word_targ, true)
         -- out_file:write(pred_sent .. '\n')
 
         print('GOLD ' .. sent_id .. ': ' .. gold[sent_id])
@@ -229,9 +149,9 @@ function main()
         --     end
         -- end
 
-        -- if opt.n_best > 1 then
-        --     for n = 1, opt.n_best do
-        --         pred_sent_n = wordidx2sent(all_sents[n], idx2word_targ, source_str, false)
+        -- if opt.k_best > 1 then
+        --     for n = 1, opt.k_best do
+        --         pred_sent_n = wordidx2sent(all_sents[n], idx2word_targ, false)
         --         local out_n = string.format("%d ||| %s ||| %.4f", n, pred_sent_n, all_scores[n])
         --         print(out_n)
         --         out_file:write(out_n .. '\n')

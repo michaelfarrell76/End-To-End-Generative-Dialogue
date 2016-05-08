@@ -1,10 +1,6 @@
 require 'rnn'
 
--- Some cheeky globals
-PAD = 1; UNK = 2; START = 3; END = 4
-PAD_WORD = '<blank>'; UNK_WORD = '<unk>'; START_WORD = '<s>'; END_WORD = '</s>'
-INF = 1e9
-
+local INF = 1e9
 local beam = torch.class('beam')
 
 ------------
