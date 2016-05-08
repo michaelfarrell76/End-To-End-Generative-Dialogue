@@ -625,10 +625,10 @@ function main()
         ext = ""
     end
 
-    -- if ischild then
-    --     opt.data_file = opt.extension .. opt.data_file
-    --     opt.val_data_file = opt.extension .. opt.val_data_file
-    -- end
+    if ischild then
+        opt.data_file = opt.extension .. opt.data_file
+        opt.val_data_file = opt.extension .. opt.val_data_file
+    end
 
     if opt.gpuid >= 0 then
         opt.print('Using CUDA on GPU ' .. opt.gpuid .. '...')
