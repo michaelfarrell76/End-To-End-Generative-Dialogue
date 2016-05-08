@@ -94,6 +94,7 @@ cmd:option('-localhost',        false,   'When true, the farmed out processes wi
 cmd:option('-remote',           false,   'When true, the farmed out processes are run on remote servers. overrides localhost')
 cmd:option('-torch_path',       '/Users/michaelfarrell/torch/install/bin/th',   'The path to the torch directory')
 cmd:option('-extension',       '',   'The location from the home directory to the helper functions')
+cmd:option('-kevin',       false,   'When true runs on kevins computer lol')
 
 
 

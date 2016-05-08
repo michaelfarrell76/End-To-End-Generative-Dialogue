@@ -6,6 +6,7 @@ function worker()
     parallel.print('Im a worker, my ID is: ',  parallel.id, ' and my IP: ', parallel.ip)
     parallel.print('parallel.parent ', parallel.parent)
 
+
     -- Number of packages received
     local n_pkg = 0
 
@@ -24,7 +25,6 @@ function worker()
             parallel.print('Recieved initialization parameters')
             cmd, arg, ext = pkg.cmd, pkg.arg, pkg.ext
 
-
             -- Load in functions
             funcs = loadfile(ext .. "model_functions.lua")
             funcs()
@@ -35,6 +35,7 @@ function worker()
             
             -- Load in data to client
             train_data, valid_data, model, criterion, opt = main()
+
 
             --point the wordvec to the right place
             opt.pre_word_vecs = opt.extension .. opt.pre_word_vecs
@@ -54,9 +55,12 @@ function worker()
             for i = 1, #model.params do
                 model.params[i]:copy(pkg.parameters[i])
             end
+            parallel.print('a')
 
             -- Training the model at the given index
             local pkg_o = train_ind(pkg.index, model, criterion, train_data)
+
+             parallel.print('z')
 
 
             -- send some data back
@@ -145,13 +149,12 @@ function parent()
 
 
     if opt.remote then
+        parallel.print('Runnign remotely')
         -- Setup remote servers this isnt working i was playing around with the path variables and stuff but couldnt get it to connect
         -- most likely either a problem with the google server not letting me in or im not setting up the lua environment correctly
         
 
-        -- package.path = "/Users/candokevin/.luarocks/share/lua/5.1/?.lua;/Users/candokevin/.luarocks/share/lua/5.1/?/init.lua;/Users/candokevin/torch/install/share/lua/5.1/?.lua;/Users/candokevin/torch/install/share/lua/5.1/?/init.lua;./?.lua;/Users/candokevin/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
-        -- package.cpath = " /Users/candokevin/.luarocks/lib/lua/5.1/?.so;/Users/candokevin/torch/install/lib/lua/5.1/?.so;/Users/candokevin/torch/install/lib/?.dylib;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
-        
+      
         -- package.cpath = '/home/michaelfarrell/torch/install/lib/lua/5.1/?.so;' ..package.cpath
         -- package.path = '/home/michaelfarrell/torch/install/share/lua/5.1/?/init.lua;' .. package.path
         -- package.path = '/home/michaelfarrell/lua---?/init.lua;' .. package.path
@@ -159,7 +162,9 @@ function parent()
         package.path = "/home/michaelfarrell/.luarocks/share/lua/5.1/?.lua;/home/michaelfarrell/.luarocks/share/lua/5.1/?/init.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?/init.lua;./?.lua;/home/michaelfarrell/Singularity/seq2seq-elements/?.lua;/home/michaelfarrell/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
         package.cpath = "/home/michaelfarrell/.luarocks/lib/lua/5.1/?.so;/home/michaelfarrell/torch/install/lib/lua/5.1/?.so;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
 
-        parallel.addremote( {ip='mikes-instance-group-4phn', cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol="gcloud compute ssh"})--'ssh -ttq -i ~/.ssh/my-ssh-key'})   --,
+        -- parallel.addremote( {ip='mikes-instance-group-4phn', cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol="gcloud compute ssh"})--'ssh -ttq -i ~/.ssh/my-ssh-key'})   --,
+    
+        parallel.addremote( {ip='michaelfarrell@104.197.111.94', cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
     
         -- parallel.addremote({ip='candokevin@10.251.57.175', cores=4, lua='/Users/candokevin/torch/install/bin/th', protocol='ssh -ttq'})
 
@@ -169,6 +174,16 @@ function parent()
         -- parallel.calibrate()
     elseif opt.localhost then
         parallel.addremote({ip='localhost', cores=4, lua=opt.torch_path, protocol='ssh -ttq'})
+        -- parallel.addremote({ip='michaelfarrell@10.251.50.115', cores=4, lua=opt.torch_path, protocol='ssh -ttq'})
+    elseif opt.kevin then
+        opt.extension = 'stash/end-to-end-generative-dialogue/src/'
+        opt.data_file = opt.extension .. opt.data_file
+        opt.val_data_file = opt.extension .. opt.val_data_file
+        package.path = "/Users/candokevin/.luarocks/share/lua/5.1/?.lua;/Users/candokevin/.luarocks/share/lua/5.1/?/init.lua;/Users/candokevin/torch/install/share/lua/5.1/?.lua;/Users/candokevin/torch/install/share/lua/5.1/?/init.lua;./?.lua;/Users/candokevin/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
+        package.cpath = " /Users/candokevin/.luarocks/lib/lua/5.1/?.so;/Users/candokevin/torch/install/lib/lua/5.1/?.so;/Users/candokevin/torch/install/lib/?.dylib;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
+        
+        parallel.addremote({ip='candokevin@10.251.53.101', cores=4, lua='/Users/candokevin/torch/install/bin/th', protocol='ssh -ttq'})
+        
 
     end
     
