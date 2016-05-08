@@ -100,6 +100,8 @@ funcs()
 
 opt = cmd:parse(arg)
 
+-- Global indicating we are not a child process
+ischild = false
 if opt.parallel then
     require 'parallel'
 

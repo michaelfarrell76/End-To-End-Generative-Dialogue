@@ -6,6 +6,9 @@ function worker()
     parallel.print('Im a worker, my ID is: ',  parallel.id, ' and my IP: ', parallel.ip)
     parallel.print('parallel.parent ', parallel.parent)
 
+    -- Global indicating is a child
+    ischild = true
+
 
     -- Number of packages received
     local n_pkg = 0
@@ -175,10 +178,7 @@ function parent()
     elseif opt.localhost then
         parallel.addremote({ip='localhost', cores=4, lua=opt.torch_path, protocol='ssh -ttq'})
         -- parallel.addremote({ip='michaelfarrell@10.251.50.115', cores=4, lua=opt.torch_path, protocol='ssh -ttq'})
-    elseif opt.kevin then
-        opt.extension = 'stash/mikeparallel/End-To-End-Generative-Dialogue/src/'
-        opt.data_file = opt.extension .. opt.data_file
-        opt.val_data_file = opt.extension .. opt.val_data_file
+    elseif opt.kevin then        
         package.path = "/Users/candokevin/.luarocks/share/lua/5.1/?.lua;/Users/candokevin/.luarocks/share/lua/5.1/?/init.lua;/Users/candokevin/torch/install/share/lua/5.1/?.lua;/Users/candokevin/torch/install/share/lua/5.1/?/init.lua;./?.lua;/Users/candokevin/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
         package.cpath = " /Users/candokevin/.luarocks/lib/lua/5.1/?.so;/Users/candokevin/torch/install/lib/lua/5.1/?.so;/Users/candokevin/torch/install/lib/?.dylib;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
         
