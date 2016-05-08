@@ -210,6 +210,8 @@ function train_ind(ind, m, criterion, data)
     parallel.print('c')
     m.enc:zeroGradParameters()
     m.dec:zeroGradParameters()
+    parallel.print(data)
+    parallel.print(ind)
 
     local d = data[ind]
     parallel.print('d')

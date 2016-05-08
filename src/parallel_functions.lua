@@ -59,6 +59,7 @@ function worker()
                 model.params[i]:copy(pkg.parameters[i])
             end
             parallel.print('a')
+            parallel.print(train_data:size())
 
             -- Training the model at the given index
             local pkg_o = train_ind(pkg.index, model, criterion, train_data)
