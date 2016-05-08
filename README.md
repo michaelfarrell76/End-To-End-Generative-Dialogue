@@ -74,7 +74,14 @@ $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5
 First you must enable Remote Login in System Preferences > Sharing. You must also specify the location of the src folder from your home directory:
 ```bash
 $ PATH_TO_SRC = Desktop/GoogleDrive/FinalProject/End-To-End-Generative-Dialogue/src/
-$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -localhost -extension PATH_TO_SRC
+$ PATH_TO_TORCH = /Users/michaelfarrell/torch/install/bin/th
+$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -localhost -extension PATH_TO_SRC -torch_path PATH_TO_TORCH
+
+```
+### Running with clients on Kevins computer
+This is used as a comparison to the google servers (for debugging purposes). 
+```
+ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -kevin -extension stash/end-to-end-generative-dialogue/src/
 ```
 
 ### Running remotely on gcloud servers
