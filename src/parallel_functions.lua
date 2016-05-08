@@ -176,7 +176,7 @@ function parent()
         parallel.addremote({ip='localhost', cores=4, lua=opt.torch_path, protocol='ssh -ttq'})
         -- parallel.addremote({ip='michaelfarrell@10.251.50.115', cores=4, lua=opt.torch_path, protocol='ssh -ttq'})
     elseif opt.kevin then
-        opt.extension = 'stash/end-to-end-generative-dialogue/src/'
+        opt.extension = 'stash/mikeparallel/End-To-End-Generative-Dialogue/src/'
         opt.data_file = opt.extension .. opt.data_file
         opt.val_data_file = opt.extension .. opt.val_data_file
         package.path = "/Users/candokevin/.luarocks/share/lua/5.1/?.lua;/Users/candokevin/.luarocks/share/lua/5.1/?/init.lua;/Users/candokevin/torch/install/share/lua/5.1/?.lua;/Users/candokevin/torch/install/share/lua/5.1/?/init.lua;./?.lua;/Users/candokevin/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"

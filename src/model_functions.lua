@@ -637,6 +637,7 @@ function main()
     end
     
     -- Create the data loader classes
+    print(opt.data_file)
     opt.print('Loading data...')
     local train_data = data.new(opt, ext .. opt.data_file)
     local valid_data = data.new(opt, ext .. opt.val_data_file)
