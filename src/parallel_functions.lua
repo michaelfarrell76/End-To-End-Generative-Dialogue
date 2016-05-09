@@ -140,7 +140,7 @@ function parent()
         -- most likely either a problem with the google server not letting me in or im not setting up the lua environment correctly
 
 
-        package.path = "/home/michaelfarrell/.luarocks/share/lua/5.1/?.lua;/home/michaelfarrell/.luarocks/share/lua/5.1/?/init.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?/init.lua;./?.lua;/home/michaelfarrell/Singularity/seq2seq-elements/?.lua;/home/michaelfarrell/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
+        package.path = "/home/michaelfarrell/.luarocks/share/lua/5.1/?.lua;/home/michaelfarrell/.luarocks/share/lua/5.1/?/init.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?/init.lua;./?.lua;/home/michaelfarrell/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
         package.cpath = "/home/michaelfarrell/.luarocks/lib/lua/5.1/?.so;/home/michaelfarrell/torch/install/lib/lua/5.1/?.so;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
     
         
@@ -151,8 +151,10 @@ function parent()
         while true do
             line = fh:read()
             if line == nil then break end
-            parallel.addremote( {ip='michaelfarrell@' .. line, cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
-            print('michaelfarrell@' .. line)
+            local addr = 'michaelfarrell@' .. line
+            addr = string.gsub(addr, "\n", "") -- remove line breaks
+            parallel.addremote( {ip=addr, cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
+            print(addr)
         end
 
         parallel.calibrate()

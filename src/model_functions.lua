@@ -1,5 +1,6 @@
 require 'rnn'
 require 'hdf5'
+require 'parallel'
 
 ------------
 -- Coupling
