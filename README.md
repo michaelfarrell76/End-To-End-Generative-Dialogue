@@ -14,9 +14,19 @@ If you want to train on an Nvidia GPU using CUDA, you'll need to install the [CU
 $ luarocks install cutorch
 $ luarocks install cunn
 ```
-Finally, if you'd like to chat with your trained model, you'll need the `penlight` package:
+If you'd like to chat with your trained model, you'll need the `penlight` package:
 ```bash
 $ luarocks install penlight
+```
+If you would like to train your model in parallel you must install the parallel package and include our changes. 
+```bash
+$ PARALLEL_INSTALL=~/installs
+$ PATH_TO_MAIN=~/Desktop/GoogleDrive/FinalProject/End-To-End-Generative-Dialogue
+$ cd $PARALLEL_INSTALL
+$ git clone https://github.com/clementfarabet/lua---parallel.git
+$ cd lua---parallel
+$ cp $PATH_TO_MAIN/stash/parallel/init.lua .
+$ luarocks make
 ```
 
 ## Usage
