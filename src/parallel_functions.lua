@@ -152,6 +152,7 @@ function parent()
             line = fh:read()
             if line == nil then break end
             parallel.addremote( {ip='michaelfarrell@' .. line, cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
+            print('michaelfarrell@' .. line)
         end
 
         parallel.calibrate()
