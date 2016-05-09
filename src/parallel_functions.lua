@@ -174,6 +174,7 @@ function parent()
     
     parallel.print('Forking ', opt.n_proc, ' processes')
     parallel.sfork(opt.n_proc)
+    print(parallel.nchildren)
  
     parallel.print('Forked')
     parallel.print('parallel.id ', parallel.id)
