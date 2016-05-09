@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if hash git
+if hash git &> /dev/null
 then
 	echo -e "\033[0;32mgit installed\033[0m"
 else
@@ -8,15 +8,15 @@ else
 	(echo "Y" | sudo apt-get install git) > /dev/null  
 fi
 
-if hash luarocks
+if hash luarocks &> /dev/null
 then
 	echo -e "\033[0;32mluarocks installed\033[0m"
 else
 	echo -e "\033[0;34mInstalling luarocks ...\033[0m"
-	(echo "Y" | sudo apt-get install luarocks) > /dev/null  
+	(echo "Y" | sudo apt-get install luarocks) &> /dev/null  
 fi
 
-if hash pip
+if hash pip &> /dev/null
 then
 	echo -e "\033[0;32mpython-pip installed\033[0m"
 else
@@ -26,7 +26,7 @@ fi
 
 source ~/.profile
 
-if hash th
+if hash th &> /dev/null
 then
 	echo -e "\033[0;32mtorch installed\033[0m"
 else
@@ -38,9 +38,6 @@ else
 	cd ..
 	source ~/.profile
 fi
-
-echo -e "\033[0;34mInstalling libzmq3 ...\033[0m"
-sudo apt-get install libzmq3-dev libzmq3 > /dev/null
 
 
 if [ -e "lua---parallel" ]	
@@ -54,7 +51,7 @@ else
 	cd ..
 fi
 
-if (luarocks list | grep -q rnn)
+if (luarocks list | grep -q rnn) &> /dev/null  
 then
 	echo -e "\033[0;32mrnn installed\033[0m"
 else
@@ -62,7 +59,7 @@ else
 	luarocks install rnn &> /dev/null  
 fi
 
-if (luarocks list | grep -q env)
+if (luarocks list | grep -q env) &> /dev/null  
 then
 	echo -e "\033[0;32menv installed\033[0m"
 else
@@ -70,7 +67,7 @@ else
 	luarocks install env &> /dev/null  
 fi
 
-if (luarocks list | grep -q hdf5)
+if (luarocks list | grep -q hdf5) &> /dev/null  
 then
 	echo -e "\033[0;hdf5 installed\033[0m"
 else
@@ -86,23 +83,25 @@ if [ -e "End-To-End-Generative-Dialogue" ]
 then 
 	echo -e "\033[0;34mPulling End-To-End-Generative-Dialogue repo changes ...\033[0m"
 	cd End-To-End-Generative-Dialogue
-	git pull
+	git pull &> /dev/null
 	cd ..
-then
+else
 	echo -e "\033[0;34mCloning repo End-To-End-Generative-Dialogue ...\033[0m"
- 	git clone https://github.com/michaelfarrell76/End-To-End-Generative-Dialogue.git
+ 	git clone https://github.com/michaelfarrell76/End-To-End-Generative-Dialogue.git &> /dev/null
  	mkdir End-To-End-Generative-Dialogue/data
 fi
 
 if [ -e "anaconda2" ]
 then 
 	echo -e "\033[0;anaconda installed\033[0m"
-	conda install h5py
+	echo -e "\033[0;34mInstalling h5py ...\033[0m"
+	echo "y" | conda install h5py &> /dev/null
 else
 	echo -e "\033[0;34mDownloading anaconda ...\033[0m"
 	wget http://repo.continuum.io/archive/Anaconda2-4.0.0-Linux-x86_64.sh &> /dev/null
 	echo -e "\033[0;34mInstalling anaconda ...\033[0m"
 	bash Anaconda2-4.0.0-Linux-x86_64.sh -b > /dev/null
+	rm Anaconda2-4.0.0-Linux-x86_64.sh
 	echo 'export PATH="/home/michaelfarrell/anaconda2/bin:$PATH"' > .bashrc
 	echo -e "\033[0;33mIn order for python to be run, you must logout and log back in\033[0m" 
 fi

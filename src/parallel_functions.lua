@@ -168,7 +168,7 @@ function parent()
 
         -- parallel.addremote( {ip='mikes-instance-group-4phn', cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol="gcloud compute ssh"})--'ssh -ttq -i ~/.ssh/my-ssh-key'})   --,
     
-        parallel.addremote( {ip='michaelfarrell@104.197.111.94', cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
+        parallel.addremote( {ip='michaelfarrell@130.211.160.115', cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
     
         -- parallel.addremote({ip='candokevin@10.251.57.175', cores=4, lua='/Users/candokevin/torch/install/bin/th', protocol='ssh -ttq'})
 
@@ -177,7 +177,7 @@ function parent()
     
         -- parallel.calibrate()
     elseif opt.localhost then
-        parallel.addremote({ip='localhost', cores=4, lua=opt.torch_path, protocol='ssh -ttq'})
+        parallel.addremote({ip='localhost', cores=4, lua=opt.torch_path, protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
         -- parallel.addremote({ip='michaelfarrell@10.251.50.115', cores=4, lua=opt.torch_path, protocol='ssh -ttq'})
     elseif opt.kevin then        
         package.path = "/Users/candokevin/.luarocks/share/lua/5.1/?.lua;/Users/candokevin/.luarocks/share/lua/5.1/?/init.lua;/Users/candokevin/torch/install/share/lua/5.1/?.lua;/Users/candokevin/torch/install/share/lua/5.1/?/init.lua;./?.lua;/Users/candokevin/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
