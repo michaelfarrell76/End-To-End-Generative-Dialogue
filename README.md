@@ -73,15 +73,15 @@ $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5
 
 First you must enable Remote Login in System Preferences > Sharing. You must also specify the location of the src folder from your home directory:
 ```bash
-$ PATH_TO_SRC = Desktop/GoogleDrive/FinalProject/End-To-End-Generative-Dialogue/src/
-$ PATH_TO_TORCH = /Users/michaelfarrell/torch/install/bin/th
-$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -localhost -extension PATH_TO_SRC -torch_path PATH_TO_TORCH
+$ PATH_TO_SRC=Desktop/GoogleDrive/FinalProject/End-To-End-Generative-Dialogue/src/
+$ PATH_TO_TORCH=/Users/michaelfarrell/torch/install/bin/th
+$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -localhost -extension $PATH_TO_SRC -torch_path $PATH_TO_TORCH
 
 ```
 ### Running with clients on Kevins computer
 This is used as a comparison to the google servers (for debugging purposes). 
-```
-  th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -kevin -extension stash/mikeparallel/End-To-End-Generative-Dialogue/src/
+```bash
+$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -n_proc 1 -parallel -kevin -extension stash/mikeparallel/End-To-End-Generative-Dialogue/src/ -torch_path /Users/candokevin/torch/install/bin/th
 ```
 
 ### Running remotely on gcloud servers
@@ -89,7 +89,8 @@ This is used as a comparison to the google servers (for debugging purposes).
 **Set up an ssh key to connect to our servers:**
 Replace USERNAME with your own username (i.e., USERNAME = michaelfarrell).
 ```bash
-$ ssh-keygen -t rsa -f ~/.ssh/gcloud-sshkey -C USERNAME
+$ USERNAME=michaelfarrell
+$ ssh-keygen -t rsa -f ~/.ssh/gcloud-sshkey -C $USERNAME
 ```
 Hit enter twice and a key should have been generated. Now print the key and copy the output:
 ```bash
@@ -119,6 +120,16 @@ $ chmod 400 ~/.ssh/gcloud-sshkey
 - Under more->Disks, unclick 'Delete boot disk when instance is deleted'
 - Create
 
+**Allow tcp connections:**
+- Click on the 'Instance templates' tab
+- Click on the new template you created
+- Go down to networks and click on the 'default' link
+- Go to 'Firewall rules' and Add a new rule
+- Set name to be 'all'
+- Set source filter to allow from any source
+- Under allowed protocols, put 'tcp:0-65535; udp:0-65535; icmp'
+- Create
+
 
 **Generate an instance group of machines if you have not yet done so:**
 - Go to the "Instance groups" tab
@@ -133,11 +144,14 @@ $ chmod 400 ~/.ssh/gcloud-sshkey
 - Wait for the instances to launch
 - Once there is a green checkmark, click on the new instance
 
+**Connecting to GCloud Server**
+
 You can connect to one of the servers by running:
 ```bash
-$ ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey USER@IP_ADDR
+$ IP_ADDR=130.211.160.115
+$ ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey $USERNAME@$IP_ADDR
 ```
-where USER is your username as defined above, and IP_ADDR is the ip address of the machine listed under "External ip" (i.e., 104.197.9.84). Note: the flag `-o "StrictHostKeyChecking no"` automatically adds the host to your list and does not prompt confirmation.
+where $username is the username you used to create the ssh key as defined above, and IP_ADDR is the ip address of the machine listed under "External ip" (i.e., 104.197.9.84). Note: the flag `-o "StrictHostKeyChecking no"` automatically adds the host to your list and does not prompt confirmation.
 
 If you get an error like this:
 ```bash
@@ -151,8 +165,24 @@ $ vim ~/.ssh/known_hosts
 ```
 and delete the last few lines that were added. They should look like some ip address and then something that starts with AAAA. You can delete lines in vim by typing dd to delete the current line. This can happen when you restart the servers and they change ip addresses, among other things.
 
-**Running the remote server:** currently attempting to run with the parallel workers on remote servers with the code below:
+**Adding remote clients**
+You will want to add your list of client servers to the file 'client_list.txt' where each line in the file is one of the external ip addresses located in the Instance group you are currently using. 
+
+**Initializing remote servers**
+Before using the remote servers, we need to make sure that the servers are ready to go. This can be done by running
+```
+$ python server_init.py
+```
+from the src folder on your own computer. 
+
+**Running the remote server:** 
+If the servers have been initialized, you will first want to connect to one of them:
 ```bash
+$ ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey $USERNAME@$IP_ADDR
+```
+Once connected:
+```bash
+$ cd End-To-End-Generative-Dialogue/src
 $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4 -remote -extension End-To-End-Generative-Dialogue/src/
 ```
 
