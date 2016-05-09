@@ -340,7 +340,7 @@ function train(m, criterion, train_data, valid_data)
         end
 
         local i = 1
-        for j = 8 + 1, 8 + skip do
+        for j = 1, skip do
             local pkg = {parameters = m.params, index = batch_order[i]}
             parallel.children[j]:send(pkg)
             i = i + 1
@@ -349,7 +349,7 @@ function train(m, criterion, train_data, valid_data)
             if opt.parallel then
                 -- parallel.children:join()
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
-                for j =  8 + 1, 8 + skip do
+                for j =  1, skip do
 
                     local reply = parallel.children[j]:receive("noblock")
                     if reply ~= nil then

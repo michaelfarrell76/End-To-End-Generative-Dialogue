@@ -157,7 +157,7 @@ function parent()
             print(addr)
         end
 
-        parallel.calibrate()
+        -- parallel.calibrate()
     elseif opt.localhost then
         parallel.addremote({ip='localhost', cores=4, lua=opt.torch_path, protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
 
