@@ -28,6 +28,9 @@ $ cd lua---parallel
 $ cp $PATH_TO_MAIN/stash/parallel/init.lua .
 $ luarocks make
 ```
+Here $PARALLEL_INSTALL is the directory in which you want to install the parallel library. 
+
+Here $PATH_TO_MAIN is the location of the End-To-End-Generative-Dialogue folder on your computer
 
 ## Usage
 
