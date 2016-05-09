@@ -29,7 +29,7 @@ end
 
 function rnn_layer(inp, hidden_size)
     rm = nn.Sequential()
-     	:add(nn.ParallelTable()
+        :add(nn.ParallelTable()
         :add(inp == hidden_size and nn.Identity() or nn.Linear(inp, hidden_size)) -- input layer
         :add(nn.Linear(hidden_size, hidden_size))) -- recurrent layer
         :add(nn.CAddTable()) -- merge
@@ -103,8 +103,7 @@ function build()
     elseif opt.layer_type == 'fast' then
         recurrence = nn.FastLSTM
     end
-
-    opt.print('\nBuilding model with specs:')
+    opt.print('Building model with specs:')
     opt.print('Layer type: ' .. opt.layer_type)
     opt.print('Embedding size: ' .. opt.word_vec_size)
     opt.print('Hidden layer size: ' .. opt.hidden_size)
@@ -155,9 +154,9 @@ function build()
     
     if opt.train_from:len() == 0 then
         if opt.pre_word_vecs:len() > 0 then
-            local f = hdf5.open(ext .. opt.pre_word_vecs)   
+            local f = hdf5.open(opt.pre_word_vecs)   
             local pre_word_vecs = f:read('word_vecs'):all()
-            print('Using pre-trained word embeddings from ' .. opt.pre_word_vecs)
+            opt.print('Using pre-trained word embeddings from ' .. opt.pre_word_vecs)
             for i = 1, pre_word_vecs:size(1) do
                 enc_embeddings.weight[i]:copy(pre_word_vecs[i])
                 dec_embeddings.weight[i]:copy(pre_word_vecs[i])
@@ -271,8 +270,8 @@ function train_ind(ind, m, criterion, data)
 
     -- Fix word embeddings
     if opt.fix_word_vecs == 1 then
-    	m.enc_embeddings.gradWeight:zero()
-    	m.dec_embeddings.gradWeight:zero()
+        m.enc_embeddings.gradWeight:zero()
+        m.dec_embeddings.gradWeight:zero()
     end
     
     if opt.parallel then
@@ -402,7 +401,7 @@ function train(m, criterion, train_data, valid_data)
                 i = i + 1  
                 local time_taken = timer:time().real - start_time
 
-               	if i % opt.print_every == 0 then
+                if i % opt.print_every == 0 then
                     local stats = string.format('Epoch: %d, Batch: %d/%d, Batch size: %d, LR: %.4f, ',
                         epoch, i, data:size(), batch_l, opt.learning_rate)
                     stats = stats .. string.format('PPL: %.2f, |Param|: %.2f, |GParam|: %.2f, ',
@@ -588,8 +587,8 @@ function eval(m, criterion, data)
         -- Worry not younglings
         -- It does however work one example at a time
         -- opt.allow_unk = 0
-     	-- local sbeam = beam.new(opt, m)
-     	-- local k_best = sbeam:generate_k(opt.beam_k, source[1])
+        -- local sbeam = beam.new(opt, m)
+        -- local k_best = sbeam:generate_k(opt.beam_k, source[1])
 
         -- local beam_bleu_score = calc_bleu_score(k_best, target)
         -- local beam_error_rate = calc_error_rate(k_best, target)
@@ -609,46 +608,13 @@ function eval(m, criterion, data)
     return valid
 end
 
-------------
--- Set up
-------------
-
-function main()
-    -- Parse input params
-    opt = cmd:parse(arg)
-    torch.manualSeed(opt.seed)
-
-    if opt.parallel then
-        opt.print = parallel.print
-    else
-        opt.print = print
-        ext = ""
-    end
-
-    if ischild then
-        opt.data_file = opt.extension .. opt.data_file
-        opt.val_data_file = opt.extension .. opt.val_data_file
-    end
-
-    if opt.gpuid >= 0 then
-        opt.print('Using CUDA on GPU ' .. opt.gpuid .. '...')
-        if opt.gpuid2 >= 0 then
-            opt.print('Using CUDA on second GPU ' .. opt.gpuid2 .. '...')
-        end
-        require 'cutorch'
-        require 'cunn'
-        cutorch.setDevice(opt.gpuid)
-        cutorch.manualSeed(opt.seed)
-    end
-    
-    -- Create the data loader classes
-    print(opt.data_file)
+-- Loads in data from opt.data_file and opt.val_data_file
+-- into the data objects defined in data.lua
+function load_data(opt)
     opt.print('Loading data...')
     local train_data = data.new(opt, opt.data_file)
     local valid_data = data.new(opt, opt.val_data_file)
-    opt.print('Done!')
-
-    opt.print(string.format('Source vocab size: %d, Target vocab size: %d',
+      opt.print(string.format('Source vocab size: %d, Target vocab size: %d',
         valid_data.source_size, valid_data.target_size))
     opt.max_sent_l = math.max(valid_data.source:size(2),
         valid_data.target:size(2))
@@ -658,14 +624,7 @@ function main()
     opt.vocab_size_enc = valid_data.source_size
     opt.vocab_size_dec = valid_data.target_size
     opt.seq_length = valid_data.seq_length
-    
-    -- Build
-    local model, criterion = build()
 
-    -- Train
-    if opt.parallel then 
-        return train_data, valid_data, model, criterion, opt
-    else
-        train(model, criterion, train_data, valid_data)
-    end
+    opt.print('Done loading data')
+    return train_data, valid_data, opt
 end

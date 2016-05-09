@@ -45,7 +45,7 @@ then
 	echo -e "\033[0;32mparallel installed\033[0m"
 else
 	echo -e "\033[0;34mInstalling parallel ...\033[0m"
-	git clone https://github.com/clementfarabet/lua---parallel.git &> /dev/null
+	git clone https://github.com/clementfarabet/lua---parallel.git> /dev/null
 	cd lua---parallel
 	luarocks make > /dev/null
 	cd ..

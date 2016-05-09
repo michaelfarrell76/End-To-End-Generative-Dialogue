@@ -59,8 +59,6 @@ function worker()
             -- Training the model at the given index
             local pkg_o = train_ind(pkg.index, model, criterion, train_data)
 
-
-
             -- send some data back
             parallel.print('sending back derivative for batch with index: ', pkg.index)
             parallel.parent:send(pkg_o)
@@ -71,90 +69,18 @@ end
 
 -- The parent process function
 function parent()
-    require "package"
+    -- Load in the class that runs the server
+    require 'sgd_server'
 
     -- Print from parent process
-    parallel.print('Im the parent, my ID is: ',  parallel.id)
+    parallel.print('Im the parent, my ID is: ',  parallel.id, ' and my IP: ', parallel.ip)
 
-    if opt.setup_servers then
-        parallel.print('Setting up remote servers')
-        os.execute('python server_init.py ')
-    end
+    -- Initialize Server from server.lua class
+    param_server = sgd_server.new()
 
-    parallel.print('Loading data, parameters, model...')
-    ext = ""
-    train_data, valid_data, model, criterion, opt = main()
+    -- Fork clients and execute startup code
+    param_server:fork_and_exec(worker)
 
-    old_path = package.path
-    old_cpath = package.cpath
-
-
-    if opt.remote then
-        parallel.print('Runnign remotely')
-        
-        -- package.path = "/home/michaelfarrell/.luarocks/share/lua/5.1/?.lua;/home/michaelfarrell/.luarocks/share/lua/5.1/?/init.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?/init.lua;./?.lua;/home/michaelfarrell/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
-        -- package.cpath = "/home/michaelfarrell/.luarocks/lib/lua/5.1/?.so;/home/michaelfarrell/torch/install/lib/lua/5.1/?.so;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
-    
-        
-        fh,err = io.open("../client_list.txt")
-        if err then print("../client_list.txt not found"); return; end
-
-        -- line by line
-        while true do
-            line = fh:read()
-            if line == nil then break end
-            local addr = 'michaelfarrell@' .. line
-            addr = string.gsub(addr, "\n", "") -- remove line breaks
-            parallel.addremote( {ip=addr, cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -ttq -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
-            print(addr)
-        end
-
-        -- parallel.calibrate()
-    elseif opt.localhost then
-        parallel.addremote({ip='localhost', cores=4, lua=opt.torch_path, protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
-
-    elseif opt.kevin then        
-        package.path = "/Users/candokevin/.luarocks/share/lua/5.1/?.lua;/Users/candokevin/.luarocks/share/lua/5.1/?/init.lua;/Users/candokevin/torch/install/share/lua/5.1/?.lua;/Users/candokevin/torch/install/share/lua/5.1/?/init.lua;./?.lua;/Users/candokevin/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
-        package.cpath = " /Users/candokevin/.luarocks/lib/lua/5.1/?.so;/Users/candokevin/torch/install/lib/lua/5.1/?.so;/Users/candokevin/torch/install/lib/?.dylib;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
-        
-        parallel.addremote({ip='candokevin@10.251.53.101', cores=4, lua='/Users/candokevin/torch/install/bin/th', protocol='ssh -ttq'})
-    end
-
-    if opt.n_proc == -1 then
-        opt.n_proc = parallel.remotes.cores
-    end
-    
-    parallel.print('Forking ', opt.n_proc, ' processes')
-    parallel.sfork(opt.n_proc)
-    print(parallel.nchildren)
- 
-    parallel.print('Forked')
-    parallel.print('parallel.id ', parallel.id)
-    parallel.print('parallel.parent ', parallel.parent)
-
-    -- Set path back
-    package.path = old_path
-    package.cpath = old_cpath
-
-
-    -- exec worker code in each process
-    parallel.children:exec(worker)
-    parallel.print('Finished telling workers to execute')
-
-    --send the global parameters to the children
-    parallel.children:join()
-    parallel.print('Sending parameters to children')
-    parallel.children:send({cmd = cmd, arg = arg, ext = opt.extension})
-
-    -- Get the responses from the children
-    replies = parallel.children:receive()
-    parallel.print('Replies from children', replies)
-
-    -- Train the model
-    train(model, criterion, train_data, valid_data)
-    parallel.print('Finished training the model')
-
-    -- sync/terminate when all workers are done
-    parallel.children:join('break')
-    parallel.print('All processes terminated')
+    -- Run the server
+    param_server:run()   
 end

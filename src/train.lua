@@ -83,7 +83,6 @@ cmd:option('-save_every',   1,      'Save every this many epochs')
 cmd:option('-print_every',  5,      'Print stats after this many batches')
 cmd:option('-seed',         3435,   'Seed for random initialization')
 
-
 -- Parallel
 cmd:option('-parallel',         false,  'When true, uses the parallel library to farm out sgd')
 cmd:option('-n_proc',           2,      'The number of processes to farm out')
@@ -93,25 +92,57 @@ cmd:option('-remote',           false,   'When true, the farmed out processes ar
 cmd:option('-torch_path',       '/Users/michaelfarrell/torch/install/bin/th',   'The path to the torch directory')
 cmd:option('-extension',       '',   'The location from the home directory to the helper functions')
 cmd:option('-kevin',       false,   'When true runs on kevins computer lol')
+cmd:option('-username',       'michaelfarrell',   'The username for connecting to remote clients')
 
 -- Load in general functions
 funcs = loadfile("model_functions.lua")
 funcs()
 
+-- Parse arguments
 opt = cmd:parse(arg)
+torch.manualSeed(opt.seed)
 
 -- Global indicating we are not a child process
 ischild = false
+
 if opt.parallel then
     require 'parallel'
 
     -- Load in functions used for parallel
     parallel_funcs = loadfile("parallel_functions.lua")
     parallel_funcs()
+    opt.print = parallel.print
 
     -- Protected execution of parllalel script:
     ok, err = pcall(parent)
     if not ok then print(err) parallel.close() end
 else
-    main()
+    
+    opt.print = print
+     if opt.gpuid >= 0 then
+        opt.print('Using CUDA on GPU ' .. opt.gpuid .. '...')
+        if opt.gpuid2 >= 0 then
+            opt.print('Using CUDA on second GPU ' .. opt.gpuid2 .. '...')
+        end
+        require 'cutorch'
+        require 'cunn'
+        cutorch.setDevice(opt.gpuid)
+        cutorch.manualSeed(opt.seed)
+    end
+    
+    -- Create the data loader classes
+    local train_data, valid_data, opt = load_data(opt)
+   
+
+  
+    
+    -- Build
+    local model, criterion = build()
+
+    -- Train
+    if opt.parallel then 
+        return train_data, valid_data, model, criterion, opt
+    else
+        train(model, criterion, train_data, valid_data)
+    end
 end
