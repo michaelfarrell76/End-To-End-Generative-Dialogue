@@ -180,10 +180,12 @@ If the servers have been initialized, you will first want to connect to one of t
 ```bash
 $ ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey $USERNAME@$IP_ADDR
 ```
-Once connected:
+Once connected, you need to again setup an ssh key as listed in the instructions: "Set up an ssh key to connect to our servers" above.
+Once the key is created and added to the account, then:
 ```bash
 $ cd End-To-End-Generative-Dialogue/src
-$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4 -remote -extension End-To-End-Generative-Dialogue/src/
+$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc -1 -remote -extension End-To-End-Generative-Dialogue/src/ -torch_path /home/michaelfarrell/torch/install/bin/th -n_proc 4
+
 ```
 
 ## Primary contributors
