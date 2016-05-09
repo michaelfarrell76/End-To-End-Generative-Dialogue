@@ -88,7 +88,6 @@ then
 else
 	echo -e "\033[0;34mCloning repo End-To-End-Generative-Dialogue ...\033[0m"
  	git clone https://github.com/michaelfarrell76/End-To-End-Generative-Dialogue.git &> /dev/null
- 	mkdir End-To-End-Generative-Dialogue/data
 fi
 
 if [ -e "anaconda2" ]

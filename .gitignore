@@ -5,6 +5,7 @@ Icon
 
 # MovieTriples + other data
 data/
+data.zip
 
 # Preprocessing files
 *.hdf5

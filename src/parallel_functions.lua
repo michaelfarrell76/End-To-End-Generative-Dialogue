@@ -29,6 +29,7 @@ function worker()
             cmd, arg, ext = pkg.cmd, pkg.arg, pkg.ext
 
             -- Load in functions
+            print(ext.."model_functions.lua")
             funcs = loadfile(ext .. "model_functions.lua")
             funcs()
 
@@ -58,13 +59,11 @@ function worker()
             for i = 1, #model.params do
                 model.params[i]:copy(pkg.parameters[i])
             end
-            parallel.print('a')
-            parallel.print(train_data:size())
+
 
             -- Training the model at the given index
             local pkg_o = train_ind(pkg.index, model, criterion, train_data)
 
-             parallel.print('z')
 
 
             -- send some data back
@@ -115,23 +114,6 @@ function setup_servers()
 
 end
 
-function setupEnvironment(instance)
-
-     -- print from worker:
-    parallel.print('=====>Setting up environent for ' .. instance)
-
-    parallel.print('Ensure that the startup script has been run')
-    os.execute('gcloud compute copy-files ../../startup.sh ' .. instance..':~/')
-    os.execute('echo "bash startup.sh" | gcloud compute ssh ' .. instance)
-
-    parallel.print('Ensure that the MovieTriples have been copied over')
-    os.execute('(echo "ls Singularity/data" | gcloud compute ssh '.. instance .. ' | grep -q MovieTriples) || gcloud compute copy-files ../data/MovieTriples '.. instance .. ':~/Singularity/data')
-    
-    parallel.print('Ensure that preprocessing script has been run')
-    os.execute('(echo "ls Singularity/seq2seq-elements/data" | gcloud compute ssh '.. instance .. ' | grep -q train_src_words.txt) || (echo "python Singularity/seq2seq-elements/preprocess.py --data_directory Singularity/data/MovieTriples/ --output_directory Singularity/seq2seq-elements/data/" | gcloud compute ssh '.. instance .. ')')
-
-end
-
 -- The parent process function
 function parent()
     require "package"
@@ -141,7 +123,7 @@ function parent()
 
     if opt.setup_servers then
         parallel.print('Setting up remote servers')
-        setup_servers()
+        os.execute('python server_init.py ')
     end
 
     parallel.print('Loading data, parameters, model...')
@@ -156,36 +138,35 @@ function parent()
         parallel.print('Runnign remotely')
         -- Setup remote servers this isnt working i was playing around with the path variables and stuff but couldnt get it to connect
         -- most likely either a problem with the google server not letting me in or im not setting up the lua environment correctly
-        
 
-      
-        -- package.cpath = '/home/michaelfarrell/torch/install/lib/lua/5.1/?.so;' ..package.cpath
-        -- package.path = '/home/michaelfarrell/torch/install/share/lua/5.1/?/init.lua;' .. package.path
-        -- package.path = '/home/michaelfarrell/lua---?/init.lua;' .. package.path
 
         package.path = "/home/michaelfarrell/.luarocks/share/lua/5.1/?.lua;/home/michaelfarrell/.luarocks/share/lua/5.1/?/init.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?.lua;/home/michaelfarrell/torch/install/share/lua/5.1/?/init.lua;./?.lua;/home/michaelfarrell/Singularity/seq2seq-elements/?.lua;/home/michaelfarrell/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
         package.cpath = "/home/michaelfarrell/.luarocks/lib/lua/5.1/?.so;/home/michaelfarrell/torch/install/lib/lua/5.1/?.so;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
-
-        -- parallel.addremote( {ip='mikes-instance-group-4phn', cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol="gcloud compute ssh"})--'ssh -ttq -i ~/.ssh/my-ssh-key'})   --,
     
-        parallel.addremote( {ip='michaelfarrell@130.211.160.115', cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
-    
-        -- parallel.addremote({ip='candokevin@10.251.57.175', cores=4, lua='/Users/candokevin/torch/install/bin/th', protocol='ssh -ttq'})
+        
+        fh,err = io.open("../client_list.txt")
+        if err then print("../client_list.txt not found"); return; end
 
-        -- parallel.addremote({ip='michaelfarrell@10.251.54.86', cores=4, lua='/Users/michaelfarrell/torch/install/bin/th', protocol='ssh -ttq'})
+        -- line by line
+        while true do
+            line = fh:read()
+            if line == nil then break end
+            parallel.addremote( {ip='michaelfarrell@' .. line, cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
+        end
 
-    
-        -- parallel.calibrate()
+        parallel.calibrate()
     elseif opt.localhost then
         parallel.addremote({ip='localhost', cores=4, lua=opt.torch_path, protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
-        -- parallel.addremote({ip='michaelfarrell@10.251.50.115', cores=4, lua=opt.torch_path, protocol='ssh -ttq'})
+
     elseif opt.kevin then        
         package.path = "/Users/candokevin/.luarocks/share/lua/5.1/?.lua;/Users/candokevin/.luarocks/share/lua/5.1/?/init.lua;/Users/candokevin/torch/install/share/lua/5.1/?.lua;/Users/candokevin/torch/install/share/lua/5.1/?/init.lua;./?.lua;/Users/candokevin/torch/install/share/luajit-2.1.0-beta1/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua"
         package.cpath = " /Users/candokevin/.luarocks/lib/lua/5.1/?.so;/Users/candokevin/torch/install/lib/lua/5.1/?.so;/Users/candokevin/torch/install/lib/?.dylib;./?.so;/usr/local/lib/lua/5.1/?.so;/usr/local/lib/lua/5.1/loadall.so"
         
         parallel.addremote({ip='candokevin@10.251.53.101', cores=4, lua='/Users/candokevin/torch/install/bin/th', protocol='ssh -ttq'})
-        
+    end
 
+    if opt.n_proc == -1 then
+        opt.n_proc = parallel.remotes.cores
     end
     
     parallel.print('Forking ', opt.n_proc, ' processes')
