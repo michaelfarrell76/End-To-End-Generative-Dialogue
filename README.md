@@ -197,7 +197,7 @@ Once connected, you need to again setup an ssh key as listed in the instructions
 Once the key is created and added to the account, then:
 ```bash
 $ cd End-To-End-Generative-Dialogue/src
-$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc -1 -remote -extension End-To-End-Generative-Dialogue/src/ -torch_path /home/michaelfarrell/torch/install/bin/th -n_proc 4
+$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -remote -extension End-To-End-Generative-Dialogue/src/ -torch_path /home/michaelfarrell/torch/install/bin/th -n_proc 4
 
 ```
 
