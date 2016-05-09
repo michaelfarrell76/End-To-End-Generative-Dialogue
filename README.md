@@ -14,10 +14,23 @@ If you want to train on an Nvidia GPU using CUDA, you'll need to install the [CU
 $ luarocks install cutorch
 $ luarocks install cunn
 ```
-Finally, if you'd like to chat with your trained model, you'll need the `penlight` package:
+If you'd like to chat with your trained model, you'll need the `penlight` package:
 ```bash
 $ luarocks install penlight
 ```
+If you would like to train your model in parallel you must install the parallel package and include our changes. 
+```bash
+$ PARALLEL_INSTALL=~/installs
+$ PATH_TO_MAIN=~/Desktop/GoogleDrive/FinalProject/End-To-End-Generative-Dialogue
+$ cd $PARALLEL_INSTALL
+$ git clone https://github.com/clementfarabet/lua---parallel.git
+$ cd lua---parallel
+$ cp $PATH_TO_MAIN/stash/parallel/init.lua .
+$ luarocks make
+```
+Here $PARALLEL_INSTALL is the directory in which you want to install the parallel library. 
+
+Here $PATH_TO_MAIN is the location of the End-To-End-Generative-Dialogue folder on your computer
 
 ## Usage
 
@@ -184,7 +197,7 @@ Once connected, you need to again setup an ssh key as listed in the instructions
 Once the key is created and added to the account, then:
 ```bash
 $ cd End-To-End-Generative-Dialogue/src
-$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc -1 -remote -extension End-To-End-Generative-Dialogue/src/ -torch_path /home/michaelfarrell/torch/install/bin/th -n_proc 4
+$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -remote -extension End-To-End-Generative-Dialogue/src/ -torch_path /home/michaelfarrell/torch/install/bin/th -n_proc 4
 
 ```
 
