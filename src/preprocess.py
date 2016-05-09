@@ -81,6 +81,7 @@ def get_data(args):
     
     def make_vocab(srcfile, targetfile, seqlength, max_word_l=0, chars=0):
         num_sents = 0
+        sent_thrown_out = 0
         for _, (src_orig, targ_orig) in \
                 enumerate(itertools.izip(open(srcfile,'r'), open(targetfile,'r'))):
             src_orig = src_indexer.clean(src_orig.decode("utf-8").strip())
@@ -88,6 +89,7 @@ def get_data(args):
             targ = targ_orig.strip().split()
             src = src_orig.strip().split()
             if len(targ) > seqlength or len(src) > seqlength or len(targ) < 1 or len(src) < 1:
+                sent_thrown_out = sent_thrown_out + 1
                 continue
             num_sents += 1
             for word in targ:                                
@@ -95,7 +97,7 @@ def get_data(args):
                 
             for word in src:                 
                 src_indexer.vocab[word] += 1
-                
+        print('Number of sentences thrown out', sent_thrown_out)
         return max_word_l, num_sents
                 
     def convert(srcfile, targetfile, batchsize, seqlength, outfile, num_sents,
@@ -153,6 +155,8 @@ def get_data(args):
             sent_id += 1
             if sent_id % 100000 == 0:
                 print("{}/{} sentences processed".format(sent_id, num_sents))
+                if sent_id > 3000000:
+                    break
 
         #break up batches based on source lengths
         source_lengths = source_lengths[:sent_id]
@@ -216,7 +220,12 @@ def get_data(args):
     print("Number of sentences in training: {}".format(num_sents_train))
     max_word_l, num_sents_valid = make_vocab(args.srcvalfile, args.targetvalfile,
                                              args.seqlength, max_word_l, 0)
-    print("Number of sentences in valid: {}".format(num_sents_valid))    
+    print("Number of sentences in valid: {}".format(num_sents_valid))
+
+    if args.subtle:
+        max_word_l, num_sents_subtle = make_vocab(args.srcsubtlefile, args.targetsubtlefile,
+                                                 args.seqlength, max_word_l, 0)
+        print("Number of sentences in subtle: {}".format(num_sents_subtle))    
 
     #prune and write vocab
     src_indexer.prune_vocab(args.srcvocabsize)
@@ -244,10 +253,15 @@ def get_data(args):
     max_sent_l = convert(args.srcfile, args.targetfile, args.batchsize, args.seqlength,
                          args.outputfile + "-train.hdf5", num_sents_train, max_word_l,
                          max_sent_l, 0, args.unkfilter)
+    print("Max sent length: {}".format(max_sent_l))    
+
+    if args.subtle:
+        max_sent_l = convert(args.srcsubtlefile, args.targetsubtlefile, args.batchsize, args.subtle_seqlength,
+                             args.outputfile + "-subtle.hdf5", num_sents_subtle, max_word_l,
+                             max_sent_l, 0, args.unkfilter)
+
     
-    print("Max sent length (before dropping): {}".format(max_sent_l))    
-
-
+    print("Max sent length for subtle: {}".format(max_sent_l))    
 
 
 def format_data(args):
@@ -294,7 +308,11 @@ def format_data(args):
         assert check_mappings == []
 
         # Make changes to the dataset
-        data_sets = [data_dict['MovieTriples']['train_set'], data_dict['MovieTriples']['valid_set'], data_dict['MovieTriples']['test_set']]
+        data_sets = [data_dict['MovieTriples']['train_set'], data_dict['MovieTriples']['valid_set'],
+                     data_dict['MovieTriples']['test_set']]
+        if args.subtle:
+            data_sets.append(data_dict['MovieTriples']['subtle_set'])
+
         for i in range(len(data_sets)):
             for j in range(len(data_sets[i])):
                 line = data_sets[i][j]
@@ -405,15 +423,28 @@ def format_data(args):
 
     data_set_contexts = []
     data_set_outputs = []
-    data_sets = [data_dict['MovieTriples']['train_set'], data_dict['MovieTriples']['valid_set'], data_dict['MovieTriples']['test_set']]
-    for data_set in data_sets:
+    data_sets = [data_dict['MovieTriples']['train_set'], data_dict['MovieTriples']['valid_set'], 
+                    data_dict['MovieTriples']['test_set']]
+
+    if args.subtle:
+        data_sets.append(data_dict['MovieTriples']['subtle_set'])
+
+    for j in range(len(data_sets)):
+        data_set = data_sets[j]
         PADDING = word_to_indices['<blank>']
         END_OF_CONV = word_to_indices['<t>']
 
         full_context = []
         full_output = []
-        max_len_context = 0
-        max_len_output = 0 
+
+        # Make the subtle dataset a bit shorter
+        if j != 3:
+            max_len_context = 52
+            max_len_output = 52
+        else:
+            # import bpdb; bpdb.set_trace()
+            max_len_context = 22
+            max_len_output = 22
 
         for i in range(len(data_set)):
             break_pt = []
@@ -421,27 +452,27 @@ def format_data(args):
                 if pattern == data_set[i][ind:ind+2]:
                     break_pt.append(ind)
 
+            if break_pt == []:
+                continue
+
             context = data_set[i][:break_pt[0]]
             output = data_set[i][break_pt[0]+2:]
 
             context = context + [word_to_indices['</s>']]
             output = [word_to_indices['<s>']] + output
 
-            # Start of sentence and end of sentence is ONLY used at the end
-            # We create a new character that represents the start and end of a conversation
-            context = context[:break_pt[1]] + [END_OF_CONV] + context[break_pt[1]+2:]
 
+            # There is only one utterance in the subtle set
+            if j != 3:
+                # Start of sentence and end of sentence is ONLY used at the end
+                # We create a new character that represents the start and end of a conversation
+                context = context[:break_pt[1]] + [END_OF_CONV] + context[break_pt[1]+2:]
 
             # Cap the target and src length at 302 words to make computation simpler, goes up to ~1500
-            if len(context) > 52:
+            if len(context) > max_len_context:
                 continue
-            if len(output) > 52:
+            if len(output) > max_len_output:
                 continue
-
-            max_len_output = max(max_len_output, len(output))
-            max_len_context = max(max_len_context, len(context))
-            max_len_output = 52
-            max_len_context = 52
 
             full_context.append(context)
             full_output.append(output)
@@ -459,17 +490,21 @@ def format_data(args):
     valid_full_context = data_set_contexts[1]
     valid_full_output = data_set_outputs[1]
 
+    if args.subtle:
+        subtle_full_context = data_set_contexts[3]
+        subtle_full_output = data_set_outputs[3]
 
     if not os.path.exists(args.output_directory):
         os.makedirs(args.output_directory)
-
-
-    
 
     write_indicies_to_file(args.srcfile_ind, train_full_context)
     write_indicies_to_file(args.targetfile_ind, train_full_output)
     write_indicies_to_file(args.srcvalfile_ind, valid_full_context)
     write_indicies_to_file(args.targetvalfile_ind, valid_full_output)
+
+    if args.subtle:
+        write_indicies_to_file(args.srcsubtlefile_ind, subtle_full_context)
+        write_indicies_to_file(args.targetsubtlefile_ind, subtle_full_output)
 
     write_vocab_to_file(args.targetvocabfile)
     write_vocab_to_file(args.srcvocabfile)
@@ -480,8 +515,11 @@ def format_data(args):
     write_words_to_file(args.srcvalfile, valid_full_context)
     write_words_to_file(args.targetfile, train_full_output)
     write_words_to_file(args.targetvalfile, valid_full_output)
+
+    if args.subtle:
+        write_words_to_file(args.srcsubtlefile, subtle_full_context)    
+        write_words_to_file(args.targetsubtlefile, subtle_full_output)
             
-   
     # Additional embeddings
     np.random.seed(9844)
     additional_vectors = np.random.uniform(-0.1, 0.1, (2, 300))
@@ -551,6 +589,8 @@ def main(arguments):
                                            default='train_targ_words.txt')
     parser.add_argument('--srcvalfile', help="Filename of source validation data.", default='dev_src_words.txt')
     parser.add_argument('--targetvalfile', help="Filename of target validation data.", default='dev_targ_words.txt')
+    parser.add_argument('--srcsubtlefile', help="Filename of source subtle data.", default='subtle_src_words.txt')
+    parser.add_argument('--targetsubtlefile', help="Filename of target subtle data.", default='subtle_targ_words.txt')
 
     # Filenames of processed files filled with indices
     parser.add_argument('--srcfile_ind', help="Filename of source training data, "
@@ -565,11 +605,15 @@ def main(arguments):
                                            default='train_targ_indices.txt')
     parser.add_argument('--srcvalfile_ind', help="Filename of source validation data.", default='dev_src_indices.txt')
     parser.add_argument('--targetvalfile_ind', help="Filename of target validation data.", default='dev_targ_indices.txt')
+    parser.add_argument('--srcsubtlefile_ind', help="Filename of source subtle data.", default='subtle_src_indices.txt')
+    parser.add_argument('--targetsubtlefile_ind', help="Filename of target subtle data.", default='subtle_targ_indices.txt')
 
     # Preprocess Modifications
-    parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=32)
+    parser.add_argument('--batchsize', help="Size of each minibatch.", type=int, default=64)
     parser.add_argument('--seqlength', help="Maximum sequence length. Sequences longer "
                                                "than this are dropped.", type=int, default=50)
+    parser.add_argument('--subtle_seqlength', help="Maximum sequence length for subtle data. Sequences longer "
+                                               "than this are dropped.", type=int, default=15)
     parser.add_argument('--maxwordlength', help="For the character models, words are "
                                            "(if longer than maxwordlength) or zero-padded "
                                             "(if shorter) to maxwordlength", type=int, default=35)
@@ -577,7 +621,9 @@ def main(arguments):
                                        "Can be an absolute count limit (if > 1) "
                                        "or a proportional limit (0 < unkfilter < 1).",
                                           type = float, default = 0)
-    
+    parser.add_argument('--subtle', help="Preprocess the subtle dataset, takes substantially longer"
+                                         "because subtle dataset is ~5,000,000 lines", default=False)
+
     args = parser.parse_args(arguments)
 
     # Dictionary holding the locations of the input files
@@ -591,7 +637,13 @@ def main(arguments):
                         }
 
     # Append on output directory to the output files
-    output_files = ['srcfile', 'targetfile', 'srcvalfile', 'targetvalfile', 'srcfile_ind', 'targetfile_ind', 'srcvalfile_ind', 'targetvalfile_ind', 'outputfile', 'srcvocabfile', 'targetvocabfile']
+    output_files = ['srcfile', 'targetfile', 'srcvalfile', 'targetvalfile', 'srcfile_ind', 'targetfile_ind', 
+                    'srcvalfile_ind', 'targetvalfile_ind', 'outputfile', 'srcvocabfile', 'targetvocabfile']
+
+    if args.subtle:
+        args.input_files['MovieTriples']['subtle_set'] = 'Subtle_Dataset.triples.pkl'
+        output_files = output_files + ['srcsubtlefile_ind', 'targetsubtlefile_ind', 'srcsubtlefile', 'targetsubtlefile']
+                    
     for o_f in output_files:
         setattr(args, o_f, args.output_directory + getattr(args, o_f))
 
