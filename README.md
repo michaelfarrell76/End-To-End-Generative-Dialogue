@@ -81,7 +81,7 @@ $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5
 ### Running with clients on Kevins computer
 This is used as a comparison to the google servers (for debugging purposes). 
 ```bash
-$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -kevin -extension stash/mikeparallel/End-To-End-Generative-Dialogue/src/ -torch_path /Users/candokevin/torch/install/bin/th
+$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -n_proc 1 -kevin -extension stash/mikeparallel/End-To-End-Generative-Dialogue/src/ -torch_path /Users/candokevin/torch/install/bin/th
 ```
 
 ### Running remotely on gcloud servers
