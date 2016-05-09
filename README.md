@@ -81,7 +81,7 @@ $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5
 ### Running with clients on Kevins computer
 This is used as a comparison to the google servers (for debugging purposes). 
 ```
- th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -kevin -extension stash/end-to-end-generative-dialogue/src/
+  th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -kevin -extension stash/mikeparallel/End-To-End-Generative-Dialogue/src/
 ```
 
 ### Running remotely on gcloud servers
@@ -108,6 +108,18 @@ Restrict external access to the key:
 $ chmod 400 ~/.ssh/gcloud-sshkey
 ```
 
+**Generate an instance template:**
+- Click on the 'Instance templates' tab
+- Create new
+- Name the template 
+- Choose 8vCPU highmem as machine type
+- Choose Ubuntu 14.04 LTS as boot disk
+- Allow HTTP traffic
+- Allow HTTPS traffic
+- Under more->Disks, unclick 'Delete boot disk when instance is deleted'
+- Create
+
+
 **Generate an instance group of machines if you have not yet done so:**
 - Go to the "Instance groups" tab
 - Create instance group
@@ -115,7 +127,7 @@ $ chmod 400 ~/.ssh/gcloud-sshkey
 - Give a description
 - Set zone to us-central1-b
 - Use instance template
-- Choose 'mike-instance-template-1'
+- Choose 'miket=template' or other template of choice
 - Set the number of instances
 - Create
 - Wait for the instances to launch
