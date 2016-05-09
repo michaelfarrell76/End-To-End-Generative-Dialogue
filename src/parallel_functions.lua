@@ -153,7 +153,7 @@ function parent()
             if line == nil then break end
             local addr = 'michaelfarrell@' .. line
             addr = string.gsub(addr, "\n", "") -- remove line breaks
-            parallel.addremote( {ip=addr, cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
+            parallel.addremote( {ip=addr, cores=4, lua='/home/michaelfarrell/torch/install/bin/th', protocol='ssh -ttq -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
             print(addr)
         end
 
