@@ -94,23 +94,37 @@ cmd:option('-extension',       '',   'The location from the home directory to th
 cmd:option('-kevin',       false,   'When true runs on kevins computer lol')
 cmd:option('-username',       'michaelfarrell',   'The username for connecting to remote clients')
 
--- Load in general functions
-funcs = loadfile("model_functions.lua")
-funcs()
 
 -- Parse arguments
 opt = cmd:parse(arg)
 torch.manualSeed(opt.seed)
 
+-- Load in general functions
+funcs = loadfile("model_functions.lua")
+funcs()
+
 -- Global indicating we are not a child process
 ischild = false
+
+-- The parent process function
+function parent()
+    -- Load in the class that runs the server
+    require 'sgd_server'
+
+    -- Print from parent process
+    parallel.print('Im the parent, my ID is: ',  parallel.id, ' and my IP: ', parallel.ip)
+
+    -- Initialize Server from server.lua class
+    param_server = sgd_server.new(opt)
+
+    -- Run the server
+    param_server:run()   
+end
 
 if opt.parallel then
     require 'parallel'
 
     -- Load in functions used for parallel
-    parallel_funcs = loadfile("parallel_functions.lua")
-    parallel_funcs()
     opt.print = parallel.print
 
     -- Protected execution of parllalel script:

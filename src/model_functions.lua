@@ -288,6 +288,7 @@ function train_ind(ind, m, criterion, data)
     end
     
     if opt.parallel then
+        print('here')
         return {gps = m.grad_params, batch_l = batch_l, target_l = target_l, source_l = source_l, nonzeros = nonzeros, loss = loss, param_norm = param_norm, grad_norm = grad_norm}
     else
         return batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
