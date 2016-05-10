@@ -72,7 +72,7 @@ $ cd Distributed-SGD/lua-lua
 ```
 Next make sure that you have the correct [requirements](https://github.com/michaelfarrell76/Distributed-SGD/tree/master/lua-lua#requirements) installed via the Requirements section of the [Distributed SGD](https://github.com/michaelfarrell76/Distributed-SGD) repo.
 
-Next setup your data folder in Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue according to the instructions in the [data](Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue#data) section. Once this is setup correctly, you should have a folder
+Next setup your data folder in Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue according to the instructions in the [data](https://github.com/michaelfarrell76/End-To-End-Generative-Dialogue#data) section. Once this is setup correctly, you should have a folder
 Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/data/MovieTriples full with the MovieTriples dataset files. 
 
 Finally, run the preprocessing code:
