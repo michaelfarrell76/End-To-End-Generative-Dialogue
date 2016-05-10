@@ -146,9 +146,6 @@ else
     
     -- Create the data loader classes
     local train_data, valid_data, opt = load_data(opt)
-   
-
-  
     
     -- Build
     local model, criterion = build()

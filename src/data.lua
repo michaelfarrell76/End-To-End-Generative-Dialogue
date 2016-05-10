@@ -24,18 +24,6 @@ function data:__init(opt, data_file)
    	self.target_size = f:read('target_size'):all()[1]
    	self.source_size = f:read('source_size'):all()[1]
    	self.target_nonzeros = f:read('target_nonzeros'):all()
-
-   	if opt.use_chars_enc == 1 then
-      	self.source_char = f:read('source_char'):all()
-      	self.char_size = f:read('char_size'):all()[1]
-      	self.char_length = self.source_char:size(3)
-   	end
-
-   	if opt.use_chars_dec == 1 then
-      	self.target_char = f:read('target_char'):all()
-      	self.char_size = f:read('char_size'):all()[1]
-      	self.char_length = self.target_char:size(3)
-   	end
    
    	self.length = self.batch_l:size(1)
    	self.seq_length = self.target:size(2)
@@ -51,27 +39,14 @@ function data:__init(opt, data_file)
       		+self.batch_l[i]-1, 1, self.target_l[i])
       	local target_l_i = self.target_l_all:sub(self.batch_idx[i],
       		self.batch_idx[i]+self.batch_l[i]-1)
-      	if opt.use_chars_enc == 1 then
-	 		source_i = self.source_char:sub(self.batch_idx[i],
-	 			self.batch_idx[i] + self.batch_l[i]-1, 1,
-	 			self.source_l[i]):transpose(1,2):contiguous()
-      	else
-	 		source_i =  self.source:sub(self.batch_idx[i], self.batch_idx[i]+
-	 			self.batch_l[i]-1, 1, self.source_l[i]):transpose(1,2)
-      	end
+ 		source_i =  self.source:sub(self.batch_idx[i], self.batch_idx[i]+
+ 			self.batch_l[i]-1, 1, self.source_l[i]):transpose(1,2)
       	if opt.reverse_src == 1 then
 	 		source_i = source_i:index(1, source_l_rev[{{max_source_l-self.source_l[i]+1,
 	 			max_source_l}}])
       	end
-
-      	if opt.use_chars_dec == 1 then
-	 		target_i = self.target_char:sub(self.batch_idx[i],
-	 			self.batch_idx[i] + self.batch_l[i]-1, 1,
-	 			self.target_l[i]):transpose(1,2):contiguous()
-      	else
-	 		target_i = self.target:sub(self.batch_idx[i], self.batch_idx[i]+self.batch_l[i]-1,
-	 			1, self.target_l[i]):transpose(1,2)
-      	end
+ 		target_i = self.target:sub(self.batch_idx[i], self.batch_idx[i]+self.batch_l[i]-1,
+ 			1, self.target_l[i]):transpose(1,2)
       	table.insert(self.batches,  {target_i,
       		target_output_i:transpose(1,2),
 			self.target_nonzeros[i], 
@@ -99,7 +74,7 @@ function data.__index(self, idx)
       	local target_l = self.batches[idx][6]
       	local source_l = self.batches[idx][7]
       	local target_l_all = self.batches[idx][8]
-      	if opt.gpuid >= 0 then --if multi-gpu, source lives in gpuid1, rest on gpuid2
+      	if opt.gpuid >= 0 then -- If multi-gpu, source lives in gpuid1, rest on gpuid2
 	 		cutorch.setDevice(opt.gpuid)
 	 		source_input = source_input:cuda()
 	 		if opt.gpuid2 >= 0 then
