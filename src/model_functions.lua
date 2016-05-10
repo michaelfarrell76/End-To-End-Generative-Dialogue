@@ -112,9 +112,6 @@ function build_encoder(recurrence)
         end
     end
 
-    if opt.layer ~= 'bi' then
-        enc:add(nn.SplitTable(1, 2))
-    end
     enc:add(nn.SelectTable(-1))
 
     return enc, enc_rnn, enc_embeddings
@@ -149,10 +146,6 @@ function build_decoder(recurrence)
                 dec:add(nn.Sequencer(nn.Dropout(opt.dropout)))
             end
         end
-    end
-
-    if opt.layer ~= 'bi' then
-        dec:add(nn.SplitTable(1, 2))
     end
 
     dec:add(nn.Sequencer(nn.Linear(opt.hidden_size, opt.vocab_size_dec)))
@@ -314,12 +307,6 @@ function train_ind(ind, m, criterion, data)
 
     -- Backward prop dec
     local grad_output = criterion:backward(dec_out, target_out)
-
-    -- torch.save('test_models.t7', {{m.enc, m.dec, m.enc_rnn, m.dec_rnn}, opt})
-    -- torch.save('source_example.dat', source)
-    -- torch.save('target_example.dat', target)
-    -- torch.save('grad_example.dat', grad_output)
-    -- local dbg = require('debugger'); dbg()
 
     m.dec:backward(target, grad_output)
     backward_connect(m.enc_rnn, m.dec_rnn)
