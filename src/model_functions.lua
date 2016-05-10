@@ -1,6 +1,5 @@
 require 'rnn'
 require 'hdf5'
-require 'parallel'
 
 ------------
 -- Coupling
@@ -109,11 +108,6 @@ function build()
     opt.print('Hidden layer size: ' .. opt.hidden_size)
     opt.print('Number of layers: ' .. opt.num_layers)
 
-    -- Encoder, enc_rnn is top rnn in vertical enc stack
-    local enc, enc_rnn, enc_embeddings = build_encoder(recurrence)
-
-    -- Decoder, dec_rnn is lowest rnn in vertical dec stack
-    local dec, dec_rnn, dec_embeddings = build_decoder(recurrence)
 
     -- Criterion
     local criterion = nn.SequencerCriterion(nn.ClassNLLCriterion())
@@ -126,8 +120,27 @@ function build()
         criterion:cuda()    
     end
 
-    if opt.train_from:len() == 1 then
-        error('TODO: implement train_from')
+    local enc, enc_rnn, enc_embeddings, dec, dec_rnn, dec_embeddings
+    if opt.train_from:len() == 0 then   
+        -- Encoder, enc_rnn is top rnn in vertical enc stack
+        enc, enc_rnn, enc_embeddings = build_encoder(recurrence)
+
+        -- Decoder, dec_rnn is lowest rnn in vertical dec stack
+        dec, dec_rnn, dec_embeddings = build_decoder(recurrence)
+    else
+        -- Load the model
+        assert(path.exists(opt.train_from), 'checkpoint path invalid')
+        print('loading ' .. opt.train_from .. '...')
+        local checkpoint = torch.load(opt.train_from)
+        local model, model_opt = checkpoint[1], checkpoint[2]
+
+        -- Load the different components
+        enc = model[1]:double()
+        dec = model[2]:double()
+        enc_rnn = model[3]:double()
+        dec_rnn = model[4]:double()
+        enc_embeddings = enc['modules'][1]
+        dec_embeddings = dec['modules'][1]
     end
 
     -- Parameter tracking
@@ -275,6 +288,7 @@ function train_ind(ind, m, criterion, data)
     end
     
     if opt.parallel then
+        print('here')
         return {gps = m.grad_params, batch_l = batch_l, target_l = target_l, source_l = source_l, nonzeros = nonzeros, loss = loss, param_norm = param_norm, grad_norm = grad_norm}
     else
         return batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
