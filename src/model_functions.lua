@@ -111,6 +111,9 @@ function build_encoder(recurrence)
         end
     end
 
+    if opt.layer_type == 'bi' then
+        enc:add(nn.SplitTable(1, 2))
+    end
     enc:add(nn.SelectTable(-1))
 
     return enc, enc_rnn, enc_embeddings
@@ -147,6 +150,10 @@ function build_decoder(recurrence)
         end
     end
 
+    if opt.layer_type == 'bi' then
+        dec:add(nn.SplitTable(1, 2))
+    end
+
     dec:add(nn.Sequencer(nn.Linear(opt.hidden_size, opt.vocab_size_dec)))
     dec:add(nn.Sequencer(nn.LogSoftMax()))
 
@@ -162,7 +169,7 @@ function build()
     elseif opt.layer_type == 'fast' then
         recurrence = nn.FastLSTM
     elseif opt.layer_type == 'bi' then
-        recurrence = seqBRNN_batched
+         recurrence = seqBRNN_batched
     end
 
     opt.print('Building model with specs:')
@@ -175,7 +182,7 @@ function build()
     local criterion = nn.SequencerCriterion(nn.ClassNLLCriterion())
 
     local enc, enc_rnn, enc_embeddings, dec, dec_rnn, dec_embeddings
-    if opt.train_from:len() == 0 then
+    if opt.train_from:len() == 0 then   
         -- Encoder, enc_rnn is top rnn in vertical enc stack
         enc, enc_rnn, enc_embeddings = build_encoder(recurrence)
 
@@ -184,7 +191,7 @@ function build()
     else
         -- Load the model
         assert(path.exists(opt.train_from), 'checkpoint path invalid')
-        print('Loading ' .. opt.train_from .. '...')
+        print('loading ' .. opt.train_from .. '...')
         local checkpoint = torch.load(opt.train_from)
         local model, model_opt = checkpoint[1], checkpoint[2]
         -- Load the different components
@@ -284,9 +291,11 @@ function train_ind(ind, m, criterion, data)
     m.enc:zeroGradParameters()
     m.dec:zeroGradParameters()
 
+
     local d = data[ind]
     local target, target_out, nonzeros, source = d[1], d[2], d[3], d[4]
     local batch_l, target_l, source_l = d[5], d[6], d[7]
+
 
     -- Quick hack to line up encoder/decoder connection
     -- (we need mini-batches on dim 1)
