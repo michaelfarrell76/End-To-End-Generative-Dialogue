@@ -99,28 +99,23 @@ cmd:option('-username',       'michaelfarrell',   'The username for connecting t
 opt = cmd:parse(arg)
 torch.manualSeed(opt.seed)
 
--- Load in general functions
-funcs = loadfile("model_functions.lua")
-funcs()
-
--- Global indicating we are not a child process
-ischild = false
 
 -- The parent process function
 function parent()
     -- Load in the class that runs the server
-    require 'sgd_server'
+    server = require('../../demo_server')
 
     -- Print from parent process
     parallel.print('Im the parent, my ID is: ',  parallel.id, ' and my IP: ', parallel.ip)
 
     -- Initialize Server from server.lua class
-    param_server = sgd_server.new(opt)
+    param_server = server.new(opt)
 
     -- Run the server
     param_server:run()   
 end
 
+-- Run in parallel
 if opt.parallel then
     require 'parallel'
 
