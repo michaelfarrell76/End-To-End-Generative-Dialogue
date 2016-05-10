@@ -133,6 +133,7 @@ function main()
     model, model_opt = checkpoint[1], checkpoint[2]
     idx2word_targ = idx2key(opt.targ_dict)
     word2idx_targ = flip_table(idx2word_targ)
+    opt.layer_type = model_opt.layer_type
 
     -- Format model
     local enc = model[1]

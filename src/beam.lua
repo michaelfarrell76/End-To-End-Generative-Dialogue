@@ -33,11 +33,13 @@ end
 -- Scoring
 ------------
 
-local function forward_connect(enc_rnn, dec_rnn, seq_length)
+local function forward_connect(enc_rnn, dec_rnn, seq_length, layer_type)
     dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput,
-        enc_rnn.outputs[seq_length])
-    dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell,
-        enc_rnn.cells[seq_length])
+    	enc_rnn.outputs[seq_length])
+    if layer_type ~= 'gru' and layer_type ~= 'rnn' then
+        dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell,
+        	enc_rnn.cells[seq_length])
+    end
 end
 
 local function get_scores(m, source, cur_beam)

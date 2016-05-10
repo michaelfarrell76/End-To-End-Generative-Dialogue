@@ -61,6 +61,7 @@ function main()
     word2idx_src = flip_table(idx2word_src)
     idx2word_targ = idx2key(opt.targ_dict)
     word2idx_targ = flip_table(idx2word_targ)
+    opt.layer_type = model.layer_type
 
     -- Format model
     local enc = model[1]
