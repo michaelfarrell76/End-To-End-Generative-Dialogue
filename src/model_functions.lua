@@ -8,21 +8,48 @@ require 'hdf5'
 -- TODO: expand to work with non lstm modules
 -- Forward coupling: copy encoder cell and output to decoder RNN
 function forward_connect(enc_rnn, dec_rnn, seq_length)
-    dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput, enc_rnn.outputs[seq_length])
-    if opt.layer_type ~= 'gru' and opt.layer_type ~= 'rnn' then
-        dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell, enc_rnn.cells[seq_length])
+    if opt.layer_type == 'bi' then
+        enc_fwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][1]
+        enc_bwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
+        dec_fwd_seqLSTM = dec_rnn['modules'][1]['modules'][2]['modules'][1]
+        dec_bwd_seqLSTM = dec_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
+            
+        -- It's unclear whether or not the forward and backward decoder should have the same output,
+        -- may need to experiment with both. Operate as effectively copmletely separate encoder/decoders
+        -- Aka, merge between hidden states is useless if they don't both use enc_rnn output
+       dec_fwd_seqLSTM.userPrevOutput = enc_rnn.output[{{},seq_length}]
+       dec_bwd_seqLSTM.userPrevOutput = enc_rnn.output[{{},seq_length}]
+       dec_fwd_seqLSTM.userPrevCell = enc_fwd_seqLSTM.cell[seq_length]
+       dec_bwd_seqLSTM.userPrevCell = enc_bwd_seqLSTM.cell[seq_length]
+    else
+        dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput, enc_rnn.outputs[seq_length])
+        if opt.layer_type ~= 'gru' and opt.layer_type ~= 'rnn' then
+            dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell, enc_rnn.cells[seq_length])
+        end
     end
 end
 
 -- Backward coupling: copy decoder gradients to encoder RNN
 function backward_connect(enc_rnn, dec_rnn)
-    if opt.layer_type ~= 'gru' and opt.layer_type ~= 'rnn' then
-        enc_rnn.userNextGradCell = nn.rnn.recursiveCopy(enc_rnn.userNextGradCell, dec_rnn.userGradPrevCell)
-    end
-    if opt.layer_type == 'rnn' then
-        enc_rnn.gradPrevOutput = nn.rnn.recursiveCopy(enc_rnn.gradPrevOutput, dec_rnn.gradPrevOutput)
+    if opt.layer_type == 'bi' then
+        enc_fwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][1]
+        enc_bwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
+        dec_fwd_seqLSTM = dec_rnn['modules'][1]['modules'][2]['modules'][1]
+        dec_bwd_seqLSTM = dec_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
+
+        enc_fwd_seqLSTM.userNextGradCell = dec_fwd_seqLSTM.userGradPrevCell
+        enc_bwd_seqLSTM.userNextGradCell = dec_bwd_seqLSTM.userGradPrevCell
+        enc_fwd_seqLSTM.gradPrevOutput = dec_fwd_seqLSTM.userGradPrevOutput
+        enc_bwd_seqLSTM.gradPrevOutput = dec_bwd_seqLSTM.userGradPrevOutput
     else
-        enc_rnn.gradPrevOutput = nn.rnn.recursiveCopy(enc_rnn.gradPrevOutput, dec_rnn.userGradPrevOutput)
+        if opt.layer_type ~= 'gru' and opt.layer_type ~= 'rnn' then
+            enc_rnn.userNextGradCell = nn.rnn.recursiveCopy(enc_rnn.userNextGradCell, dec_rnn.userGradPrevCell)
+        end
+        if opt.layer_type == 'rnn' then
+            enc_rnn.gradPrevOutput = nn.rnn.recursiveCopy(enc_rnn.gradPrevOutput, dec_rnn.gradPrevOutput)
+        else
+            enc_rnn.gradPrevOutput = nn.rnn.recursiveCopy(enc_rnn.gradPrevOutput, dec_rnn.userGradPrevOutput)
+        end
     end
 end
 
@@ -37,6 +64,19 @@ function rnn_layer(inp, hidden_size)
     return rnn
 end
 
+function seqBRNN_batched(inp, hidden_size)
+    return nn.SeqBRNN(inp, hidden_size, true)
+end
+
+-- Bidirectional LSTM already includes sequencer
+function add_sequencer(layer)
+    if opt.layer_type ~= 'bi' then
+        return nn.Sequencer(layer)
+    else
+        return layer
+    end
+end
+
 ------------
 -- Structure
 ------------
@@ -45,7 +85,10 @@ function build_encoder(recurrence)
     local enc = nn.Sequential()
     local enc_embeddings = nn.LookupTable(opt.vocab_size_enc, opt.word_vec_size)
     enc:add(enc_embeddings)
-    enc:add(nn.SplitTable(1, 2))
+
+    if opt.layer_type ~= 'bi' then
+        enc:add(nn.SplitTable(1, 2))
+    end
 
     local enc_rnn
     for i = 1, opt.num_layers do
@@ -53,14 +96,25 @@ function build_encoder(recurrence)
         if i == 1 then inp = opt.word_vec_size end
 
         local rnn = recurrence(inp, opt.hidden_size)
-        enc:add(nn.Sequencer(rnn))
+        enc:add(add_sequencer(rnn))
+
         if i == opt.num_layers then
             enc_rnn = rnn -- Save final layer of encoder
         elseif opt.dropout > 0 then
-            enc:add(nn.Sequencer(nn.Dropout(opt.dropout)))
+            if opt.layer_type == 'bi' then
+                enc:add(nn.Unsqueeze(2))
+                enc:add(nn.SplitTable(1, 2))
+                enc:add(nn.Sequencer(nn.Dropout(opt.dropout)))
+                enc:add(nn.JoinTable(1, 1))
+            else
+                enc:add(nn.Sequencer(nn.Dropout(opt.dropout)))
+            end
         end
     end
 
+    if opt.layer ~= 'bi' then
+        enc:add(nn.SplitTable(1, 2))
+    end
     enc:add(nn.SelectTable(-1))
 
     return enc, enc_rnn, enc_embeddings
@@ -70,7 +124,10 @@ function build_decoder(recurrence)
     local dec = nn.Sequential()
     local dec_embeddings = nn.LookupTable(opt.vocab_size_dec, opt.word_vec_size)
     dec:add(dec_embeddings)
-    dec:add(nn.SplitTable(1, 2))
+    
+    if opt.layer_type ~= 'bi' then
+        dec:add(nn.SplitTable(1, 2))
+    end
 
     local dec_rnn
     for i = 1, opt.num_layers do
@@ -78,13 +135,24 @@ function build_decoder(recurrence)
         if i == 1 then inp = opt.word_vec_size end
 
         local rnn = recurrence(inp, opt.hidden_size)
-        dec:add(nn.Sequencer(rnn))
+        dec:add(add_sequencer(rnn))
         if i == 1 then -- Save initial layer of decoder
             dec_rnn = rnn
         end
         if opt.dropout > 0 and i < opt.num_layers then
-            dec:add(nn.Sequencer(nn.Dropout(opt.dropout)))
+            if opt.layer_type == 'bi' then
+                dec:add(nn.Unsqueeze(2))
+                dec:add(nn.SplitTable(1, 2))
+                dec:add(nn.Sequencer(nn.Dropout(opt.dropout)))
+                dec:add(nn.JoinTable(1, 1))
+            else
+                dec:add(nn.Sequencer(nn.Dropout(opt.dropout)))
+            end
         end
+    end
+
+    if opt.layer ~= 'bi' then
+        dec:add(nn.SplitTable(1, 2))
     end
 
     dec:add(nn.Sequencer(nn.Linear(opt.hidden_size, opt.vocab_size_dec)))
@@ -101,24 +169,18 @@ function build()
         recurrence = nn.GRU
     elseif opt.layer_type == 'fast' then
         recurrence = nn.FastLSTM
+    elseif opt.layer_type == 'bi' then
+         recurrence = seqBRNN_batched
     end
+
     opt.print('Building model with specs:')
     opt.print('Layer type: ' .. opt.layer_type)
     opt.print('Embedding size: ' .. opt.word_vec_size)
     opt.print('Hidden layer size: ' .. opt.hidden_size)
     opt.print('Number of layers: ' .. opt.num_layers)
 
-
     -- Criterion
     local criterion = nn.SequencerCriterion(nn.ClassNLLCriterion())
-
-    if opt.gpuid > 0 then
-        enc:cuda()
-        enc_rnn:cuda()
-        dec:cuda()
-        dec_rnn:cuda()
-        criterion:cuda()    
-    end
 
     local enc, enc_rnn, enc_embeddings, dec, dec_rnn, dec_embeddings
     if opt.train_from:len() == 0 then   
@@ -133,14 +195,21 @@ function build()
         print('loading ' .. opt.train_from .. '...')
         local checkpoint = torch.load(opt.train_from)
         local model, model_opt = checkpoint[1], checkpoint[2]
-
         -- Load the different components
         enc = model[1]:double()
         dec = model[2]:double()
         enc_rnn = model[3]:double()
-        dec_rnn = model[4]:double()
+        dec_rnn = model[4]:double() 
         enc_embeddings = enc['modules'][1]
         dec_embeddings = dec['modules'][1]
+    end
+
+    if opt.gpuid > 0 then
+        enc:cuda()
+        enc_rnn:cuda()
+        dec:cuda()
+        dec_rnn:cuda()
+        criterion:cuda()    
     end
 
     -- Parameter tracking
@@ -245,6 +314,13 @@ function train_ind(ind, m, criterion, data)
 
     -- Backward prop dec
     local grad_output = criterion:backward(dec_out, target_out)
+
+    -- torch.save('test_models.t7', {{m.enc, m.dec, m.enc_rnn, m.dec_rnn}, opt})
+    -- torch.save('source_example.dat', source)
+    -- torch.save('target_example.dat', target)
+    -- torch.save('grad_example.dat', grad_output)
+    -- local dbg = require('debugger'); dbg()
+
     m.dec:backward(target, grad_output)
     backward_connect(m.enc_rnn, m.dec_rnn)
 
@@ -288,7 +364,6 @@ function train_ind(ind, m, criterion, data)
     end
     
     if opt.parallel then
-        print('here')
         return {gps = m.grad_params, batch_l = batch_l, target_l = target_l, source_l = source_l, nonzeros = nonzeros, loss = loss, param_norm = param_norm, grad_norm = grad_norm}
     else
         return batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
@@ -306,11 +381,19 @@ function train(m, criterion, train_data, valid_data)
 
     function clean_layer(layer)
         if opt.gpuid >= 0 then
-            layer.output = torch.CudaTensor()
-            layer.gradInput = torch.CudaTensor()
+            if type(layer.output) ~= 'table' then
+                layer.output = torch.CudaTensor()
+            end
+            if type(layer.gradInput) ~= 'table' then 
+                layer.gradInput = torch.CudaTensor()
+            end
         else
-            layer.output = torch.DoubleTensor()
-            layer.gradInput = torch.DoubleTensor()
+            if type(layer.output) ~= 'table' then
+                layer.output = torch.DoubleTensor()
+            end
+            if type(layer.gradInput) ~= 'table' then 
+                layer.gradInput = torch.DoubleTensor()
+            end
         end
         if layer.modules then
             for i, mod in ipairs(layer.modules) do
@@ -358,6 +441,7 @@ function train(m, criterion, train_data, valid_data)
             parallel.children[j]:send(pkg)
             i = i + 1
         end
+
         while i <= data:size() do
             if opt.parallel then
                 -- parallel.children:join()
@@ -380,7 +464,6 @@ function train(m, criterion, train_data, valid_data)
                             parallel.children[j]:send(pkg)
                             i = i + 1
                         end
-
 
                         batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm =  reply.batch_l, reply.target_l, reply.source_l, reply.nonzeros, reply.loss, reply.param_norm, reply.grad_norm
                     end
@@ -458,9 +541,8 @@ function train(m, criterion, train_data, valid_data)
         -- Clean and save model
         local save_file = string.format('%s_epoch%.2f_%.2f.t7', opt.save_file, epoch, valid_score)
         if epoch % opt.save_every == 0 then
-        -- if epoch == opt.num_epochs then
             opt.print('Saving checkpoint to ' .. save_file)
-            -- clean_layer(m.enc); clean_layer(m.dec);
+            clean_layer(m.enc); clean_layer(m.dec); clean_layer(m.enc_rnn); clean_layer(m.dec_rnn)
             torch.save(save_file, {{m.enc, m.dec, m.enc_rnn, m.dec_rnn}, opt})
         end
     end
