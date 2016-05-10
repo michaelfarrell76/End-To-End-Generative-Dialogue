@@ -97,12 +97,19 @@ function chat(sbeam)
         local pred = remove_pad(sbeam:generate_map(ctx))
 
         -- Or pick randomly from k best?
-        -- local k_best = sbeam:generate_k(5, ctx)
+        -- local k_best, scores = sbeam:generate_k(10, ctx)
         -- local pred = remove_pad(k_best[math.random(#k_best)])
+        -- local pred = remove_pad(k_best[1])
 
         local pred_sent = wordidx2sent(pred, idx2word_targ, false)
         table.insert(dialogue, pred)
         print('\n' .. pred_sent .. '\n')
+
+        -- for i = 1, #k_best do
+        --     pred_sent = wordidx2sent(remove_pad(k_best[i]), idx2word_targ, false)
+        --     print('PRED (' .. scores[i] .. '): ' .. pred_sent)
+        -- end
+        -- print('')
 
         -- TODO: add logical way to end discourse
     end
