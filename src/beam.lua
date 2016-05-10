@@ -90,6 +90,7 @@ function beam:generate(K, source, gold)
         -- Apply hard constraints
         local out = model_scores:clone():double()
         out[{{}, START}] = -INF
+        out[{{}, 8}] = -INF -- Disallow <person>
         if opt.allow_unk == 0 then
             out[{{}, UNK}] = -INF
         end
@@ -132,9 +133,14 @@ function beam:generate(K, source, gold)
             hyps[i+1][k][i+1] = y_i1
 
             -- If we have produced an END symbol, push to stack
-            if y_i1 == END then
+            if y_i1 == END and hyps[i+1][k][2] ~= END then
+            	-- Normalize probability over length
+            	-- Not *that* helpful, but right idea
+            	-- local norm_score = scores[i+1][k] / (i + 1)
+
                 table.insert(result, {i+1, scores[i+1][k], hyps[i+1][k]:clone()})
                 scores[i+1][k] = -INF
+
                 if #result == K then
                     full = true
                     break
@@ -152,22 +158,26 @@ end
 function beam:generate_map(source, gold)
     local result = self:generate(self.opt.k or 5, source, gold)
     local len = result[1][1]
+    local score = result[1][2]
     local sent = result[1][3]
-    return sent[{{1, len}}]
+    return sent[{{1, len}}], score
 end
 
 -- For external use
 function beam:generate_k(k, source)
     local result = self:generate(k, source, nil)
     local outputs = {}
-    for i = 1, #result do
+    local scores = {}
+    for i = 1, k do
         -- result[i] = length, score, sentence
         local len = result[i][1]
+        local score = result[i][2]
         local sent = result[i][3]
         sent = sent[{{1, len}}]
         table.insert(outputs, sent)
+        table.insert(scores, score)
     end
-    return outputs
+    return outputs, scores
 end
 
 return beam
