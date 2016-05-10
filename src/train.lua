@@ -103,7 +103,7 @@ torch.manualSeed(opt.seed)
 -- The parent process function
 function parent()
     -- Load in the class that runs the server
-    server = require('../../demo_server')
+    server = require('sgd_server')
 
     -- Print from parent process
     parallel.print('Im the parent, my ID is: ',  parallel.id, ' and my IP: ', parallel.ip)
