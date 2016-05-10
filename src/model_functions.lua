@@ -10,16 +10,9 @@ function forward_connect(enc_rnn, dec_rnn, seq_length)
     if opt.layer_type == 'bi' then
         enc_fwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][1]
         enc_bwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
-        dec_fwd_seqLSTM = dec_rnn['modules'][1]['modules'][2]['modules'][1]
-        dec_bwd_seqLSTM = dec_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
-            
-        -- It's unclear whether or not the forward and backward decoder should have the same output,
-        -- may need to experiment with both. Operate as effectively copmletely separate encoder/decoders
-        -- Aka, merge between hidden states is useless if they don't both use enc_rnn output
-       dec_fwd_seqLSTM.userPrevOutput = enc_rnn.output[{{},seq_length}]
-       dec_bwd_seqLSTM.userPrevOutput = enc_rnn.output[{{},seq_length}]
-       dec_fwd_seqLSTM.userPrevCell = enc_fwd_seqLSTM.cell[seq_length]
-       dec_bwd_seqLSTM.userPrevCell = enc_bwd_seqLSTM.cell[seq_length]
+        
+        dec_rnn.userPrevOutput = enc_rnn.output[{{},seq_length}]
+        dec_rnn.userPrevCell = enc_bwd_seqLSTM.cell[seq_length]
     else
         dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput, enc_rnn.outputs[seq_length])
         if opt.layer_type ~= 'gru' and opt.layer_type ~= 'rnn' then
@@ -33,13 +26,11 @@ function backward_connect(enc_rnn, dec_rnn)
     if opt.layer_type == 'bi' then
         enc_fwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][1]
         enc_bwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
-        dec_fwd_seqLSTM = dec_rnn['modules'][1]['modules'][2]['modules'][1]
-        dec_bwd_seqLSTM = dec_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
 
-        enc_fwd_seqLSTM.userNextGradCell = dec_fwd_seqLSTM.userGradPrevCell
-        enc_bwd_seqLSTM.userNextGradCell = dec_bwd_seqLSTM.userGradPrevCell
-        enc_fwd_seqLSTM.gradPrevOutput = dec_fwd_seqLSTM.userGradPrevOutput
-        enc_bwd_seqLSTM.gradPrevOutput = dec_bwd_seqLSTM.userGradPrevOutput
+        enc_fwd_seqLSTM.userNextGradCell = dec_rnn.userGradPrevCell
+        enc_bwd_seqLSTM.userNextGradCell = dec_rnn.userGradPrevCell
+        enc_fwd_seqLSTM.gradPrevOutput = dec_rnn.userGradPrevOutput
+        enc_bwd_seqLSTM.gradPrevOutput = dec_rnn.userGradPrevOutput
     else
         if opt.layer_type ~= 'gru' and opt.layer_type ~= 'rnn' then
             enc_rnn.userNextGradCell = nn.rnn.recursiveCopy(enc_rnn.userNextGradCell, dec_rnn.userGradPrevCell)
@@ -126,6 +117,9 @@ function build_decoder(recurrence)
     
     if opt.layer_type ~= 'bi' then
         dec:add(nn.SplitTable(1, 2))
+    else
+        -- Decoder is not bidirectional
+        recurrence = nn.SeqLSTM
     end
 
     local dec_rnn
@@ -134,6 +128,7 @@ function build_decoder(recurrence)
         if i == 1 then inp = opt.word_vec_size end
 
         local rnn = recurrence(inp, opt.hidden_size)
+        rnn.batchfirst = true
         dec:add(add_sequencer(rnn))
         if i == 1 then -- Save initial layer of decoder
             dec_rnn = rnn
