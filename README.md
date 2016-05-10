@@ -18,20 +18,6 @@ If you'd like to chat with your trained model, you'll need the `penlight` packag
 ```bash
 $ luarocks install penlight
 ```
-If you would like to train your model in parallel you must install the parallel package and include our changes. 
-```bash
-$ PARALLEL_INSTALL=~/installs
-$ PATH_TO_MAIN=~/Desktop/GoogleDrive/FinalProject/End-To-End-Generative-Dialogue
-$ cd $PARALLEL_INSTALL
-$ git clone https://github.com/clementfarabet/lua---parallel.git
-$ cd lua---parallel
-$ cp $PATH_TO_MAIN/stash/parallel/init.lua .
-$ luarocks make
-```
-Here $PARALLEL_INSTALL is the directory in which you want to install the parallel library. 
-
-Here $PATH_TO_MAIN is the location of the End-To-End-Generative-Dialogue folder on your computer
-
 ## Usage
 
 ### Data
@@ -75,9 +61,31 @@ These models have a tendency to respond tersely and vaguely. It's a work in prog
 
 ## Advanced Usage
 
+We have implemented support for training the model using [Distributed SGD](https://github.com/michaelfarrell76/Distributed-SGD) to farm our clients that will simultaneously compute gradients/update parameters, both remotely and locally.
+
+### Setup
+
+In order to run code in parallel, you need the [Distributed SGD](https://github.com/michaelfarrell76/Distributed-SGD) which contains this directory (End-To-End-Generative-Dialogue) as a submodule:
+```bash
+$ git clone https://github.com/michaelfarrell76/Distributed-SGD.git
+$ cd Distributed-SGD/lua-lua
+```
+Next make sure that you have the correct [requirements](https://github.com/michaelfarrell76/Distributed-SGD/tree/master/lua-lua#requirements) installed via the Requirements section of the [Distributed SGD](https://github.com/michaelfarrell76/Distributed-SGD) repo.
+
+Next setup your data folder in Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue according to the instructions in the [data](Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue#data) section. Once this is setup correctly, you should have a folder
+Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/data/MovieTriples full with the MovieTriples dataset files. 
+
+Finally, run the preprocessing code:
+```bash
+$ cd Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/src
+$ python preprocess.py
+```
+
 ### Running code in parallel
 
-**Local:** to run a worker with 4 parallel clients on your own machine:
+##### Local 
+
+To run a worker with 4 parallel clients on your own machine:
 ```bash
 $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4
 ```
@@ -89,8 +97,8 @@ First you must enable Remote Login in System Preferences > Sharing. You must als
 $ PATH_TO_SRC=Desktop/GoogleDrive/FinalProject/End-To-End-Generative-Dialogue/src/
 $ PATH_TO_TORCH=/Users/michaelfarrell/torch/install/bin/th
 $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -localhost -extension $PATH_TO_SRC -torch_path $PATH_TO_TORCH
-```
 
+```
 ### Running with clients on Kevins computer
 This is used as a comparison to the google servers (for debugging purposes). 
 ```bash
