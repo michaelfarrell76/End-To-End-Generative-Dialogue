@@ -705,6 +705,6 @@ function load_data(opt)
     opt.vocab_size_dec = valid_data.target_size
     opt.seq_length = valid_data.seq_length
 
-    opt.print('Done loading data')
+    opt.print('Done loading data!')
     return train_data, valid_data, opt
 end
