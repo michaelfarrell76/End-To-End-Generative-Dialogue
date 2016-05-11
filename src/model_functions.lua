@@ -217,7 +217,7 @@ function build()
     else
         -- Load the model
         assert(path.exists(opt.train_from), 'checkpoint path invalid')
-        print('loading ' .. opt.train_from .. '...')
+        opt.print('Loading ' .. opt.train_from .. '...')
         local checkpoint = torch.load(opt.train_from)
         local model, model_opt = checkpoint[1], checkpoint[2]
         -- Load the different components
@@ -235,18 +235,6 @@ function build()
     local num_params = 0
     local params = {}
     local grad_params = {}
-    
-    if opt.train_from:len() == 0 then
-        if opt.pre_word_vecs:len() > 0 then
-            local f = hdf5.open(opt.pre_word_vecs)   
-            local pre_word_vecs = f:read('word_vecs'):all()
-            opt.print('Using pre-trained word embeddings from ' .. opt.pre_word_vecs)
-            for i = 1, pre_word_vecs:size(1) do
-                enc_embeddings.weight[i]:copy(pre_word_vecs[i])
-                dec_embeddings.weight[i]:copy(pre_word_vecs[i])
-            end          
-        end
-    end
 
     opt.print('Number of parameters: ' .. num_params .. '\n')
 
@@ -289,6 +277,19 @@ function build()
         if opt.gpuid >= 0 then
             params[i] = params[i]:cuda()
             grad_params[i] = grad_params[i]:cuda()
+        end
+    end
+
+    -- Initialize pre-trained embeddings if necessary
+    if opt.train_from:len() == 0 then
+        if opt.pre_word_vecs:len() > 0 then
+            local f = hdf5.open(opt.pre_word_vecs)
+            local pre_word_vecs = f:read('word_vecs'):all()
+            opt.print('Using pre-trained word embeddings from ' .. opt.pre_word_vecs)
+            for i = 1, pre_word_vecs:size(1) do
+                enc_embeddings.weight[i]:copy(pre_word_vecs[i])
+                dec_embeddings.weight[i]:copy(pre_word_vecs[i])
+            end
         end
     end
 
