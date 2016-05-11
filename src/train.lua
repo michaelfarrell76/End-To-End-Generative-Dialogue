@@ -57,6 +57,7 @@ cmd:option('-num_epochs',       10,     'Number of training epochs')
 cmd:option('-start_epoch',      1,      'If loading from a checkpoint, the epoch from which to start')
 cmd:option('-param_init',       0.1,    'Parameters are initialized over uniform distribution with support (-param_init, param_init)')
 cmd:option('-learning_rate',    1,      'Starting learning rate')
+cmd:option('-ada_grad',         true,      'When true, update parameters using adagrad algorithm')
 cmd:option('-max_grad_norm',    5,      'If the norm of the gradient vector exceeds this, renormalize it to have the norm equal to max_grad_norm')
 cmd:option('-dropout',          0.3,    'Dropout probability. Dropout is applied between vertical LSTM stacks.')
 cmd:option('-lr_decay',         0.5,    'Decay learning rate by this much if (i) perplexity does not decrease on the validation set or (ii) epoch has gone past the start_decay_at_limit')
@@ -91,7 +92,6 @@ cmd:option('-localhost',        false,   'When true, the farmed out processes wi
 cmd:option('-remote',           false,   'When true, the farmed out processes are run on remote servers. overrides localhost')
 cmd:option('-torch_path',       '/Users/michaelfarrell/torch/install/bin/th',   'The path to the torch directory')
 cmd:option('-extension',       '',   'The location from the home directory to the helper functions')
-cmd:option('-kevin',       false,   'When true runs on kevins computer lol')
 cmd:option('-username',       'michaelfarrell',   'The username for connecting to remote clients')
 
 
@@ -121,6 +121,7 @@ if opt.parallel then
 
     -- Load in functions used for parallel
     opt.print = parallel.print
+    opt.learning_rate = 1 / opt.n_proc
 
     -- Protected execution of parllalel script:
     ok, err = pcall(parent)

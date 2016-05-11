@@ -430,6 +430,14 @@ function train(m, criterion, train_data, valid_data)
             i = i + 1
         end
 
+        if opt.ada_grad then
+            fudge = .000000001
+            historical_grad = {}
+            for k = 1, #m.params do
+                historical_grad[k] = torch.zeros(params:size(1))
+            end
+        end
+
         while i <= data:size() do
             if opt.parallel then
                 -- parallel.children:join()
@@ -439,7 +447,11 @@ function train(m, criterion, train_data, valid_data)
                     local reply = parallel.children[j]:receive("noblock")
                     if reply ~= nil then
                         for k = 1, #m.params do
-                            m.params[k]:add(-opt.learning_rate, reply.gps[k])
+                            if opt.ada_grad then
+                                historical_grad[k]:add(torch.cmul(reply.gps[k],reply.gps[k]))
+                            else
+                                m.params[k]:add(-1,  torch.cmul(reply.gps[k], opt.learning_rate / torch.sqrt(fudge + historical_grad[k])))
+                            end
                             num_words_target = num_words_target + reply.batch_l * reply.target_l
                             num_words_source = num_words_source + reply.batch_l * reply.source_l
                             train_nonzeros = train_nonzeros + reply.nonzeros
