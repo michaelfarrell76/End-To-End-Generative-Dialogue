@@ -80,10 +80,9 @@ end
 -- Structure
 ------------
 
-function build_encoder(recurrence)
+function build_encoder_stack(recurrence, embeddings)
     local enc = nn.Sequential()
-    local enc_embeddings = nn.LookupTable(opt.vocab_size_enc, opt.word_vec_size)
-    enc:add(enc_embeddings)
+    if embeddings ~= nil then enc:add(embeddings) end
 
     if opt.layer_type ~= 'bi' then
         enc:add(nn.SplitTable(1, 2))
@@ -92,7 +91,7 @@ function build_encoder(recurrence)
     local enc_rnn
     for i = 1, opt.num_layers do
         local inp = opt.hidden_size
-        if i == 1 then inp = opt.word_vec_size end
+        if i == 1 and embeddings ~= nil then inp = opt.word_vec_size end
 
         local rnn = recurrence(inp, opt.hidden_size)
         enc:add(add_sequencer(rnn))
@@ -116,6 +115,34 @@ function build_encoder(recurrence)
     end
     enc:add(nn.SelectTable(-1))
 
+    return enc, enc_rnn
+end
+
+function build_encoder(recurrence)
+    local enc_embeddings = nn.LookupTable(opt.vocab_size_enc, opt.word_vec_size)
+    local enc, enc_rnn = build_encoder_stack(recurrence, enc_embeddings)
+    return enc, enc_rnn, enc_embeddings
+end
+
+function build_hred_encoder(recurrence)
+    local enc = nn.Sequential()
+    local enc_embeddings = nn.LookupTable(opt.vocab_size_enc, opt.word_vec_size)
+    local par = nn.ParallelTable()
+    
+    -- Build parallel utterance rnns
+    for i = 1, opt.utter_context do
+        local utterance_rnn = build_encoder_stack(recurrence, enc_embeddings)
+        utterance_rnn:add(nn.Unsqueeze(2))
+        par:add(utterance_rnn)
+    end
+
+    enc:add(par)
+    enc:add(nn.JoinTable(2))
+
+    -- Build context rnn
+    local context_rnn, enc_rnn = build_encoder_stack(recurrence, nil)
+    enc:add(context_rnn)
+    
     return enc, enc_rnn, enc_embeddings
 end
 
@@ -169,11 +196,15 @@ function build()
     elseif opt.layer_type == 'fast' then
         recurrence = nn.FastLSTM
     elseif opt.layer_type == 'bi' then
-         recurrence = seqBRNN_batched
+        recurrence = seqBRNN_batched
+    end
+    if opt.model_type == 'hred' then
+    	build_encoder = build_hred_encoder
     end
 
     opt.print('Building model with specs:')
     opt.print('Layer type: ' .. opt.layer_type)
+    opt.print('Model type: ' .. opt.model_type)
     opt.print('Embedding size: ' .. opt.word_vec_size)
     opt.print('Hidden layer size: ' .. opt.hidden_size)
     opt.print('Number of layers: ' .. opt.num_layers)
@@ -253,17 +284,17 @@ function build()
         cutorch.manualSeed(opt.seed)
 
         for i = 1, #layers do
-         if opt.gpuid2 >= 0 then
-             if i == 1 then
-                 cutorch.setDevice(opt.gpuid) -- Encoder on gpu1
-             else
-                 cutorch.setDevice(opt.gpuid2) -- Decoder/generator on gpu2
-             end
-         end
-         layers[i]:cuda()
+         	if opt.gpuid2 >= 0 then
+             	if i == 1 then
+                 	cutorch.setDevice(opt.gpuid) -- Encoder on gpu1
+             	else
+                 	cutorch.setDevice(opt.gpuid2) -- Decoder/generator on gpu2
+             	end
+         	end
+         	layers[i]:cuda()
         end
         if opt.gpuid2 >= 0 then
-         cutorch.setDevice(opt.gpuid2) --criterion on gpu2
+         	cutorch.setDevice(opt.gpuid2) --criterion on gpu2
         end
         criterion:cuda()
     end
@@ -291,19 +322,12 @@ function train_ind(ind, m, criterion, data)
     m.enc:zeroGradParameters()
     m.dec:zeroGradParameters()
 
-
     local d = data[ind]
     local target, target_out, nonzeros, source = d[1], d[2], d[3], d[4]
     local batch_l, target_l, source_l = d[5], d[6], d[7]
+    if opt.model_type == 'hred' then source_l = opt.utter_context end
 
-
-    -- Quick hack to line up encoder/decoder connection
-    -- (we need mini-batches on dim 1)
-    -- TODO: change forward/backward_connect rather than transpose here
-    source = source:t()
-    target = target:t()
-
-     -- Forward prop enc
+    -- Forward prop enc
     local enc_out = m.enc:forward(source)
     forward_connect(m.enc_rnn, m.dec_rnn, source_l)
 
@@ -660,10 +684,6 @@ function eval(m, criterion, data)
         local target, target_out, nonzeros, source = d[1], d[2], d[3], d[4]
         local batch_l, target_l, source_l = d[5], d[6], d[7]
 
-        -- Line up for forward_connect()
-        source = source:t()
-        target = target:t()
-
         -- Forward prop enc
         local enc_out = m.enc:forward(source)
         forward_connect(m.enc_rnn, m.dec_rnn, source_l)
@@ -714,6 +734,6 @@ function load_data(opt)
     opt.vocab_size_dec = valid_data.target_size
     opt.seq_length = valid_data.seq_length
 
-    opt.print('Done loading data!')
+    opt.print('Done loading data!\n')
     return train_data, valid_data, opt
 end

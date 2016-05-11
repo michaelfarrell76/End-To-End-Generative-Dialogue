@@ -54,6 +54,12 @@ end
 -- Misc
 ------------
 
+function pad_blank(t, length)
+	local blank = torch.LongTensor(length - t:size(1))
+	blank:fill(PAD)
+	return blank:cat(t)
+end
+
 function pad_start(t)
 	local bos = torch.LongTensor({START})
     return bos:cat(t)
