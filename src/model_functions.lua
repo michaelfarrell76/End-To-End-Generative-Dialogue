@@ -198,14 +198,6 @@ function build()
         dec_embeddings = dec['modules'][1]
     end
 
-    if opt.gpuid > 0 then
-        enc:cuda()
-        enc_rnn:cuda()
-        dec:cuda()
-        dec_rnn:cuda()
-        criterion:cuda()    
-    end
-
     -- Parameter tracking
     local layers = {enc, dec}
     local num_params = 0
@@ -258,17 +250,17 @@ function build()
          layers[i]:cuda()
         end
         if opt.gpuid2 >= 0 then
-         cutorch.setDevice(opt.gpuid2) --criterion on gpu2
+            cutorch.setDevice(opt.gpuid2) --criterion on gpu2
         end
         criterion:cuda()
     end
 
     -- Package model for training
     local m = {
-        enc = enc,
+        enc = layers[1],
         enc_rnn = enc_rnn,
         enc_embeddings = enc_embeddings,
-        dec = dec,
+        dec = layers[2],
         dec_rnn = dec_rnn,
         dec_embeddings = dec_embeddings,
         params = params,
@@ -286,11 +278,9 @@ function train_ind(ind, m, criterion, data)
     m.enc:zeroGradParameters()
     m.dec:zeroGradParameters()
 
-
     local d = data[ind]
     local target, target_out, nonzeros, source = d[1], d[2], d[3], d[4]
     local batch_l, target_l, source_l = d[5], d[6], d[7]
-
 
     -- Quick hack to line up encoder/decoder connection
     -- (we need mini-batches on dim 1)
