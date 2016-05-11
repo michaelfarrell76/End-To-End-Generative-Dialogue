@@ -439,11 +439,13 @@ function train(m, criterion, train_data, valid_data)
         local start_time = timer:time().real
         local num_words_target = 0
         local num_words_source = 0
+        cur_perp = 10000000000
 
         local skip = 0
         if opt.parallel then
             skip = opt.n_proc
             parallel.children:join()
+
         end
 
         local i = 1
@@ -451,6 +453,10 @@ function train(m, criterion, train_data, valid_data)
             local pkg = {parameters = m.params, index = batch_order[i]}
             parallel.children[j]:send(pkg)
             i = i + 1
+        end
+
+        if opt.parallel and cur_perp > opt.wait then
+            skip = 1
         end
 
         if opt.ada_grad then
@@ -471,8 +477,14 @@ function train(m, criterion, train_data, valid_data)
             end
         end
 
+        
+
         while i <= data:size() do
             if opt.parallel then
+                if cur_perp < opt.wait then
+                    skip = opt.n_proc
+                end
+
                 -- parallel.children:join()
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
                 for j =  1, skip do
@@ -515,7 +527,7 @@ function train(m, criterion, train_data, valid_data)
                         num_words_source / time_taken, num_words_target / time_taken)
                     opt.print(stats)
                 end
-                sys.sleep(1)
+                sys.sleep(.1)
             else
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
                 batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm = train_ind(batch_order[i], m, criterion, train_data)
