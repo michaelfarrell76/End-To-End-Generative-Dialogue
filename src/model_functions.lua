@@ -520,8 +520,9 @@ function train(m, criterion, train_data, valid_data)
                 if i % opt.print_every == 0  and batch_l ~= nil then
                     local stats = string.format('Epoch: %d, Batch: %d/%d, Batch size: %d, LR: %.4f, ',
                         epoch, i, data:size(), batch_l, opt.learning_rate)
+                    cur_perp = math.exp(train_loss / train_nonzeros)
                     stats = stats .. string.format('PPL: %.2f, |Param|: %.2f, |GParam|: %.2f, ',
-                        math.exp(train_loss / train_nonzeros), param_norm, grad_norm)
+                        cur_perp, param_norm, grad_norm)
                     stats = stats .. string.format('Training: %d/%d/%d total/source/target tokens/sec',
                         (num_words_target+num_words_source) / time_taken,
                         num_words_source / time_taken, num_words_target / time_taken)
