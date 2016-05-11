@@ -55,12 +55,24 @@ function worker()
             parallel.print('Recieved initialization parameters')
             cmd, arg, ext = pkg.cmd, pkg.arg, pkg.ext
             opt = cmd:parse(arg)
+            opt.print = parallel.print
+
+            if opt.gpuid >= 0 then
+                print('Using CUDA on GPU ' .. opt.gpuid .. '...')
+                if opt.gpuid2 >= 0 then
+                    print('Using CUDA on second GPU ' .. opt.gpuid2 .. '...')
+                end
+                require 'cutorch'
+                require 'cunn'
+                cutorch.setDevice(opt.gpuid)
+                cutorch.manualSeed(opt.seed)
+            end
 
             -- Update path
             package.path = opt.add_to_path .. package.path
 
             -- Add in additional necessary parameters
-            opt.print = parallel.print
+            
             opt.parallel = true
 
 

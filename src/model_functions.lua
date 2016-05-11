@@ -449,16 +449,18 @@ function train(m, criterion, train_data, valid_data)
         end
 
         local i = 1
+
+        if opt.parallel and cur_perp > opt.wait then
+            skip = 1
+        end
+
         for j = 1, skip do
             local pkg = {parameters = m.params, index = batch_order[i]}
             parallel.children[j]:send(pkg)
             i = i + 1
         end
 
-        if opt.parallel and cur_perp > opt.wait then
-            skip = 1
-        end
-
+       
         if opt.ada_grad then
             opt.print('Using ada_grad')
             local fudge_fact = .000000001
@@ -483,6 +485,12 @@ function train(m, criterion, train_data, valid_data)
             if opt.parallel then
                 if cur_perp < opt.wait then
                     skip = opt.n_proc
+                    for j = 2, skip do
+                        local pkg = {parameters = m.params, index = batch_order[i]}
+                        parallel.children[j]:send(pkg)
+                        i = i + 1
+                    end
+                    opt.wait = -1
                 end
 
                 -- parallel.children:join()
@@ -498,12 +506,12 @@ function train(m, criterion, train_data, valid_data)
                             else   
                                 m.params[k]:add(-opt.learning_rate, reply.gps[k])
                             end
-
-                            num_words_target = num_words_target + reply.batch_l * reply.target_l
-                            num_words_source = num_words_source + reply.batch_l * reply.source_l
-                            train_nonzeros = train_nonzeros + reply.nonzeros
-                            train_loss = train_loss + reply.loss * reply.batch_l
                         end
+
+                        num_words_target = num_words_target + reply.batch_l * reply.target_l
+                        num_words_source = num_words_source + reply.batch_l * reply.source_l
+                        train_nonzeros = train_nonzeros + reply.nonzeros
+                        train_loss = train_loss + reply.loss * reply.batch_l
 
                         if i <= data:size() then
                             local pkg = {parameters = m.params, index = batch_order[i]}
@@ -520,8 +528,9 @@ function train(m, criterion, train_data, valid_data)
                 if i % opt.print_every == 0  and batch_l ~= nil then
                     local stats = string.format('Epoch: %d, Batch: %d/%d, Batch size: %d, LR: %.4f, ',
                         epoch, i, data:size(), batch_l, opt.learning_rate)
+                    cur_perp = math.exp(train_loss / train_nonzeros)
                     stats = stats .. string.format('PPL: %.2f, |Param|: %.2f, |GParam|: %.2f, ',
-                        math.exp(train_loss / train_nonzeros), param_norm, grad_norm)
+                        cur_perp, param_norm, grad_norm)
                     stats = stats .. string.format('Training: %d/%d/%d total/source/target tokens/sec',
                         (num_words_target+num_words_source) / time_taken,
                         num_words_source / time_taken, num_words_target / time_taken)
@@ -601,7 +610,7 @@ function train(m, criterion, train_data, valid_data)
         local save_file = string.format('%s_epoch%.2f_%.2f.t7', opt.save_file, epoch, valid_score)
         if epoch % opt.save_every == 0 then
             opt.print('Saving checkpoint to ' .. save_file)
-            clean_layer(m.enc); clean_layer(m.dec); clean_layer(m.enc_rnn); clean_layer(m.dec_rnn)
+            (m.enc:clearState()); (m.enc_rnn:clearState()); (m.dec:clearState()); clean_layer(m.dec_rnn:clearState())
             torch.save(save_file, {{m.enc, m.dec, m.enc_rnn, m.dec_rnn}, opt})
         end
     end
