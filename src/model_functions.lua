@@ -10,16 +10,9 @@ function forward_connect(enc_rnn, dec_rnn, seq_length)
     if opt.layer_type == 'bi' then
         enc_fwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][1]
         enc_bwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
-        dec_fwd_seqLSTM = dec_rnn['modules'][1]['modules'][2]['modules'][1]
-        dec_bwd_seqLSTM = dec_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
-            
-        -- It's unclear whether or not the forward and backward decoder should have the same output,
-        -- may need to experiment with both. Operate as effectively copmletely separate encoder/decoders
-        -- Aka, merge between hidden states is useless if they don't both use enc_rnn output
-       dec_fwd_seqLSTM.userPrevOutput = enc_rnn.output[{{},seq_length}]
-       dec_bwd_seqLSTM.userPrevOutput = enc_rnn.output[{{},seq_length}]
-       dec_fwd_seqLSTM.userPrevCell = enc_fwd_seqLSTM.cell[seq_length]
-       dec_bwd_seqLSTM.userPrevCell = enc_bwd_seqLSTM.cell[seq_length]
+        
+        dec_rnn.userPrevOutput = enc_rnn.output[{{},seq_length}]
+        dec_rnn.userPrevCell = enc_bwd_seqLSTM.cell[seq_length]
     else
         dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput, enc_rnn.outputs[seq_length])
         if opt.layer_type ~= 'gru' and opt.layer_type ~= 'rnn' then
@@ -33,13 +26,11 @@ function backward_connect(enc_rnn, dec_rnn)
     if opt.layer_type == 'bi' then
         enc_fwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][1]
         enc_bwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
-        dec_fwd_seqLSTM = dec_rnn['modules'][1]['modules'][2]['modules'][1]
-        dec_bwd_seqLSTM = dec_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
 
-        enc_fwd_seqLSTM.userNextGradCell = dec_fwd_seqLSTM.userGradPrevCell
-        enc_bwd_seqLSTM.userNextGradCell = dec_bwd_seqLSTM.userGradPrevCell
-        enc_fwd_seqLSTM.gradPrevOutput = dec_fwd_seqLSTM.userGradPrevOutput
-        enc_bwd_seqLSTM.gradPrevOutput = dec_bwd_seqLSTM.userGradPrevOutput
+        enc_fwd_seqLSTM.userNextGradCell = dec_rnn.userGradPrevCell
+        enc_bwd_seqLSTM.userNextGradCell = dec_rnn.userGradPrevCell
+        enc_fwd_seqLSTM.gradPrevOutput = dec_rnn.userGradPrevOutput
+        enc_bwd_seqLSTM.gradPrevOutput = dec_rnn.userGradPrevOutput
     else
         if opt.layer_type ~= 'gru' and opt.layer_type ~= 'rnn' then
             enc_rnn.userNextGradCell = nn.rnn.recursiveCopy(enc_rnn.userNextGradCell, dec_rnn.userGradPrevCell)
@@ -153,6 +144,9 @@ function build_decoder(recurrence)
     
     if opt.layer_type ~= 'bi' then
         dec:add(nn.SplitTable(1, 2))
+    else
+        -- Decoder is not bidirectional
+        recurrence = nn.SeqLSTM
     end
 
     local dec_rnn
@@ -161,6 +155,7 @@ function build_decoder(recurrence)
         if i == 1 then inp = opt.word_vec_size end
 
         local rnn = recurrence(inp, opt.hidden_size)
+        rnn.batchfirst = true
         dec:add(add_sequencer(rnn))
         if i == 1 then -- Save initial layer of decoder
             dec_rnn = rnn
@@ -234,35 +229,12 @@ function build()
         dec_embeddings = dec['modules'][1]
     end
 
-    if opt.gpuid > 0 then
-        enc:cuda()
-        enc_rnn:cuda()
-        dec:cuda()
-        dec_rnn:cuda()
-        criterion:cuda()    
-    end
 
     -- Parameter tracking
     local layers = {enc, dec}
     local num_params = 0
     local params = {}
     local grad_params = {}
-    for i = 1, #layers do
-        if opt.gpuid2 >= 0 then
-            if i == 1 then
-                cutorch.setDevice(opt.gpuid)
-            else
-                cutorch.setDevice(opt.gpuid2)
-            end
-        end
-        local p, gp = layers[i]:getParameters()
-        if opt.train_from:len() == 0 then
-            p:uniform(-opt.param_init, opt.param_init)
-        end
-        num_params = num_params + p:size(1)
-        params[i] = p
-        grad_params[i] = gp
-    end
     
     if opt.train_from:len() == 0 then
         if opt.pre_word_vecs:len() > 0 then
@@ -299,12 +271,33 @@ function build()
         criterion:cuda()
     end
 
+    for i = 1, #layers do
+        if opt.gpuid2 >= 0 then
+            if i == 1 then
+                cutorch.setDevice(opt.gpuid)
+            else
+                cutorch.setDevice(opt.gpuid2)
+            end
+        end
+        local p, gp = layers[i]:getParameters()
+        if opt.train_from:len() == 0 then
+            p:uniform(-opt.param_init, opt.param_init)
+        end
+        num_params = num_params + p:size(1)
+        params[i] = p
+        grad_params[i] = gp
+        if opt.gpuid >= 0 then
+            params[i] = params[i]:cuda()
+            grad_params[i] = grad_params[i]:cuda()
+        end
+    end
+
     -- Package model for training
     local m = {
-        enc = enc,
+        enc = layers[1],
         enc_rnn = enc_rnn,
         enc_embeddings = enc_embeddings,
-        dec = dec,
+        dec = layers[2],
         dec_rnn = dec_rnn,
         dec_embeddings = dec_embeddings,
         params = params,
@@ -459,6 +452,24 @@ function train(m, criterion, train_data, valid_data)
             i = i + 1
         end
 
+        if opt.ada_grad then
+            opt.print('Using ada_grad')
+            local fudge_fact = .000000001
+            historical_grad = {}
+            fudge = {}
+            l_r = {}
+            for k = 1, #m.params do
+                historical_grad[k] = torch.zeros(m.params[k]:size(1))
+                fudge[k] = torch.zeros(m.params[k]:size(1)):fill(fudge_fact)
+                l_r[k] = torch.zeros(m.params[k]:size(1)):fill(opt.learning_rate)
+                if opt.gpuid > 0 then
+                    historical_grad[k] = historical_grad[k]:cuda()
+                    fudge[k] = fudge[k]:cuda()
+                    l_r[k] = l_r[k]:cuda()
+                end
+            end
+        end
+
         while i <= data:size() do
             if opt.parallel then
                 -- parallel.children:join()
@@ -468,7 +479,13 @@ function train(m, criterion, train_data, valid_data)
                     local reply = parallel.children[j]:receive("noblock")
                     if reply ~= nil then
                         for k = 1, #m.params do
-                            m.params[k]:add(-opt.learning_rate, reply.gps[k])
+                            if opt.ada_grad then
+                                historical_grad[k]:add(torch.cmul(reply.gps[k],reply.gps[k]))
+                                opt.print(historical_grad[k]:sum())
+                                m.params[k]:add(-1,  torch.cmul(reply.gps[k], opt.learning_rate / torch.sqrt(fudge + historical_grad[k])))
+                            else
+                                m.params[k]:add(-opt.learning_rate, reply.gps[k])
+                            end
                             num_words_target = num_words_target + reply.batch_l * reply.target_l
                             num_words_source = num_words_source + reply.batch_l * reply.source_l
                             train_nonzeros = train_nonzeros + reply.nonzeros
@@ -503,8 +520,20 @@ function train(m, criterion, train_data, valid_data)
                 batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm = train_ind(batch_order[i], m, criterion, train_data)
 
                 -- Update params
-                m.dec:updateParameters(opt.learning_rate)
-                m.enc:updateParameters(opt.learning_rate)
+
+                for k = 1, #m.params do
+                    if opt.ada_grad then
+                        historical_grad[k]:add(torch.cmul(m.grad_params[k],m.grad_params[k]))
+                   
+                        m.params[k]:add(-1,  torch.cmul(m.grad_params[k], torch.cdiv(l_r[k], torch.sqrt(fudge[k] + historical_grad[k]))))
+                    else   
+                        m.params[k]:add(-opt.learning_rate, m.grad_params[k])
+                    end
+
+                end
+
+                -- m.dec:updateParameters(opt.learning_rate)
+                -- m.enc:updateParameters(opt.learning_rate)
 
                 -- Bookkeeping
                 num_words_target = num_words_target + batch_l * target_l

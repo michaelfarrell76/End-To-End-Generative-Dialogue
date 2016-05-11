@@ -18,20 +18,6 @@ If you'd like to chat with your trained model, you'll need the `penlight` packag
 ```bash
 $ luarocks install penlight
 ```
-If you would like to train your model in parallel you must install the parallel package and include our changes. 
-```bash
-$ PARALLEL_INSTALL=~/installs
-$ PATH_TO_MAIN=~/Desktop/GoogleDrive/FinalProject/End-To-End-Generative-Dialogue
-$ cd $PARALLEL_INSTALL
-$ git clone https://github.com/clementfarabet/lua---parallel.git
-$ cd lua---parallel
-$ cp $PATH_TO_MAIN/stash/parallel/init.lua .
-$ luarocks make
-```
-Here $PARALLEL_INSTALL is the directory in which you want to install the parallel library. 
-
-Here $PATH_TO_MAIN is the location of the End-To-End-Generative-Dialogue folder on your computer
-
 ## Usage
 
 ### Data
@@ -75,123 +61,83 @@ These models have a tendency to respond tersely and vaguely. It's a work in prog
 
 ## Advanced Usage
 
+We have implemented support for training the model using [Distributed SGD](https://github.com/michaelfarrell76/Distributed-SGD) to farm our clients that will simultaneously compute gradients/update parameters, both remotely and locally.
+
+### Setup
+
+In order to run code in parallel, you need the [Distributed SGD](https://github.com/michaelfarrell76/Distributed-SGD) which contains this directory (End-To-End-Generative-Dialogue) as a submodule:
+```bash
+$ git clone --recursive https://github.com/michaelfarrell76/Distributed-SGD.git
+$ cd Distributed-SGD/lua-lua
+```
+Next make sure that you have the correct [requirements](https://github.com/michaelfarrell76/Distributed-SGD/tree/master/lua-lua#requirements) installed via the Requirements section of the [Distributed SGD](https://github.com/michaelfarrell76/Distributed-SGD) repo.
+
+Next setup your data folder in Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue according to the instructions in the [data](https://github.com/michaelfarrell76/End-To-End-Generative-Dialogue#data) section. Once this is setup correctly, you should have a folder
+Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/data/MovieTriples full with the MovieTriples dataset files. 
+
+Finally, run the preprocessing code:
+```bash
+$ cd Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/src
+$ python preprocess.py
+```
+
 ### Running code in parallel
 
-**Local:** to run a worker with 4 parallel clients on your own machine:
+##### Local 
+
+To run a worker with 2 parallel clients on your own machine:
 ```bash
-$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4
+$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 2
 ```
 
-**Locally through localhost**: you can run a worker with 1 parallel client on your own computer through localhost (which is more similar to how things will work when running through a server). There is only 1 parallel client since it requires that you input your password while connecting to your own computer through ssh. This should not be used in practice as it's more inefficient than the previous command. This can, however, be a useful benchmark for developing remote server training.
+##### localhost
 
-First you must enable Remote Login in System Preferences > Sharing. You must also specify the location of the src folder from your home directory:
+You can start a worker that talks to its clients through localhost.
+
+First follow the setup [instructions](https://github.com/michaelfarrell76/Distributed-SGD/tree/master/lua-lua#remote---localhost) under the 'Remote -localhost' header, through the 'Allow ssh connections' subheader. 
+
+Once you've successfully added your ssh to the list of authorized keys, and allowed for remote login, you can run this through localhost with the following command:
 ```bash
-$ PATH_TO_SRC=Desktop/GoogleDrive/FinalProject/End-To-End-Generative-Dialogue/src/
+$ PATH_TO_SRC=Desktop/GoogleDrive/FinalProject/Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/src/
 $ PATH_TO_TORCH=/Users/michaelfarrell/torch/install/bin/th
-$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 1 -localhost -extension $PATH_TO_SRC -torch_path $PATH_TO_TORCH
-
-```
-### Running with clients on Kevins computer
-This is used as a comparison to the google servers (for debugging purposes). 
-```bash
-$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -n_proc 1 -parallel -kevin -extension stash/mikeparallel/End-To-End-Generative-Dialogue/src/ -torch_path /Users/candokevin/torch/install/bin/th
+$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 2 -localhost -extension $PATH_TO_SRC -torch_path $PATH_TO_TORCH
 ```
 
 ### Running remotely on gcloud servers
 
-**Set up an ssh key to connect to our servers:**
-Replace USERNAME with your own username (i.e., USERNAME = michaelfarrell).
+Ideally, you can have the clients farmed out to different remote computers instead of running locally. 
+
+First, zip the data folder that contains the MovieTriples dataset in the main End-To-End-Generative-Dialogue folder:
 ```bash
-$ USERNAME=michaelfarrell
-$ ssh-keygen -t rsa -f ~/.ssh/gcloud-sshkey -C $USERNAME
+$ cd End-To-End-Generative-Dialogue
+$ zip -r data.zip data
 ```
-Hit enter twice and a key should have been generated. Now print the key and copy the output:
+
+Next navigate to the 'lua-lua' folder and follow the setup [instructions](https://github.com/michaelfarrell76/Distributed-SGD/tree/master/lua-lua#remote---gcloud) under the 'Remote -gcloud' header. Follow these instructions exactly as they are written through the section 'Adding ssh keys again', except in the section labeled 'Setup the disk', instead of running the command
 ```bash
-$ cat ~/.ssh/gcloud-sshkey.pub
+$  source setup_image.sh
 ```
-Next you must add the key to the set of public keys:
-- Login to our google compute account. 
-- Go to compute engine dashboard
-- Go to metdata tab
-- Go to ssh-key subtab
-- Click edit
-- Add the key you copied as a new line
-
-Restrict external access to the key:
+in the 'Setup the disk' step, you should run
 ```bash
-$ chmod 400 ~/.ssh/gcloud-sshkey
+$  source End-To-End-Generative-Dialogue/src/setup_image_End-to-End.sh
 ```
+which contains the necessary changes to the setup for this task.
 
-**Generate an instance template:**
-- Click on the 'Instance templates' tab
-- Create new
-- Name the template 
-- Choose 8vCPU highmem as machine type
-- Choose Ubuntu 14.04 LTS as boot disk
-- Allow HTTP traffic
-- Allow HTTPS traffic
-- Under more->Disks, unclick 'Delete boot disk when instance is deleted'
-- Create
+Once the servers are all setup and you are connected to your host server, you should navigate back to the src directory and you can run the train.lua file on remote servers:
 
-**Allow tcp connections:**
-- Click on the 'Instance templates' tab
-- Click on the new template you created
-- Go down to networks and click on the 'default' link
-- Go to 'Firewall rules' and Add a new rule
-- Set name to be 'all'
-- Set source filter to allow from any source
-- Under allowed protocols, put 'tcp:0-65535; udp:0-65535; icmp'
-- Create
-
-
-**Generate an instance group of machines if you have not yet done so:**
-- Go to the "Instance groups" tab
-- Create instance group
-- Give the group a name, i.e. training-group-dev
-- Give a description
-- Set zone to us-central1-b
-- Use instance template
-- Choose 'miket=template' or other template of choice
-- Set the number of instances
-- Create
-- Wait for the instances to launch
-- Once there is a green checkmark, click on the new instance
-
-**Connecting to GCloud Server**
-
-You can connect to one of the servers by running:
 ```bash
-$ IP_ADDR=130.211.160.115
-$ ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey $USERNAME@$IP_ADDR
-```
-where $username is the username you used to create the ssh key as defined above, and IP_ADDR is the ip address of the machine listed under "External ip" (i.e., 104.197.9.84). Note: the flag `-o "StrictHostKeyChecking no"` automatically adds the host to your list and does not prompt confirmation.
+$ cd Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/src
+$ EXTENSION=Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/src/
+$ TORCH_PATH=/home/michaelfarrell/torch/install/bin/th
+$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -remote -extension $EXTENSION -torch_path $TORCH_PATH -n_proc 12
 
-If you get an error like this:
-```bash
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 ```
-then you'll want to
-```bash
-$ vim ~/.ssh/known_hosts
-```
-and delete the last few lines that were added. They should look like some ip address and then something that starts with AAAA. You can delete lines in vim by typing dd to delete the current line. This can happen when you restart the servers and they change ip addresses, among other things.
-
-**Adding remote clients**
-You will want to add your list of client servers to the file 'client_list.txt' where each line in the file is one of the external ip addresses located in the Instance group you are currently using. 
-
-**Initializing remote servers**
-Before using the remote servers, we need to make sure that the servers are ready to go. This can be done by running
-```
-$ python server_init.py
-```
-from the src folder on your own computer. 
 
 **Running the remote server:** 
 If the servers have been initialized, you will first want to connect to one of them:
 ```bash
 $ ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey $USERNAME@$IP_ADDR
+
 ```
 Once connected, you need to again setup an ssh key as listed in the instructions: "Set up an ssh key to connect to our servers" above.
 Once the key is created and added to the account, then:

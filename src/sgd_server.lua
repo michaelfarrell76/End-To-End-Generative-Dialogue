@@ -1,73 +1,98 @@
 ------------------------------------------------------------------------
 -- demo_server.lua
+--
+-- This is the example of a class that is used to implement a sever in
+--      server.lua. This class has an _init(opt) function that takes in
+--      the global parameters, loads in the data and builds the model on 
+--      the parameter server. The class also has a run() function that
+--      forks out the child clients and executes the function 'worker'
+--      on each corresponding client. 
+--
+-- If you wish to develop your own SGD model, create a new class that is
+--      similar to this.
 ------------------------------------------------------------------------
 local sgd_server = torch.class('sgd_server')
 
 ------------
--- Server class
-------------
 -- Worker code
+------------
 function worker()
+    -- Used to check files 
+    require "lfs"
     
     -- Alert successfully started up
     parallel.print('Im a worker, my ID is: ',  parallel.id, ' and my IP: ', parallel.ip)
 
     -- Global indicating is a child
     ischild = true
+
+    -- Extension to lua-lua folder from home directory. Set to no extension as default
     ext = ""
 
     -- Number of packages received
     local n_pkg = 0
 
     while true do
+
         -- Allow the parent to terminate the child
         m = parallel.yield()
         if m == 'break' then break end   
 
         -- Receive data
         local pkg = parallel.parent:receive()
+
         -- Make sure to clean everything up since big files are being passed
         io.write('.') io.flush()
         collectgarbage()
 
-
-        print('recevived')
-        parallel.print('recevived')
         if n_pkg == 0 then 
             -- This is the first time receiving a package, it has the globals
 
+            -- Receive and parse global parameters
             parallel.print('Recieved initialization parameters')
             cmd, arg, ext = pkg.cmd, pkg.arg, pkg.ext
-
             opt = cmd:parse(arg)
-            opt.print = parallel.print
 
-            -- Load in functions
-            funcs = loadfile(ext .. "model_functions.lua")
+            -- Add in additional necessary parameters
+            opt.print = parallel.print
+            opt.parallel = true
+
+
+             -- Library used to handle data types
+            local data_loc = ext .. 'data'
+            if not lfs.attributes(data_loc .. '.lua') then
+                print('The file data.lua could not be found in ' .. data_loc .. '.lua')
+                os.exit()
+            end
+            data = require(data_loc)
+
+            -- Load in helper functions for this model defined in End-To-End-Generative-Dialogue
+            local model_funcs_loc = ext .. "model_functions.lua"
+            if not lfs.attributes(model_funcs_loc) then
+                print('The file model_functions.lua could not be found in ' .. model_funcs_loc)
+                os.exit()
+            end
+            funcs = loadfile(model_funcs_loc)
             funcs()
 
-            -- Load in data
-            datafun = loadfile(ext .. "data.lua")
-            data = datafun()
-
+            -- Change the locations of the datafiles based on new extension
             opt.data_file = ext .. opt.data_file
             opt.val_data_file = ext .. opt.val_data_file
+
+            --point the wordvec to the right place if exists
+            if opt.pre_word_vecs ~= "" then
+                opt.pre_word_vecs = opt.extension .. opt.pre_word_vecs
+            end
             
             -- Load in data to client
-            train_data, valid_data = load_data(opt)
+            train_data, valid_data, opt = load_data(opt)
+
+            -- Build the model on the client
             model, criterion = build()
 
-
-            --point the wordvec to the right place
-            opt.pre_word_vecs = opt.extension .. opt.pre_word_vecs
-
-            parallel.print('a')
             -- send some data back
             parallel.parent:send('Received parameters and loaded data successfully')
         else
-            print('b')
-            opt.print('b')
-            
 
             parallel.print('received params from batch with index: ', pkg.index)
 
@@ -75,7 +100,6 @@ function worker()
             for i = 1, #model.params do
                 model.params[i]:copy(pkg.parameters[i])
             end
-
 
             -- Training the model at the given index
             local pkg_o = train_ind(pkg.index, model, criterion, train_data)
@@ -88,22 +112,50 @@ function worker()
     end
 end
 
+
+------------
+-- Server class
+------------
+
+-- Initialization function for the server object. Here we load in the data, build our
+--      model, and then add any remote client objects if necessary. 
 function sgd_server:__init(opt)
+    -- Save the command line options 
     self.opt = opt
-    -- Load in helper functions for this model
-    funcs = loadfile("model_functions.lua")
+
+    -- Used to check files 
+    require "lfs"
+
+     -- Library used to handle data types
+    local data_loc = 'data'
+    if not lfs.attributes(data_loc .. '.lua') then
+        print('The file data.lua could not be found in ' .. data_loc .. '.lua')
+        os.exit()
+    end
+    data = require(data_loc)
+
+    -- Load in helper functions for this model defined in End-To-End-Generative-Dialogue
+    local model_funcs_loc = "model_functions.lua"
+    if not lfs.attributes(model_funcs_loc) then
+        print('The file model_functions.lua could not be found in ' .. model_funcs_loc)
+        os.exit()
+    end
+    funcs = loadfile(model_funcs_loc)
     funcs()
 
+    -- Load in the data
     self:load_data()
 
+    -- Setup and build the model
     self:build()
 
+    -- Add remote computers if necessary
     if self.opt.remote then
         parallel.print('Runnings clients remotely')
         
         -- Open the list of client ip addresses
-        local fh,err = io.open("../client_list.txt")
-        if err then print("../client_list.txt not found"); return; end
+        local fh,err = io.open("../../../client_list.txt")
+        if err then print("../../../client_list.txt not found"); return; end
 
         -- line by line
         while true do
@@ -111,16 +163,23 @@ function sgd_server:__init(opt)
             if line == nil then break end
             local addr = self.opt.username .. '@' .. line
             addr = string.gsub(addr, "\n", "") -- remove line breaks
-            parallel.addremote( {ip=addr, cores=4, lua=self.opt.torch_path, protocol='ssh -ttq -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
+
+            -- Add the remote server by ip address
+            parallel.addremote( {ip=addr, cores=4, lua=self.opt.torch_path, protocol='ssh -ttq -o "StrictHostKeyChecking no" -i ~/.ssh/dist-sgd-sshkey'})
             parallel.print('Adding address ', addr)
         end
     elseif opt.localhost then
+        -- Has remote clients launched through localhost
         parallel.print('Running clients through localhost')
 
-        parallel.addremote({ip='localhost', cores=4, lua=self.opt.torch_path, protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/gcloud-sshkey'})
+        parallel.addremote({ip='localhost', cores=4, lua=self.opt.torch_path, protocol='ssh -o "StrictHostKeyChecking no" -i ~/.ssh/dist-sgd-sshkey'})
     end
 end
 
+-- Main function that runs the server. Here the child clients are forked off and
+--      the code in the 'worker' function is sent to the clients to be run. Once
+--      the connection is established, :send() and :recieve() are used to pass 
+--      parameters between the client and the server
 function sgd_server:run()
     parallel.print('Forking ', self.opt.n_proc, ' processes')
     parallel.sfork(self.opt.n_proc)
@@ -129,6 +188,7 @@ function sgd_server:run()
     -- exec worker code in each process
     parallel.children:exec(worker)
     parallel.print('Finished telling workers to execute')
+
     --send the global parameters to the children
     parallel.children:join()
     parallel.print('Sending parameters to children')
@@ -147,13 +207,18 @@ function sgd_server:run()
     parallel.print('All processes terminated')
 end
 
+-- Function loads in the training and validation data into self.train_data and
+--      seld.valid_data. 
 function sgd_server:load_data()
+    -- Simply calls the load_data function defined in "End-To-End-Generative-Dialogue/src/model_functions.lua"
     self.train_data, self.valid_data, self.opt = load_data(self.opt)
 end
 
+-- Function loads in the nn model and criterion into self.model and self.criterion
 function sgd_server:build()
+    -- Simply calls the build function defined in "End-To-End-Generative-Dialogue/src/model_functions.lua"
     self.model, self.criterion = build()
 end
 
-
+-- Return the server
 return sgd_server
