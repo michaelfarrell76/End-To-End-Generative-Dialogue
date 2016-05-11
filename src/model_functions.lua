@@ -198,7 +198,12 @@ function build()
         dec_embeddings = dec['modules'][1]
     end
 
- 
+
+    -- Parameter tracking
+    local layers = {enc, dec}
+    local num_params = 0
+    local params = {}
+    local grad_params = {}
     
     if opt.train_from:len() == 0 then
         if opt.pre_word_vecs:len() > 0 then
@@ -235,11 +240,7 @@ function build()
         criterion:cuda()
     end
 
-       -- Parameter tracking
-    local layers = {enc, dec}
-    local num_params = 0
-    local params = {}
-    local grad_params = {}
+
     for i = 1, #layers do
         if opt.gpuid2 >= 0 then
             if i == 1 then
@@ -253,8 +254,9 @@ function build()
             p:uniform(-opt.param_init, opt.param_init)
         end
         num_params = num_params + p:size(1)
-        params[i] = p
-        grad_params[i] = gp
+
+        params[i] = p:cuda()
+        grad_params[i] = gp:cuda()
     end
 
     -- Package model for training
@@ -268,7 +270,6 @@ function build()
         params = params,
         grad_params = grad_params
     }
-    print(m)
 
     return m, criterion
 end
