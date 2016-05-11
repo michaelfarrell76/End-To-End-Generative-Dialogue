@@ -85,9 +85,9 @@ $ python preprocess.py
 
 ##### Local 
 
-To run a worker with 4 parallel clients on your own machine:
+To run a worker with 2 parallel clients on your own machine:
 ```bash
-$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 4
+$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -n_proc 2
 ```
 
 ##### localhost
