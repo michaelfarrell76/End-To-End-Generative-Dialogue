@@ -450,7 +450,7 @@ function train(m, criterion, train_data, valid_data)
 
         local i = 1
 
-         if opt.parallel and cur_perp > opt.wait then
+        if opt.parallel and cur_perp > opt.wait then
             skip = 1
         end
 
@@ -490,6 +490,7 @@ function train(m, criterion, train_data, valid_data)
                         parallel.children[j]:send(pkg)
                         i = i + 1
                     end
+                    opt.wait = -1
                 end
 
                 -- parallel.children:join()

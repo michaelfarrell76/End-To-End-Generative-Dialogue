@@ -125,6 +125,17 @@ function parent()
     param_server:run()   
 end
 
+if opt.gpuid >= 0 then
+    print('Using CUDA on GPU ' .. opt.gpuid .. '...')
+    if opt.gpuid2 >= 0 then
+        print('Using CUDA on second GPU ' .. opt.gpuid2 .. '...')
+    end
+    require 'cutorch'
+    require 'cunn'
+    cutorch.setDevice(opt.gpuid)
+    cutorch.manualSeed(opt.seed)
+end
+
 -- Run in parallel
 if opt.parallel then
     require 'parallel'
@@ -141,17 +152,17 @@ else
     funcs = loadfile("model_functions.lua")
     funcs()
     
-    opt.print = print
-     if opt.gpuid >= 0 then
-        opt.print('Using CUDA on GPU ' .. opt.gpuid .. '...')
-        if opt.gpuid2 >= 0 then
-            opt.print('Using CUDA on second GPU ' .. opt.gpuid2 .. '...')
-        end
-        require 'cutorch'
-        require 'cunn'
-        cutorch.setDevice(opt.gpuid)
-        cutorch.manualSeed(opt.seed)
-    end
+    -- opt.print = print
+    --  if opt.gpuid >= 0 then
+    --     opt.print('Using CUDA on GPU ' .. opt.gpuid .. '...')
+    --     if opt.gpuid2 >= 0 then
+    --         opt.print('Using CUDA on second GPU ' .. opt.gpuid2 .. '...')
+    --     end
+    --     require 'cutorch'
+    --     require 'cunn'
+    --     cutorch.setDevice(opt.gpuid)
+    --     cutorch.manualSeed(opt.seed)
+    -- end
     
     -- Create the data loader classes
     local train_data, valid_data, opt = load_data(opt)
