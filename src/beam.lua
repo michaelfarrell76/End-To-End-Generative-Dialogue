@@ -34,11 +34,19 @@ end
 ------------
 
 local function forward_connect(enc_rnn, dec_rnn, seq_length, layer_type)
-    dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput,
-    	enc_rnn.outputs[seq_length])
-    if layer_type ~= 'gru' and layer_type ~= 'rnn' then
-        dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell,
-        	enc_rnn.cells[seq_length])
+	if layer_type == 'bi' then
+        enc_fwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][1]
+        enc_bwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
+        
+        dec_rnn.userPrevOutput = enc_rnn.output[{{}, seq_length}]
+        dec_rnn.userPrevCell = enc_bwd_seqLSTM.cell[seq_length]
+    else
+        dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput,
+        	enc_rnn.outputs[seq_length])
+        if layer_type ~= 'gru' and layer_type ~= 'rnn' then
+            dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell,
+            	enc_rnn.cells[seq_length])
+        end
     end
 end
 
@@ -81,7 +89,6 @@ function beam:generate(K, source, gold)
     for i = 1, n do
         if full then break end
 
-        -- local cur_beam = hyps[i]:narrow(2, i + 1, i)
         local cur_beam = hyps[i]:narrow(2, 1, i)
         local cur_K = K
 
@@ -97,7 +104,7 @@ function beam:generate(K, source, gold)
             out[{{}, UNK}] = -INF
         end
 
-        -- Only take first row when starting out as beam context is uniform
+        -- Only take first row when starting out as all predictions are same
         if i == 1 then
             cur_K = 1
             out = out:narrow(1, 1, 1)
