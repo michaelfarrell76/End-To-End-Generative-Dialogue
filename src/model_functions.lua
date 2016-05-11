@@ -450,7 +450,7 @@ function train(m, criterion, train_data, valid_data)
 
         local i = 1
 
-         if opt.parallel and cur_perp > opt.wait then
+        if opt.parallel and cur_perp > opt.wait then
             skip = 1
         end
 
@@ -490,6 +490,7 @@ function train(m, criterion, train_data, valid_data)
                         parallel.children[j]:send(pkg)
                         i = i + 1
                     end
+                    opt.wait = -1
                 end
 
                 -- parallel.children:join()
@@ -505,12 +506,12 @@ function train(m, criterion, train_data, valid_data)
                             else   
                                 m.params[k]:add(-opt.learning_rate, reply.gps[k])
                             end
-
-                            num_words_target = num_words_target + reply.batch_l * reply.target_l
-                            num_words_source = num_words_source + reply.batch_l * reply.source_l
-                            train_nonzeros = train_nonzeros + reply.nonzeros
-                            train_loss = train_loss + reply.loss * reply.batch_l
                         end
+
+                        num_words_target = num_words_target + reply.batch_l * reply.target_l
+                        num_words_source = num_words_source + reply.batch_l * reply.source_l
+                        train_nonzeros = train_nonzeros + reply.nonzeros
+                        train_loss = train_loss + reply.loss * reply.batch_l
 
                         if i <= data:size() then
                             local pkg = {parameters = m.params, index = batch_order[i]}
