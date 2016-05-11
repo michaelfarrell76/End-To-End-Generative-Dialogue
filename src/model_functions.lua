@@ -486,13 +486,6 @@ function train(m, criterion, train_data, valid_data)
                                 m.params[k]:add(-opt.learning_rate, reply.gps[k])
                             end
 
-                            if opt.ada_grad then
-                                historical_grad[k]:add(torch.cmul(reply.gps[k],reply.gps[k]))
-                                opt.print(historical_grad[k]:sum())
-                                m.params[k]:add(-1,  torch.cmul(reply.gps[k], opt.learning_rate / torch.sqrt(fudge + historical_grad[k])))
-                            else
-                                m.params[k]:add(-opt.learning_rate, reply.gps[k])
-                            end
                             num_words_target = num_words_target + reply.batch_l * reply.target_l
                             num_words_source = num_words_source + reply.batch_l * reply.source_l
                             train_nonzeros = train_nonzeros + reply.nonzeros
