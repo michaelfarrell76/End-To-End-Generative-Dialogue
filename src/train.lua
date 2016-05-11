@@ -96,6 +96,7 @@ cmd:option('-torch_path',       '/Users/michaelfarrell/torch/install/bin/th',   
 cmd:option('-extension',       '',   'The location from the home directory to the helper functions')
 cmd:option('-username',       'michaelfarrell',   'The username for connecting to remote clients')
 cmd:option('-add_to_path' ,     '/home/michaelfarrell/Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/src/?.lua;',  'A string that will be appended on to the front of the path')
+cmd:option('-wait',         500,  'Waits to parallelize until below this threshold')
 
 -- Used to update the path variable
 require 'package'
@@ -130,7 +131,7 @@ if opt.parallel then
 
     -- Load in functions used for parallel
     opt.print = parallel.print
-    opt.learning_rate = opt.learning_rate / opt.n_proc
+    -- opt.learning_rate = opt.learning_rate / opt.n_proc
 
     -- Protected execution of parllalel script:
     ok, err = pcall(parent)
