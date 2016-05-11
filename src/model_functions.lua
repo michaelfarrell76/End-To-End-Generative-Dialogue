@@ -485,6 +485,11 @@ function train(m, criterion, train_data, valid_data)
             if opt.parallel then
                 if cur_perp < opt.wait then
                     skip = opt.n_proc
+                    for j = 2, skip do
+                        local pkg = {parameters = m.params, index = batch_order[i]}
+                        parallel.children[j]:send(pkg)
+                        i = i + 1
+                    end
                 end
 
                 -- parallel.children:join()
