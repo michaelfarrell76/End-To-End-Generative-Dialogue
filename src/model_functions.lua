@@ -236,8 +236,6 @@ function build()
     local params = {}
     local grad_params = {}
 
-    opt.print('Number of parameters: ' .. num_params .. '\n')
-
     -- GPU
     if opt.gpuid >= 0 then
         cutorch.setDevice(opt.gpuid)
@@ -292,6 +290,8 @@ function build()
             end
         end
     end
+
+    opt.print('Number of parameters: ' .. num_params .. '\n')
 
     -- Package model for training
     local m = {

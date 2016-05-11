@@ -20,6 +20,13 @@ function find_all(t, val)
 end
 
 function split_utterances(source)
+    -- Fix for subtle (no end utterance token)
+    if opt.utter_context == 1 then
+        local source_split = {}
+        table.insert(source_split, source)
+        return source_split
+    end
+
 	-- First determine context length
     local std_len = source:size(2)
 	local source_split = {}
@@ -70,8 +77,8 @@ local data = torch.class('data')
 function data:__init(opt, data_file)
    	local f = hdf5.open(data_file, 'r')
 
-   	self.source  = f:read('source'):all()
-   	self.target  = f:read('target'):all()
+   	self.source = f:read('source'):all()
+   	self.target = f:read('target'):all()
    	self.target_output = f:read('target_output'):all()
    	self.target_l = f:read('target_l'):all() -- Max target length each batch
    	self.target_l_all = f:read('target_l_all'):all()
