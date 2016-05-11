@@ -610,7 +610,7 @@ function train(m, criterion, train_data, valid_data)
         local save_file = string.format('%s_epoch%.2f_%.2f.t7', opt.save_file, epoch, valid_score)
         if epoch % opt.save_every == 0 then
             opt.print('Saving checkpoint to ' .. save_file)
-            (m.enc:clearState()); (m.enc_rnn:clearState()); (m.dec:clearState()); clean_layer(m.dec_rnn:clearState())
+            m.enc:clearState(); m.enc_rnn:clearState(); m.dec:clearState(); clean_layer(m.dec_rnn:clearState())
             torch.save(save_file, {{m.enc, m.dec, m.enc_rnn, m.dec_rnn}, opt})
         end
     end

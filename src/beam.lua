@@ -111,7 +111,7 @@ function beam:generate(K, source, gold)
             model_scores = model_scores:narrow(1, 1, 1)
         end
 
-        -- Prob of summary is log p + log p(y_{i+1} | y_c, x)
+        -- Prob of hypothesis is log p + log p(y_{i+1} | y_c, x)
         for k = 1, cur_K do
             out[k]:add(scores[i][k])
         end
