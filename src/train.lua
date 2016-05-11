@@ -100,13 +100,14 @@ cmd:option('-add_to_path' ,     '/home/michaelfarrell/Distributed-SGD/lua-lua/En
 -- Used to update the path variable
 require 'package'
 
--- Add on location to path of new class if not already in path
-package.path = opt.add_to_path .. package.path
+
 
 -- Parse arguments
 opt = cmd:parse(arg)
 torch.manualSeed(opt.seed)
 
+-- Add on location to path of new class if not already in path
+package.path = opt.add_to_path .. package.path
 
 -- The parent process function
 function parent()
