@@ -130,7 +130,7 @@ if opt.parallel then
 
     -- Load in functions used for parallel
     opt.print = parallel.print
-    opt.learning_rate = opt.learning_rate / opt.n_proc
+    -- opt.learning_rate = opt.learning_rate / opt.n_proc
 
     -- Protected execution of parllalel script:
     ok, err = pcall(parent)
