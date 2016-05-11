@@ -152,7 +152,7 @@ else
     funcs = loadfile("model_functions.lua")
     funcs()
     
-    -- opt.print = print
+    opt.print = print
     --  if opt.gpuid >= 0 then
     --     opt.print('Using CUDA on GPU ' .. opt.gpuid .. '...')
     --     if opt.gpuid2 >= 0 then
