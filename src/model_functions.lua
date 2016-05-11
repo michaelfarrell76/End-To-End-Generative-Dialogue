@@ -452,6 +452,13 @@ function train(m, criterion, train_data, valid_data)
                     if reply ~= nil then
                         for k = 1, #m.params do
                             if opt.ada_grad then
+                                historical_grad[k]:add(torch.cmul(reply.gps[k], reply.gps[k]))
+                                m.params[k]:add(-1,  torch.cmul(reply.gps[k], torch.cdiv(l_r[k], torch.sqrt(fudge[k] + historical_grad[k]))))
+                            else   
+                                m.params[k]:add(-opt.learning_rate, reply.gps[k])
+                            end
+
+                            if opt.ada_grad then
                                 historical_grad[k]:add(torch.cmul(reply.gps[k],reply.gps[k]))
                                 opt.print(historical_grad[k]:sum())
                                 m.params[k]:add(-1,  torch.cmul(reply.gps[k], opt.learning_rate / torch.sqrt(fudge + historical_grad[k])))
