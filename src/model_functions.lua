@@ -203,22 +203,6 @@ function build()
     local num_params = 0
     local params = {}
     local grad_params = {}
-    for i = 1, #layers do
-        if opt.gpuid2 >= 0 then
-            if i == 1 then
-                cutorch.setDevice(opt.gpuid)
-            else
-                cutorch.setDevice(opt.gpuid2)
-            end
-        end
-        local p, gp = layers[i]:getParameters()
-        if opt.train_from:len() == 0 then
-            p:uniform(-opt.param_init, opt.param_init)
-        end
-        num_params = num_params + p:size(1)
-        params[i] = p
-        grad_params[i] = gp
-    end
     
     if opt.train_from:len() == 0 then
         if opt.pre_word_vecs:len() > 0 then
@@ -253,6 +237,23 @@ function build()
             cutorch.setDevice(opt.gpuid2) --criterion on gpu2
         end
         criterion:cuda()
+    end
+
+    for i = 1, #layers do
+        if opt.gpuid2 >= 0 then
+            if i == 1 then
+                cutorch.setDevice(opt.gpuid)
+            else
+                cutorch.setDevice(opt.gpuid2)
+            end
+        end
+        local p, gp = layers[i]:getParameters()
+        if opt.train_from:len() == 0 then
+            p:uniform(-opt.param_init, opt.param_init)
+        end
+        num_params = num_params + p:size(1)
+        params[i] = p:cuda()
+        grad_params[i] = gp:cuda()
     end
 
     -- Package model for training
