@@ -150,9 +150,6 @@ else
     local model, criterion = build()
 
     -- Train
-    if opt.parallel then 
-        return train_data, valid_data, model, criterion, opt
-    else
-        train(model, criterion, train_data, valid_data)
-    end
+    train(model, criterion, train_data, valid_data)
+
 end

@@ -422,10 +422,20 @@ function train(m, criterion, train_data, valid_data)
         end
 
         if opt.ada_grad then
-            fudge = .000000001
+            opt.print('Using ada_grad')
+            local fudge_fact = .000000001
             historical_grad = {}
+            fudge = {}
+            l_r = {}
             for k = 1, #m.params do
-                historical_grad[k] = torch.zeros(params:size(1))
+                historical_grad[k] = torch.zeros(m.params[k]:size(1))
+                fudge[k] = torch.zeros(m.params[k]:size(1)):fill(fudge_fact)
+                l_r[k] = torch.zeros(m.params[k]:size(1)):fill(opt.learning_rate)
+                if opt.gpuid > 0 then
+                    historical_grad[k] = historical_grad[k]:cuda()
+                    fudge[k] = fudge[k]:cuda()
+                    l_r[k] = l_r[k]:cuda()
+                end
             end
         end
 
@@ -440,8 +450,10 @@ function train(m, criterion, train_data, valid_data)
                         for k = 1, #m.params do
                             if opt.ada_grad then
                                 historical_grad[k]:add(torch.cmul(reply.gps[k],reply.gps[k]))
-                            else
+                                opt.print(historical_grad[k]:sum())
                                 m.params[k]:add(-1,  torch.cmul(reply.gps[k], opt.learning_rate / torch.sqrt(fudge + historical_grad[k])))
+                            else
+                                m.params[k]:add(-opt.learning_rate, reply.gps[k])
                             end
                             num_words_target = num_words_target + reply.batch_l * reply.target_l
                             num_words_source = num_words_source + reply.batch_l * reply.source_l
@@ -477,8 +489,20 @@ function train(m, criterion, train_data, valid_data)
                 batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm = train_ind(batch_order[i], m, criterion, train_data)
 
                 -- Update params
-                m.dec:updateParameters(opt.learning_rate)
-                m.enc:updateParameters(opt.learning_rate)
+
+                for k = 1, #m.params do
+                    if opt.ada_grad then
+                        historical_grad[k]:add(torch.cmul(m.grad_params[k],m.grad_params[k]))
+                   
+                        m.params[k]:add(-1,  torch.cmul(m.grad_params[k], torch.cdiv(l_r[k], torch.sqrt(fudge[k] + historical_grad[k]))))
+                    else   
+                        m.params[k]:add(-opt.learning_rate, m.grad_params[k])
+                    end
+
+                end
+
+                -- m.dec:updateParameters(opt.learning_rate)
+                -- m.enc:updateParameters(opt.learning_rate)
 
                 -- Bookkeeping
                 num_words_target = num_words_target + batch_l * target_l
