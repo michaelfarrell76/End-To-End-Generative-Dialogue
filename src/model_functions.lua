@@ -449,16 +449,18 @@ function train(m, criterion, train_data, valid_data)
         end
 
         local i = 1
+
+         if opt.parallel and cur_perp > opt.wait then
+            skip = 1
+        end
+
         for j = 1, skip do
             local pkg = {parameters = m.params, index = batch_order[i]}
             parallel.children[j]:send(pkg)
             i = i + 1
         end
 
-        if opt.parallel and cur_perp > opt.wait then
-            skip = 1
-        end
-
+       
         if opt.ada_grad then
             opt.print('Using ada_grad')
             local fudge_fact = .000000001
