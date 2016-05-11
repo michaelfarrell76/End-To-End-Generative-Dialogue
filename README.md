@@ -126,7 +126,7 @@ which contains the necessary changes to the setup for this task.
 Once the servers are all setup and you are connected to your host server, you should navigate back to the src directory and you can run the train.lua file on remote servers:
 
 ```bash
-$ cd Distributed-SGD/lua-luaEnd-To-End-Generative-Dialogue/src
+$ cd Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/src
 $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -remote -extension End-To-End-Generative-Dialogue/src/ -torch_path /home/michaelfarrell/torch/install/bin/th -n_proc 4
 ```
 
