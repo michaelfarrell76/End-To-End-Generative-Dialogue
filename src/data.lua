@@ -145,14 +145,20 @@ function data.__index(self, idx)
       	local source_l = self.batches[idx][7]
       	local target_l_all = self.batches[idx][8]
       	if opt.gpuid >= 0 then -- If multi-gpu, source lives in gpuid1, rest on gpuid2
-	 		cutorch.setDevice(opt.gpuid)
-	 		source_input = source_input:cuda()
-	 		if opt.gpuid2 >= 0 then
-	    		cutorch.setDevice(opt.gpuid2)
-	 		end
-	 		target_input = target_input:cuda()
-	 		target_output = target_output:cuda()
-	 		target_l_all = target_l_all:cuda()
+  	 		  cutorch.setDevice(opt.gpuid)
+          if opt.model_type == "hred" then
+            for i = 1, #source_input do
+              source_input[i] = source_input[i]:cuda()
+            end
+          else
+      	 		source_input = source_input:cuda()
+          end
+    	 		if opt.gpuid2 >= 0 then
+    	    		cutorch.setDevice(opt.gpuid2)
+    	 		end
+    	 		target_input = target_input:cuda()
+    	 		target_output = target_output:cuda()
+    	 		target_l_all = target_l_all:cuda()
       	end
       	return {target_input, target_output, nonzeros, source_input,
 	      batch_l, target_l, source_l, target_l_all}
