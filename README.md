@@ -113,11 +113,11 @@ $ cd End-To-End-Generative-Dialogue
 $ zip -r data.zip data
 ```
 
-Next navigate to the 'lua-lua' folder and follow the setup [instructions](https://github.com/michaelfarrell76/Distributed-SGD/tree/master/lua-lua#remote---gcloud) under the 'Remote -gcloud' header. Follow these instructions exactly as they are written except in the section labeled 'Setup the disk', instead of running 
+Next navigate to the 'lua-lua' folder and follow the setup [instructions](https://github.com/michaelfarrell76/Distributed-SGD/tree/master/lua-lua#remote---gcloud) under the 'Remote -gcloud' header. Follow these instructions exactly as they are written except in the section labeled 'Setup the disk', through the section 'Connecting to gcloud servers', however instead of running the command
 ```bash
 $  source setup_image.sh
 ```
-You should run
+in the 'Setup the disk' step, you should run
 ```bash
 $  source End-To-End-Generative-Dialogue/src/setup_image_End-to-End.sh
 ```
