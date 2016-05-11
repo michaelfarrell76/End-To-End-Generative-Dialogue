@@ -19,6 +19,9 @@ local sgd_server = torch.class('sgd_server')
 function worker()
     -- Used to check files 
     require "lfs"
+
+    -- Used to update path
+    require 'package'
     
     -- Alert successfully started up
     parallel.print('Im a worker, my ID is: ',  parallel.id, ' and my IP: ', parallel.ip)
@@ -52,6 +55,9 @@ function worker()
             parallel.print('Recieved initialization parameters')
             cmd, arg, ext = pkg.cmd, pkg.arg, pkg.ext
             opt = cmd:parse(arg)
+
+            -- Update path
+            package.path = opt.add_to_path .. package.path
 
             -- Add in additional necessary parameters
             opt.print = parallel.print
