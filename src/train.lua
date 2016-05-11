@@ -95,7 +95,14 @@ cmd:option('-remote',           false,   'When true, the farmed out processes ar
 cmd:option('-torch_path',       '/Users/michaelfarrell/torch/install/bin/th',   'The path to the torch directory')
 cmd:option('-extension',       '',   'The location from the home directory to the helper functions')
 cmd:option('-username',       'michaelfarrell',   'The username for connecting to remote clients')
+cmd:option('-add_to_path' ,     '/home/michaelfarrell/Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/src
+/?.lua;',                 'A string that will be appended on to the front of the path')
 
+-- Used to update the path variable
+require 'package'
+
+-- Add on location to path of new class if not already in path
+package.path = opt.add_to_path .. package.path
 
 -- Parse arguments
 opt = cmd:parse(arg)
