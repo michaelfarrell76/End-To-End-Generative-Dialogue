@@ -127,7 +127,10 @@ Once the servers are all setup and you are connected to your host server, you sh
 
 ```bash
 $ cd Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/src
-$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -remote -extension End-To-End-Generative-Dialogue/src/ -torch_path /home/michaelfarrell/torch/install/bin/th -n_proc 4
+$ EXTENSION=Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/src/
+$ TORCH_PATH=/home/michaelfarrell/torch/install/bin/th
+$ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -remote -extension $EXTENSION -torch_path $TORCH_PATH -n_proc 12
+
 ```
 
 **Running the remote server:** 
