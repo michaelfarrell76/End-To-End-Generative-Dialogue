@@ -154,8 +154,8 @@ function sgd_server:__init(opt)
         parallel.print('Runnings clients remotely')
         
         -- Open the list of client ip addresses
-        local fh,err = io.open("../client_list.txt")
-        if err then print("../client_list.txt not found"); return; end
+        local fh,err = io.open("../../../client_list.txt")
+        if err then print("../../../client_list.txt not found"); return; end
 
         -- line by line
         while true do
