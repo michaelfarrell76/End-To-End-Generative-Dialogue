@@ -67,7 +67,7 @@ We have implemented support for training the model using [Distributed SGD](https
 
 In order to run code in parallel, you need the [Distributed SGD](https://github.com/michaelfarrell76/Distributed-SGD) which contains this directory (End-To-End-Generative-Dialogue) as a submodule:
 ```bash
-$ git clone https://github.com/michaelfarrell76/Distributed-SGD.git
+$ git clone --recursive https://github.com/michaelfarrell76/Distributed-SGD.git
 $ cd Distributed-SGD/lua-lua
 ```
 Next make sure that you have the correct [requirements](https://github.com/michaelfarrell76/Distributed-SGD/tree/master/lua-lua#requirements) installed via the Requirements section of the [Distributed SGD](https://github.com/michaelfarrell76/Distributed-SGD) repo.
