@@ -126,6 +126,9 @@ if opt.parallel then
     ok, err = pcall(parent)
     if not ok then print(err) parallel.close() end
 else
+
+    funcs = loadfile("model_functions.lua")
+    funcs()
     
     opt.print = print
      if opt.gpuid >= 0 then
