@@ -183,11 +183,6 @@ function main()
     -- Initialize beam and start making predictions
     local sbeam = beam.new(opt, m, lm)
      
-    local pred_score_total = 0
-    local gold_score_total = 0
-    local pred_words_total = 0
-    local gold_words_total = 0
-
     local sent_id = 0
     local pred_sents = {}
     local file = io.open(opt.src_file, 'r')
@@ -219,40 +214,10 @@ function main()
         	print('PRED (' .. i .. ') ' .. 'SCORE: '.. scores[i] .. ' ' .. sent_id .. ': ' .. pred_sent)
         end
 
-        -- pred_score_total = pred_score_total + pred_score
-        -- pred_words_total = pred_words_total + pred:size(1)
-        -- local pred_sent = wordidx2sent(pred, idx2word_targ, true)
-        -- out_file:write(pred_sent .. '\n')
-
         print('GOLD ' .. sent_id .. ': ' .. gold[sent_id])
-        -- print('PRED ' .. sent_id .. ': ' .. pred_sent)
-        -- if gold ~= nil then
-        --     print('GOLD ' .. sent_id .. ': ' .. gold[sent_id])
-        --     if opt.score_gold == 1 then
-        --         print(string.format("PRED SCORE: %.4f, GOLD SCORE: %.4f", pred_score, gold_score))
-        --         gold_score_total = gold_score_total + gold_score
-        --         gold_words_total = gold_words_total + target:size(1) - 1
-        --     end
-        -- end
-
-        -- if opt.k_best > 1 then
-        --     for n = 1, opt.k_best do
-        --         pred_sent_n = wordidx2sent(all_sents[n], idx2word_targ, false)
-        --         local out_n = string.format("%d ||| %s ||| %.4f", n, pred_sent_n, all_scores[n])
-        --         print(out_n)
-        --         out_file:write(out_n .. '\n')
-        --     end
-        -- end
         print('')
     end
 
-    print(string.format("PRED AVG SCORE: %.4f, PRED PPL: %.4f", pred_score_total / pred_words_total,
-        math.exp(-pred_score_total / pred_words_total)))
-    -- if opt.score_gold == 1 then
-    --     print(string.format("GOLD AVG SCORE: %.4f, GOLD PPL: %.4f",
-    --         gold_score_total / gold_words_total,
-    --         math.exp(-gold_score_total / gold_words_total)))
-    -- end
     out_file:close()
 end
 
