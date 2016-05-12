@@ -52,7 +52,7 @@ end
 
 -- Artificially limits specific vocabulary
 local function constrain(scores, allow_unk)
-	scores[{{}, START}] = -INF
+	-- scores[{{}, START}] = -INF
 	scores[{{}, 8}] = -INF -- Disallow <person>
 	if allow_unk == 0 then
 	    scores[{{}, UNK}] = -INF
@@ -77,34 +77,45 @@ local function get_scores(m, source, cur_beam)
 end
 
 -- Returns a pure language model score without any preceding context
-local function get_lm_scores(m, cur_beam)
-	return m.dec:forward(cur_beam)
+local function get_lm_scores(lm, cur_beam)
+	return lm:forward(cur_beam)
 end
 
 -- Discounts words early in prediction based on their uncontextual likelihood
 -- See MMI-antiLM
-local function antilm_score(scores, lm_scores, k, cur_beam, allow_unk)
+local function antilm_score(scores, lm_scores, k, cur_beam, allow_unk, lambda)
 	local function g(i)
 		if i <= opt.gamma then return 1 end
 		return 0
 	end
 
 	local score = 0
-	for i = 1, #scores do
+	for i = 1, #scores - 1 do
 		local cscores = constrain(scores[i], allow_unk)
-		score = score + cscores[k][cur_beam[k][i]] - (lm_scores[i][k][cur_beam[k][i]] * g(i))
+		local idx = cur_beam[k][i]
+		score = score + cscores[k][idx] - (lambda * lm_scores[i][k][idx] * g(i))
 	end
 	
+	-- Prefer longer responses
+	score = score + (0.2 * #scores)
 	return score
+end
+
+-- Prevent sentences without content or only punctuation
+local function validate(hyp)
+	return hyp[2] ~= END and hyp[2] ~= 10003 and hyp[2] ~= 9
 end
 
 ------------
 -- Beam class
 ------------
 
-function beam:__init(opt, model)
+function beam:__init(opt, model, lm)
     self.opt = opt
     self.m = model
+    self.m.enc:evaluate()
+    self.m.dec:evaluate()
+    self.lm = lm
 end
 
 -- Generates K most likely output utterances given an input source
@@ -112,7 +123,7 @@ function beam:generate(K, source, gold)
     -- Let's get all fb up in here
     -- scores[i][k] is the log prob of the k'th hyp of i words
     -- hyps[i][k] contains the words in k'th hyp at i word
-    local n = self.opt.max_sent_l or 80
+    local n = self.opt.max_sent_l or 20
     local full = false
     local result = {}
     local scores = torch.zeros(n + 1, K):float()
@@ -120,11 +131,12 @@ function beam:generate(K, source, gold)
     hyps:fill(START)
 
     -- Beam me up, Scotty!
-    n = 30 -- Aritificial limit
+    n = 20 -- Aritificial limit
     for i = 1, n do
         if full then break end
 
         local cur_beam = hyps[i]:narrow(2, 1, i)
+        -- print(cur_beam)
         local cur_K = K
 
         -- Score all next words for each context in the beam
@@ -140,9 +152,9 @@ function beam:generate(K, source, gold)
 
         -- Recaculate scores for each sequence using MMI-antiLM
         if self.opt.antilm == 1 then
-        	local lm = get_lm_scores(self.m, cur_beam)
+        	local lm = get_lm_scores(self.lm, cur_beam)
         	for k = 1, cur_K do
-        		scores[i][k] = antilm_score(all, lm, k, cur_beam, self.opt.allow_unk)
+        		scores[i][k] = antilm_score(all, lm, k, cur_beam, self.opt.allow_unk, self.opt.lambda)
         	end
         else
         	-- Apply hard constraints to certain vocabulary
@@ -152,6 +164,8 @@ function beam:generate(K, source, gold)
         -- Prob of hypothesis is log prob of preceding sequence + log prob of
         -- most recent predictions
         for k = 1, cur_K do
+        	-- print(out[k]:size())
+        	-- print(scores[i][k])
             out[k]:add(scores[i][k])
         end
 
@@ -179,8 +193,8 @@ function beam:generate(K, source, gold)
             end
             hyps[i+1][k][i+1] = y_i1
 
-            -- If we have produced an END symbol, push to stack
-            if y_i1 == END and hyps[i+1][k][2] ~= END then
+            -- If we have produced an END symbol and valid utterance, push to stack
+            if y_i1 == END and validate(hyps[i+1][k]) then
             	-- Normalize probability over length
             	-- Not *that* helpful, but right idea
             	-- local norm_score = scores[i+1][k] / (i + 1)
@@ -215,7 +229,7 @@ function beam:generate_k(k, source)
     local result = self:generate(k, source, nil)
     local outputs = {}
     local scores = {}
-    for i = 1, k do
+    for i = 1, #result do
         -- result[i] = length, score, sentence
         local len = result[i][1]
         local score = result[i][2]

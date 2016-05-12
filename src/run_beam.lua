@@ -9,7 +9,8 @@ require 'dict'
 cmd = torch.CmdLine()
 
 -- File location
-cmd:option('-model', 'seq2seq_lstm.t7.', [[Path to model .t7 file]])
+cmd:option('-model',    'seq2seq_lstm.t7.', [[Path to model .t7 file]])
+cmd:option('-lm',       'lm_lstm.t7',       [[Path to language model .t7 file]])
 cmd:option('-src_file', '', [[Source sequence to decode (one line per sequence)]])
 cmd:option('-targ_file', '', [[True target sequence (optional)]])
 cmd:option('-output_file', 'pred.txt', [[Path to output the predictions (each line will be the
@@ -18,25 +19,24 @@ cmd:option('-src_dict', 'data/demo.src.dict', [[Path to source vocabulary (*.src
 cmd:option('-targ_dict', 'data/demo.targ.dict', [[Path to target vocabulary (*.targ.dict file)]])
 
 -- Beam search options
-cmd:option('-k', 5, [[Beam size]])
-cmd:option('-max_sent_l', 80, [[Maximum sentence length. If any sequences in srcfile are longer
-                               than this then it will error out]])
-cmd:option('-simple', 0, [[If = 1, output prediction is simply the first time the top of the beam
-                         ends with an end-of-sentence token. If = 0, the model considers all 
-                         hypotheses that have been generated so far that ends with end-of-sentence 
-                         token and takes the highest scoring of all of them.]])
-cmd:option('-allow_unk', 0, [[If = 1, prediction can include UNK tokens.]])
+cmd:option('-k', 			5, 	[[Beam size]])
+cmd:option('-max_sent_l', 	80, [[Maximum sentence length. If any sequences in srcfile are longer
+                               		than this then it will error out]])
+cmd:option('-simple', 		0, 	[[If = 1, output prediction is simply the first time the top of the beam
+                         			ends with an end-of-sentence token. If = 0, the model considers all 
+                         			hypotheses that have been generated so far that ends with end-of-sentence 
+                         			token and takes the highest scoring of all of them.]])
+cmd:option('-allow_unk', 	0, 	[[If = 1, prediction can include UNK tokens.]])
 cmd:option('-antilm',		0, 	[[If = 1, prediction limits scoring contribution from earlier input.]])
 cmd:option('-gamma',		3,	[[Number of initial word probabilities to discount from sequence probability.]])
+cmd:option('-k_best', 		1, 	[[If > 1, it will also output a k_best list of decoded sentences]])
 -- cmd:option('-replace_unk', 0, [[Replace the generated UNK tokens with the source token that 
 --                               had the highest attention weight. If srctarg_dict is provided, 
 --                               it will lookup the identified source token and give the corresponding 
 --                               target token. If it is not provided (or the identified source token
 --                               does not exist in the table) then it will copy the source token]])
-cmd:option('-srctarg_dict', 'data/en-de.dict', [[Path to source-target dictionary to replace UNK 
-                             tokens. See README.md for the format this file should be in]])
 -- cmd:option('-score_gold', 1, [[If = 1, score the log likelihood of the gold as well]])
-cmd:option('-k_best', 1, [[If > 1, it will also output a k_best list of decoded sentences]])
+
 cmd:option('-gpuid',  -1, [[ID of the GPU to use (-1 = use CPU)]])
 cmd:option('-gpuid2', -1, [[Second GPU ID]])
 
@@ -55,6 +55,11 @@ function main()
 
     print('Loading ' .. opt.model .. '...')
     local checkpoint = torch.load(opt.model)
+    local lm
+    if path.exists(opt.lm) then
+        local lm_checkpoint = torch.load(opt.lm)
+        lm = lm_checkpoint[1][2]
+    end
     print('Done!')
 
     -- Load model and word2idx/idx2word dictionaries
@@ -106,7 +111,7 @@ function main()
     end
 
     -- Initialize beam and start making predictions
-    local sbeam = beam.new(opt, m)
+    local sbeam = beam.new(opt, m, lm)
      
     local pred_score_total = 0
     local gold_score_total = 0

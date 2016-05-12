@@ -12,8 +12,9 @@ require 'dict'
 cmd = torch.CmdLine()
 
 -- File location
-cmd:option('-model', 'seq2seq_lstm.t7.', [[Path to model .t7 file]])
-cmd:option('-targ_dict', 'data/demo.targ.dict', [[Path to target vocabulary (*.targ.dict file)]])
+cmd:option('-model',    'seq2seq_lstm.t7.', 	[[Path to model .t7 file]])
+cmd:option('-lm',       'lm_lstm.t7',       	[[Path to language model .t7 file]])
+cmd:option('-targ_dict','data/demo.targ.dict', 	[[Path to target vocabulary (*.targ.dict file)]])
 
 -- Beam search options
 cmd:option('-k',			5, 	[[Beam size]])
@@ -26,6 +27,7 @@ cmd:option('-simple', 		0, 	[[If = 1, output prediction is simply the first time
 cmd:option('-allow_unk', 	0, 	[[If = 1, prediction can include UNK tokens.]])
 cmd:option('-antilm',		0, 	[[If = 1, prediction limits scoring contribution from earlier input.]])
 cmd:option('-gamma',		3,	[[Number of initial word probabilities to discount from sequence probability.]])
+cmd:option('-lambda',		0.8,[[Discount on initial word probabilities while using antiLM.]])
 
 opt = cmd:parse(arg)
 
@@ -96,22 +98,22 @@ function chat(sbeam)
         local ctx = build_context(dialogue, ctx_length)
 
         -- Pick the best one
-        local pred = remove_pad(sbeam:generate_map(ctx))
+        -- local pred = remove_pad(sbeam:generate_map(ctx))
 
         -- Or pick randomly from k best?
-        -- local k_best, scores = sbeam:generate_k(10, ctx)
-        -- local pred = remove_pad(k_best[math.random(#k_best)])
+        local k_best, scores = sbeam:generate_k(opt.k, ctx)
+        local pred = remove_pad(k_best[math.random(#k_best)])
         -- local pred = remove_pad(k_best[1])
 
         local pred_sent = wordidx2sent(pred, idx2word_targ, false)
         table.insert(dialogue, pred)
         print('\n' .. pred_sent .. '\n')
 
-        -- for i = 1, #k_best do
-        --     pred_sent = wordidx2sent(remove_pad(k_best[i]), idx2word_targ, false)
-        --     print('PRED (' .. scores[i] .. '): ' .. pred_sent)
-        -- end
-        -- print('')
+        for i = 1, #k_best do
+            pred_sent = wordidx2sent(remove_pad(k_best[i]), idx2word_targ, false)
+            print('PRED (' .. scores[i] .. '): ' .. pred_sent)
+        end
+        print('')
 
         -- TODO: add logical way to end discourse
     end
@@ -129,6 +131,11 @@ function main()
 
     print('Loading ' .. opt.model .. '...')
     local checkpoint = torch.load(opt.model)
+    local lm
+    if path.exists(opt.lm) then
+        local lm_checkpoint = torch.load(opt.lm)
+        lm = lm_checkpoint[1][2]
+    end
     print('Done!')
 
     -- Load model and word2idx/idx2word dictionaries
@@ -151,7 +158,7 @@ function main()
     }
 
     -- Initialize beam and start making chit-chat
-    local sbeam = beam.new(opt, m)
+    local sbeam = beam.new(opt, m, lm)
     chat(sbeam)
 end
 
