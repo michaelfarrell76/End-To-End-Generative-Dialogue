@@ -111,6 +111,7 @@ function beam:generate(K, source, gold)
     local hyps = torch.zeros(n + 1, K, n + 1):long()
     hyps:fill(START)
 
+    local lambda = self.opt.lambda
 
     -- Beam me up, Scotty!
     for i = 1, n do
@@ -139,8 +140,9 @@ function beam:generate(K, source, gold)
         if self.opt.antilm == 1 and i <= self.opt.gamma then
         	local lm = get_lm_scores(self.lm, cur_beam)
             lm = lm[#lm]
+            print(lambda)
             for k = 1, cur_K do
-                out[k]:csub(lm[k] * self.opt.lambda)
+                out[k]:csub(lm[k] * lambda)
             end
         end
 
@@ -180,7 +182,7 @@ function beam:generate(K, source, gold)
             	-- Not *that* helpful, but right idea
             	-- local norm_score = scores[i+1][k] / (i + 1)
                 -- table.insert(result, {i+1, scores[i+1][k] +  i * self.opt.len_reward, hyps[i+1][k]:clone()})
-                table.insert(result, {i+1, scores[i+1][k] + torch.log(i) * 2, hyps[i+1][k]:clone()})
+                table.insert(result, {i+1, scores[i+1][k] + torch.log(i) * 2.5, hyps[i+1][k]:clone()})
 
                 scores[i+1][k] = -INF
 
@@ -189,7 +191,10 @@ function beam:generate(K, source, gold)
                 --     break
                 -- end
             end
+
+            
         end
+        lambda = lambda * opt.decay
     end
 
     -- Sort by score, and we're done
