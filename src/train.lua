@@ -41,6 +41,7 @@ cmd:option('-word_vec_size',    300,    'Word embedding sizes')
 cmd:option('-layer_type',       'lstm', 'Recurrent layer type (rnn, gru, lstm, bi)')
 cmd:option('-model_type',       'red', 	'Model structure (red, hred)')
 cmd:option('-utter_context',	2,		'Number of utterances in context')
+cmd:option('-train_nnlm',    false,      'Ignores encoder input')
 
 -- cmd:option('-reverse_src',   0,      'If 1, reverse the source sequence. The original 
 --                                      sequence-to-sequence paper found that this was crucial to 
