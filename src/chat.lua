@@ -114,8 +114,8 @@ function chat(sbeam)
         end
         local score_tensor = torch.DoubleTensor(scores)
 
-        local pred = remove_pad(k_best[torch.multinomial(score_tensor, 1, true)[1]])
-                -- local pred = remove_pad(k_best[math.random(#k_best)])
+        -- local pred = remove_pad(k_best[torch.multinomial(score_tensor, 1, true)[1]])
+                local pred = remove_pad(k_best[math.random(#k_best)])
 
         -- local pred = remove_pad(k_best[1])
 
