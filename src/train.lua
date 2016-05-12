@@ -59,7 +59,7 @@ cmd:option('-num_epochs',       20,     'Number of training epochs')
 cmd:option('-start_epoch',      1,      'If loading from a checkpoint, the epoch from which to start')
 cmd:option('-param_init',       0.1,    'Parameters are initialized over uniform distribution with support (-param_init, param_init)')
 cmd:option('-learning_rate',    .01,    'Initial learning rate')
-cmd:option('-ada_grad',         false,   'When true, update parameters using adagrad algorithm')
+cmd:option('-ada_grad',         true,   'When true, update parameters using adagrad algorithm')
 cmd:option('-max_grad_norm',    5,      'If the norm of the gradient vector exceeds this, renormalize it to have the norm equal to max_grad_norm')
 cmd:option('-dropout',          0.3,    'Dropout probability. Dropout is applied between vertical LSTM stacks.')
 cmd:option('-lr_decay',         0.5,    'Decay learning rate by this much if (i) perplexity does not decrease on the validation set or (ii) epoch has gone past the start_decay_at_limit')
@@ -109,6 +109,9 @@ opt = cmd:parse(arg)
 opt.model_id = opt.layer_type .. '_' .. opt.model_type
 if opt.data_file ~= 'data/conv-train.hdf5' then 
     opt.model_id = opt.model_id .. '_subtle'
+end
+if opt.train_from == '' then
+   opt.model_id = opt.model_id .. '_nosubtle'
 end
 if opt.fix_word_vecs then
     opt.model_id = opt.model_id  .. '_fix'
