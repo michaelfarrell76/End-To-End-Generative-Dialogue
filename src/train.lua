@@ -25,8 +25,8 @@ cmd:text("")
 cmd:text("**Data options**")
 cmd:text("")
 
-cmd:option('-data_file',    'data/demo-train.hdf5',     'Path to the training *.hdf5 file from preprocess.py')
-cmd:option('-val_data_file','data/demo-val.hdf5',       'Path to validation *.hdf5 file from preprocess.py')
+cmd:option('-data_file',    'data/conv-train.hdf5',     'Path to the training *.hdf5 file from preprocess.py')
+cmd:option('-val_data_file','data/conv-val.hdf5',       'Path to validation *.hdf5 file from preprocess.py')
 cmd:option('-save_file',    'seq2seq_lstm',             'Save file name (model will be saved as savefile_epochX_PPL.t7  where X is the X-th epoch and PPL is the validation perplexity')
 cmd:option('-train_from',   '',                         'If training from a checkpoint then this is the path to the pretrained model.')
 
@@ -55,11 +55,11 @@ cmd:text("**Optimization options**")
 cmd:text("")
 
 -- Optimization
-cmd:option('-num_epochs',       10,     'Number of training epochs')
+cmd:option('-num_epochs',       20,     'Number of training epochs')
 cmd:option('-start_epoch',      1,      'If loading from a checkpoint, the epoch from which to start')
 cmd:option('-param_init',       0.1,    'Parameters are initialized over uniform distribution with support (-param_init, param_init)')
 cmd:option('-learning_rate',    .01,    'Initial learning rate')
-cmd:option('-ada_grad',         true,   'When true, update parameters using adagrad algorithm')
+cmd:option('-ada_grad',         false,   'When true, update parameters using adagrad algorithm')
 cmd:option('-max_grad_norm',    5,      'If the norm of the gradient vector exceeds this, renormalize it to have the norm equal to max_grad_norm')
 cmd:option('-dropout',          0.3,    'Dropout probability. Dropout is applied between vertical LSTM stacks.')
 cmd:option('-lr_decay',         0.5,    'Decay learning rate by this much if (i) perplexity does not decrease on the validation set or (ii) epoch has gone past the start_decay_at_limit')
@@ -101,10 +101,24 @@ cmd:option('-wait',         500,  'Waits to parallelize until below this thresho
 -- Used to update the path variable
 require 'package'
 
-
-
 -- Parse arguments
 opt = cmd:parse(arg)
+
+-- Make a reasonable save name and log name
+opt.model_id = opt.layer_type .. '_' .. opt.model_type
+if opt.fix_word_vecs then
+    opt.model_id = opt.model_id  .. '_fix'
+end 
+if opt.hidden_size ~= 300 then 
+    opt.model_id = opt.model_id .. '_hs' .. opt.hidden_size
+end
+if opt.ada_grad then 
+    opt.model_id = opt.model_id .. '_ada'
+end
+
+opt.file_out =  'log_files/' .. opt.model_id ..'.txt'
+opt.save_file = 'models/' .. opt.model_id .. '.t7' 
+
 torch.manualSeed(opt.seed)
 
 -- Add on location to path of new class if not already in path
