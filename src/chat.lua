@@ -28,7 +28,7 @@ cmd:option('-allow_unk', 	0, 	[[If = 1, prediction can include UNK tokens.]])
 cmd:option('-antilm',		0, 	[[If = 1, prediction limits scoring contribution from earlier input.]])
 cmd:option('-gamma',		3,	[[Number of initial word probabilities to discount from sequence probability.]])
 cmd:option('-lambda',		0.8,[[Discount on initial word probabilities while using antiLM.]])
-cmd:option('-len_reward',   1,	[[Discount on initial word probabilities while using antiLM.]])
+cmd:option('-len_reward',   0.8,[[Discount on initial word probabilities while using antiLM.]])
 
 opt = cmd:parse(arg)
 
