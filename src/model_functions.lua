@@ -119,11 +119,15 @@ function build_hred_encoder(recurrence)
     local enc = nn.Sequential()
     local enc_embeddings = nn.LookupTable(opt.vocab_size_enc, opt.word_vec_size)
     local par = nn.ParallelTable()
-    
+
+    utterance_rnns = {}
     -- Build parallel utterance rnns
     for i = 1, opt.utter_context do
         local utterance_rnn = build_encoder_stack(recurrence, enc_embeddings)
         utterance_rnn:add(nn.Unsqueeze(2))
+        if opt.load_red then 
+            table.insert(utterance_rnns, utterance_rnn)
+        end
         par:add(utterance_rnn)
     end
 
@@ -134,7 +138,7 @@ function build_hred_encoder(recurrence)
     local context_rnn, enc_rnn = build_encoder_stack(recurrence, nil)
     enc:add(context_rnn)
     
-    return enc, enc_rnn, enc_embeddings
+    return enc, enc_rnn, enc_embeddings, utterance_rnns
 end
 
 function build_decoder(recurrence)
@@ -215,18 +219,42 @@ function build()
         -- Decoder, dec_rnn is lowest rnn in vertical dec stack
         dec, dec_rnn, dec_embeddings = build_decoder(recurrence)
     else
+        -- Frequently the models have CudaTensors, need to load and convert to doubles
+        require 'cunn'
+
         -- Load the model
         assert(path.exists(opt.train_from), 'checkpoint path invalid')
         opt.print('Loading ' .. opt.train_from .. '...')
         local checkpoint = torch.load(opt.train_from)
         local model, model_opt = checkpoint[1], checkpoint[2]
+
         -- Load the different components
         enc = model[1]:double()
         dec = model[2]:double()
         enc_rnn = model[3]:double()
         dec_rnn = model[4]:double() 
-        enc_embeddings = enc['modules'][1]
-        dec_embeddings = dec['modules'][1]
+        enc_embeddings = enc['modules'][1]:double()
+        dec_embeddings = dec['modules'][1]:double()
+
+        if opt.load_red then
+            local enc_red_p, _ = enc:getParameters()
+            local enc_rnn_red_p, _ = enc_rnn:getParameters()
+            local enc_embeddings_red_p, _ = enc_embeddings:getParameters()
+
+            -- Encoder, enc_rnn is top rnn in vertical enc stack
+            enc, enc_rnn, enc_embeddings, utterance_rnns = build_encoder(recurrence)
+        
+            for i = 1, #utterance_rnns do
+                p, _ = utterance_rnns[i]:getParameters()
+                p:copy(enc_red_p)
+            end
+
+            local p, _ = enc_rnn:getParameters()
+            p:copy(enc_rnn_red_p)
+
+            local p, _ = enc_embeddings:getParameters()
+            p:copy(enc_embeddings_red_p)
+        end
     end
 
 
@@ -732,6 +760,7 @@ function eval(m, criterion, data)
         local d = data[i]
         local target, target_out, nonzeros, source = d[1], d[2], d[3], d[4]
         local batch_l, target_l, source_l = d[5], d[6], d[7]
+        if opt.model_type == 'hred' then source_l = opt.utter_context end
 
         -- Forward prop enc
         local enc_out = m.enc:forward(source)
