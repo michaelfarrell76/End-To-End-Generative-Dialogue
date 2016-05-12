@@ -28,7 +28,7 @@ cmd:option('-allow_unk', 	0, 	[[If = 1, prediction can include UNK tokens.]])
 cmd:option('-antilm',		0, 	[[If = 1, prediction limits scoring contribution from earlier input.]])
 cmd:option('-gamma',		3,	[[Number of initial word probabilities to discount from sequence probability.]])
 cmd:option('-lambda',		0.8,[[Discount on initial word probabilities while using antiLM.]])
-cmd:option('-len_reward',       1,[[Discount on initial word probabilities while using antiLM.]])
+cmd:option('-len_reward',   1,	[[Discount on initial word probabilities while using antiLM.]])
 
 opt = cmd:parse(arg)
 
@@ -103,8 +103,8 @@ function chat(sbeam)
 
         -- Or pick randomly from k best?
         local k_best, scores = sbeam:generate_k(opt.k, ctx)
-        local pred = remove_pad(k_best[math.random(#k_best)])
-        -- local pred = remove_pad(k_best[1])
+        -- local pred = remove_pad(k_best[math.random(#k_best)])
+        local pred = remove_pad(k_best[1])
 
         local pred_sent = wordidx2sent(pred, idx2word_targ, false)
         table.insert(dialogue, pred)

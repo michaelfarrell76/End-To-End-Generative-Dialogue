@@ -160,7 +160,7 @@ function beam:generate(K, source, gold)
             lm = lm[#lm]
 
             for k = 1, cur_K do
-                out[k]:csub(lm[k] * self.opt.lambda - i * self.opt.len_reward )
+                out[k]:csub(lm[k] * self.opt.lambda - i * self.opt.len_reward)
             end
         end
 
