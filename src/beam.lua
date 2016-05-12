@@ -34,14 +34,33 @@ end
 ------------
 
 local function forward_connect(enc_rnn, dec_rnn, seq_length, layer_type)
-    dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput,
-    	enc_rnn.outputs[seq_length])
-    if layer_type ~= 'gru' and layer_type ~= 'rnn' then
-        dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell,
-        	enc_rnn.cells[seq_length])
+	if layer_type == 'bi' then
+        enc_fwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][1]
+        enc_bwd_seqLSTM = enc_rnn['modules'][1]['modules'][2]['modules'][2]['modules'][2]
+        
+        dec_rnn.userPrevOutput = enc_rnn.output[{{}, seq_length}]
+        dec_rnn.userPrevCell = enc_bwd_seqLSTM.cell[seq_length]
+    else
+        dec_rnn.userPrevOutput = nn.rnn.recursiveCopy(dec_rnn.userPrevOutput,
+        	enc_rnn.outputs[seq_length])
+        if layer_type ~= 'gru' and layer_type ~= 'rnn' then
+            dec_rnn.userPrevCell = nn.rnn.recursiveCopy(dec_rnn.userPrevCell,
+            	enc_rnn.cells[seq_length])
+        end
     end
 end
 
+-- Artificially limits specific vocabulary
+local function constrain(scores, allow_unk)
+	scores[{{}, START}] = -INF
+	scores[{{}, 8}] = -INF -- Disallow <person>
+	if allow_unk == 0 then
+	    scores[{{}, UNK}] = -INF
+	end
+	return scores
+end
+
+-- Returns encoder decoder scores accounting for context (standard forward pass)
 local function get_scores(m, source, cur_beam)
     local source_l = source:size(1)
     source = source:contiguous()
@@ -52,8 +71,31 @@ local function get_scores(m, source, cur_beam)
     forward_connect(m.enc_rnn, m.dec_rnn, source_l)
     local preds = m.dec:forward(cur_beam)
 
-    -- Return log probability distribution for next words
-    return preds[#preds]
+    -- Return log probability distribution for all words
+    -- NB: preds[#preds] = log prob of most recent word
+    return preds
+end
+
+-- Returns a pure language model score without any preceding context
+local function get_lm_scores(m, cur_beam)
+	return m.dec:forward(cur_beam)
+end
+
+-- Discounts words early in prediction based on their uncontextual likelihood
+-- See MMI-antiLM
+local function antilm_score(scores, lm_scores, k, cur_beam, allow_unk)
+	local function g(i)
+		if i <= opt.gamma then return 1 end
+		return 0
+	end
+
+	local score = 0
+	for i = 1, #scores do
+		local cscores = constrain(scores[i], allow_unk)
+		score = score + cscores[k][cur_beam[k][i]] - (lm_scores[i][k][cur_beam[k][i]] * g(i))
+	end
+	
+	return score
 end
 
 ------------
@@ -70,7 +112,7 @@ function beam:generate(K, source, gold)
     -- Let's get all fb up in here
     -- scores[i][k] is the log prob of the k'th hyp of i words
     -- hyps[i][k] contains the words in k'th hyp at i word
-    local n = opt.max_sent_l or 80
+    local n = self.opt.max_sent_l or 80
     local full = false
     local result = {}
     local scores = torch.zeros(n + 1, K):float()
@@ -78,33 +120,37 @@ function beam:generate(K, source, gold)
     hyps:fill(START)
 
     -- Beam me up, Scotty!
+    n = 30 -- Aritificial limit
     for i = 1, n do
         if full then break end
 
-        -- local cur_beam = hyps[i]:narrow(2, i + 1, i)
         local cur_beam = hyps[i]:narrow(2, 1, i)
         local cur_K = K
 
         -- Score all next words for each context in the beam
         -- log p(y_{i+1} | y_c, x) for all y_c
-        local model_scores = get_scores(self.m, source, cur_beam)
+        local all = get_scores(self.m, source, cur_beam)
+        local out = all[#all]
 
-        -- Apply hard constraints
-        local out = model_scores:clone():double()
-        out[{{}, START}] = -INF
-        out[{{}, 8}] = -INF -- Disallow <person>
-        if opt.allow_unk == 0 then
-            out[{{}, UNK}] = -INF
-        end
-
-        -- Only take first row when starting out as beam context is uniform
+        -- Only take first row when starting out as all predictions are same
         if i == 1 then
             cur_K = 1
             out = out:narrow(1, 1, 1)
-            model_scores = model_scores:narrow(1, 1, 1)
         end
 
-        -- Prob of summary is log p + log p(y_{i+1} | y_c, x)
+        -- Recaculate scores for each sequence using MMI-antiLM
+        if self.opt.antilm == 1 then
+        	local lm = get_lm_scores(self.m, cur_beam)
+        	for k = 1, cur_K do
+        		scores[i][k] = antilm_score(all, lm, k, cur_beam, self.opt.allow_unk)
+        	end
+        else
+        	-- Apply hard constraints to certain vocabulary
+        	out = constrain(out, self.opt.allow_unk)
+        end
+
+        -- Prob of hypothesis is log prob of preceding sequence + log prob of
+        -- most recent predictions
         for k = 1, cur_K do
             out[k]:add(scores[i][k])
         end
@@ -116,7 +162,6 @@ function beam:generate(K, source, gold)
             max_scores:size(2)):float()
 
         -- Construct the next hypotheses by taking the next k-best
-        local seen_ngram = {}
         for k = 1, K do
             -- Pull the score, index, rank, and word of the current best
             -- in the table, and then zero it out

@@ -26,6 +26,8 @@ cmd:option('-simple', 0, [[If = 1, output prediction is simply the first time th
                          hypotheses that have been generated so far that ends with end-of-sentence 
                          token and takes the highest scoring of all of them.]])
 cmd:option('-allow_unk', 0, [[If = 1, prediction can include UNK tokens.]])
+cmd:option('-antilm',		0, 	[[If = 1, prediction limits scoring contribution from earlier input.]])
+cmd:option('-gamma',		3,	[[Number of initial word probabilities to discount from sequence probability.]])
 -- cmd:option('-replace_unk', 0, [[Replace the generated UNK tokens with the source token that 
 --                               had the highest attention weight. If srctarg_dict is provided, 
 --                               it will lookup the identified source token and give the corresponding 

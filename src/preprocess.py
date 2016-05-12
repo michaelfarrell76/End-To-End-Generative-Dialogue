@@ -160,7 +160,7 @@ def get_data(args):
 
         #break up batches based on source lengths
         source_lengths = source_lengths[:sent_id]
-        source_sort = np.argsort(source_lengths) 
+        source_sort = np.argsort(source_lengths)
 
         sources = sources[source_sort]
         targets = targets[source_sort]

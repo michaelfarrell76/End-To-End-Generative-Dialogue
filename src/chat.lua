@@ -16,14 +16,16 @@ cmd:option('-model', 'seq2seq_lstm.t7.', [[Path to model .t7 file]])
 cmd:option('-targ_dict', 'data/demo.targ.dict', [[Path to target vocabulary (*.targ.dict file)]])
 
 -- Beam search options
-cmd:option('-k', 5, [[Beam size]])
-cmd:option('-max_sent_l', 80, [[Maximum sentence length. If any sequences in srcfile are longer
-                               than this then it will error out]])
-cmd:option('-simple', 0, [[If = 1, output prediction is simply the first time the top of the beam
-                         ends with an end-of-sentence token. If = 0, the model considers all 
-                         hypotheses that have been generated so far that ends with end-of-sentence 
-                         token and takes the highest scoring of all of them.]])
-cmd:option('-allow_unk', 0, [[If = 1, prediction can include UNK tokens.]])
+cmd:option('-k',			5, 	[[Beam size]])
+cmd:option('-max_sent_l', 	80, [[Maximum sentence length. If any sequences in srcfile are longer
+                               		than this then it will error out]])
+cmd:option('-simple', 		0, 	[[If = 1, output prediction is simply the first time the top of the beam
+                         			ends with an end-of-sentence token. If = 0, the model considers all 
+                         			hypotheses that have been generated so far that ends with end-of-sentence 
+                         			token and takes the highest scoring of all of them.]])
+cmd:option('-allow_unk', 	0, 	[[If = 1, prediction can include UNK tokens.]])
+cmd:option('-antilm',		0, 	[[If = 1, prediction limits scoring contribution from earlier input.]])
+cmd:option('-gamma',		3,	[[Number of initial word probabilities to discount from sequence probability.]])
 
 opt = cmd:parse(arg)
 
