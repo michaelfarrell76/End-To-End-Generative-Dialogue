@@ -160,7 +160,7 @@ function beam:generate(K, source, gold)
             lm = lm[#lm]
 
             for k = 1, cur_K do
-                out[k]:csub(lm[k] * self.opt.lambda - i * self.opt.len_reward )
+                out[k]:csub(lm[k] * self.opt.lambda)
             end
         end
 
@@ -199,8 +199,8 @@ function beam:generate(K, source, gold)
             	-- Normalize probability over length
             	-- Not *that* helpful, but right idea
             	-- local norm_score = scores[i+1][k] / (i + 1)
-
-                table.insert(result, {i+1, scores[i+1][k], hyps[i+1][k]:clone()})
+                -- table.insert(result, {i+1, scores[i+1][k] +  i * self.opt.len_reward, hyps[i+1][k]:clone()})
+                table.insert(result, {i+1, scores[i+1][k] +  i * self.opt.len_reward, hyps[i+1][k]:clone()})
                 scores[i+1][k] = -INF
 
                 -- if #result == K then
