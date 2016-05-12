@@ -1,8 +1,14 @@
 # End-to-End Generative Dialogue
 
-A neural conversational model.
+This code implements multi-layer recurrent neural network encoder-decoder models (RNN, GRU, and LSTM) for training/sampling from conversation dialogue. Essentially, the model takes a series of sentences of preceding dialogue and attempts to predict a response sentence. All models and their training, evaluation, and sampling are detailed thoroughly in the paper [End-to-End Generative Dialogue](https://github.com/michaelfarrell76/End-To-End-Generative-Dialogue/blob/master/paper/main.pdf).
 
-This code implements multi-layer recurrent neural network encoder-decoder models (RNN, GRU, and LSTM) for training/sampling from conversation dialogue. Essentially, the model takes a series of sentences of preceding dialogue and attempts to predict a response sentence. All models and their training, evaluation, and sampling are detailed thoroughly in the paper [End-to-End Generative Dialogue](link).
+## Primary contributors
+
+[Kevin Yang](https://github.com/kyang01)
+
+[Michael Farrell](https://github.com/michaelfarrell76)
+
+[Colton Gyulay](https://github.com/cgyulay)
 
 ## Requirements
 
@@ -148,14 +154,6 @@ $ cd End-To-End-Generative-Dialogue/src
 $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5 -save_file conv-model -parallel -remote -extension End-To-End-Generative-Dialogue/src/ -torch_path /home/michaelfarrell/torch/install/bin/th -n_proc 4
 
 ```
-
-## Primary contributors
-
-[Kevin Yang](https://github.com/kyang01)
-
-[Michael Farrell](https://github.com/michaelfarrell76)
-
-[Colton Gyulay](https://github.com/cgyulay)
 
 ## Relevant links
 
