@@ -203,9 +203,7 @@ function main()
             target, target_str = sent2wordidx(gold[sent_id], word2idx_targ)
         end
 
-        
         -- local pred = sbeam:generate_map(source)
-
         local preds, scores = sbeam:generate_k(opt.k, source)
 
         local min_preds = math.min(opt.k2, #preds)
