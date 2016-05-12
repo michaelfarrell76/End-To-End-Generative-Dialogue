@@ -322,10 +322,8 @@ function train_ind(ind, m, criterion, data)
     if opt.model_type == 'hred' then source_l = opt.utter_context end
 
     -- Forward prop enc
-    if not opt.train_nnlm then
-        enc_out = m.enc:forward(source)
-        forward_connect(m.enc_rnn, m.dec_rnn, source_l)
-    end 
+    local enc_out = m.enc:forward(source)
+    forward_connect(m.enc_rnn, m.dec_rnn, source_l)
 
     -- Forward prop dec
     local dec_out = m.dec:forward(target)
@@ -336,15 +334,14 @@ function train_ind(ind, m, criterion, data)
 
     m.dec:backward(target, grad_output)
     
-    if not opt.train_nnlm then
-        backward_connect(m.enc_rnn, m.dec_rnn)
-        -- Backward prop enc
-        local zeroTensor = torch.Tensor(enc_out:size()):zero()
-        if opt.gpuid >=0 then
-            zeroTensor = zeroTensor:cuda()
-        end
-        m.enc:backward(source, zeroTensor)
+    backward_connect(m.enc_rnn, m.dec_rnn)
+    -- Backward prop enc
+    local zeroTensor = torch.Tensor(enc_out:size()):zero()
+    if opt.gpuid >=0 then
+        zeroTensor = zeroTensor:cuda()
     end
+    m.enc:backward(source, zeroTensor)
+
     -- Total grad norm
     local grad_norm = 0
     for j = 1, #m.grad_params do
@@ -737,10 +734,9 @@ function eval(m, criterion, data)
         local batch_l, target_l, source_l = d[5], d[6], d[7]
 
         -- Forward prop enc
-        if not opt.train_nnlm then
-            local enc_out = m.enc:forward(source)
-            forward_connect(m.enc_rnn, m.dec_rnn, source_l)
-        end
+        local enc_out = m.enc:forward(source)
+        forward_connect(m.enc_rnn, m.dec_rnn, source_l)
+
         -- Forward prop dec
         local dec_out = m.dec:forward(target)
         local loss = criterion:forward(dec_out, target_out)
