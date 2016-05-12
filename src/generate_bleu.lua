@@ -52,81 +52,77 @@ opt = cmd:parse(arg)
 -- Set up
 ------------
 
-function calc_bleu_score(beam_results, target)
-    local bleu_scores = torch.zeros(opt.beam_k)
+function calc_bleu_score(pred, target)
 
-    -- For each of the beam examples
-    for i = 1, opt.beam_k do 
-        local pred = beam_results[i]
+    local scores = torch.zeros(opt.max_bleu)
+        
+    -- For each of the n-grams
+    for j = 0, opt.max_bleu - 1 do
+        local pred_counts = {}
 
-        local scores = torch.zeros(opt.max_bleu)
-        -- For each of the n-grams
-        for j = 0, opt.max_bleu - 1 do
-            local pred_counts = {}
+        -- Loop through preds by n-gram
+        for k = 1, pred:size(1) - j  do
 
-            -- Loop through preds by n-gram
-            for k = 1, pred:size(1) - j  do
-
-                -- Generate key
-                local key = ""
-                for l = 0, j do
-                    if l > 0 then
-                        key = key + " "
-                    end
-                    key = key + pred[k + l]
+            -- Generate key
+            local key = ""
+            for l = 0, j do
+                if l > 0 then
+                    key = key + " "
                 end
-
-                -- Update pred counts
-                if pred_counts[key] == nil then
-                    pred_counts[key] = 1
-                else
-                    pred_counts[key] = 1 + pred_counts[key]
-                end
+                key = key + pred[k + l]
             end
 
-            local target_counts = {}
-
-             -- Loop through target by n-gram
-            for k = 1, target:size(1) - j do
-
-                -- Generate key
-                local key = ""
-                for l = 0, j do
-                    if l > 0 then
-                        key = key + " "
-                    end
-                    key = key + target[k + l]
-                end
-
-                -- Update target counts
-                if target_counts[key] == nil then
-                    target_counts[key] = 1
-                else
-                    target_counts[key] = 1 + target_counts[key]
-                end
-            end
-
-            local prec = 0
-            for key, pred_val in pairs(pred_counts) do
-                target_val = target_counts[prec]
-                if target_val ~= nil then
-                    if target_val >= pred_val then
-                        prec = prec + pred_val
-                    else
-                        prec = prec + target_val
-                    end
-                end
-            end
-
-            local score 
-            if pred:size(1) <= j then
-                score = 1
+            -- Update pred counts
+            if pred_counts[key] == nil then
+                pred_counts[key] = 1
             else
-                score = prec / (pred:size(1) - j)
+                pred_counts[key] = 1 + pred_counts[key]
+            end
+        end
+
+        local target_counts = {}
+
+         -- Loop through target by n-gram
+        for k = 1, target:size(1) - j do
+
+            -- Generate key
+            local key = ""
+            for l = 0, j do
+                if l > 0 then
+                    key = key + " "
+                end
+                key = key + target[k + l]
             end
 
-            scores[j + 1] = score
+            -- Update target counts
+            if target_counts[key] == nil then
+                target_counts[key] = 1
+            else
+                target_counts[key] = 1 + target_counts[key]
+            end
         end
+
+        local prec = 0
+        for key, pred_val in pairs(pred_counts) do
+            target_val = target_counts[key]
+            if target_val ~= nil then
+                if target_val >= pred_val then
+                    prec = prec + pred_val
+                else
+                    prec = prec + target_val
+                end
+            end
+        end
+
+        local score 
+        if pred:size(1) <= j then
+            score = 1
+        else
+            score = prec / (pred:size(1) - j)
+        end
+
+        scores[j + 1] = score
+    end
 
         -- Add brevity penalty
         local log_bleu = torch.min(0, 1 - (target:size(1) / pred:size(1)))

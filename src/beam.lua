@@ -62,7 +62,7 @@ end
 
 -- Returns encoder decoder scores accounting for context (standard forward pass)
 local function get_scores(m, source, cur_beam, layer_type)
-    local source_l = source:size(1)
+    local source_l = source:size(1) 
     source = source:contiguous()
     source = source:view(1, -1):expand(cur_beam:size(1), source_l)
 
@@ -78,7 +78,7 @@ end
 
 -- Returns a pure language model score without any preceding context
 local function get_lm_scores(lm, cur_beam)
-	return lm:forward(cur_beam:t())
+	return lm:forward(cur_beam)
 end
 
 
@@ -123,6 +123,7 @@ function beam:generate(K, source, gold)
 
         -- Score all next words for each context in the beam
         -- log p(y_{i+1} | y_c, x) for all y_c
+
         local all = get_scores(self.m, source, cur_beam, self.opt.layer_type)
 
         local out = all[#all]
@@ -181,7 +182,7 @@ function beam:generate(K, source, gold)
             	-- Not *that* helpful, but right idea
             	-- local norm_score = scores[i+1][k] / (i + 1)
                 -- table.insert(result, {i+1, scores[i+1][k] +  i * self.opt.len_reward, hyps[i+1][k]:clone()})
-                table.insert(result, {i+1, scores[i+1][k] + torch.log(i) * 2.5, hyps[i+1][k]:clone()})
+                table.insert(result, {i+1, scores[i+1][k] + torch.log(i) * opt.len_reward, hyps[i+1][k]:clone()})
 
                 scores[i+1][k] = -INF
 
@@ -231,7 +232,8 @@ function beam:generate_k(k, source)
     local result = self:generate(k, source, nil)
     local outputs = {}
     local scores = {}
-    for i = 1, self.opt.k2 do
+    local max_ind = math.min(#result, self.opt.k2)
+    for i = 1, max_ind do
         -- result[i] = length, score, sentence
         local len = result[i][1]
         local score = result[i][2]
