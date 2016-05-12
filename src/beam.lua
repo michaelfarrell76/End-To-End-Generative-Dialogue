@@ -151,29 +151,22 @@ function beam:generate(K, source, gold)
             out = out:narrow(1, 1, 1)
         end
 
+        -- Apply hard constraints to certain vocabulary
+    	out = constrain(out, self.opt.allow_unk)
+
         -- Recaculate scores for each sequence using MMI-antiLM
         if self.opt.antilm == 1 and i <= self.opt.gamma then
-            print(cur_beam)
         	local lm = get_lm_scores(self.lm, cur_beam)
-            print(lm)
             lm = lm[#lm]
 
             for k = 1, cur_K do
                 out[k]:csub(lm[k] * self.opt.lambda - i * self.opt.len_reward )
             end
-
-
-
-        else
-        	-- Apply hard constraints to certain vocabulary
-        	out = constrain(out, self.opt.allow_unk)
         end
 
         -- Prob of hypothesis is log prob of preceding sequence + log prob of
         -- most recent predictions
         for k = 1, cur_K do
-        	-- print(out[k]:size())
-        	-- print(scores[i][k])
             out[k]:add(scores[i][k])
         end
 
@@ -210,10 +203,10 @@ function beam:generate(K, source, gold)
                 table.insert(result, {i+1, scores[i+1][k], hyps[i+1][k]:clone()})
                 scores[i+1][k] = -INF
 
-                if #result == K then
-                    full = true
-                    break
-                end
+                -- if #result == K then
+                --     full = true
+                --     break
+                -- end
             end
         end
     end
