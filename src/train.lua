@@ -27,8 +27,9 @@ cmd:text("")
 
 cmd:option('-data_file',    'data/conv-train.hdf5',     'Path to the training *.hdf5 file from preprocess.py')
 cmd:option('-val_data_file','data/conv-val.hdf5',       'Path to validation *.hdf5 file from preprocess.py')
-cmd:option('-save_file',    'seq2seq_lstm',             'Save file name (model will be saved as savefile_epochX_PPL.t7  where X is the X-th epoch and PPL is the validation perplexity')
+cmd:option('-save_file',    '',                         'Save file name (model will be saved as savefile_epochX_PPL.t7  where X is the X-th epoch and PPL is the validation perplexity')
 cmd:option('-train_from',   '',                         'If training from a checkpoint then this is the path to the pretrained model.')
+cmd:option('-load_red',   false,                        'If training a HRED model and loading parameters from subtle red model.')
 
 -- RNN model specs
 cmd:text("")
