@@ -173,16 +173,6 @@ else
     funcs()
     
     opt.print = print
-    --  if opt.gpuid >= 0 then
-    --     opt.print('Using CUDA on GPU ' .. opt.gpuid .. '...')
-    --     if opt.gpuid2 >= 0 then
-    --         opt.print('Using CUDA on second GPU ' .. opt.gpuid2 .. '...')
-    --     end
-    --     require 'cutorch'
-    --     require 'cunn'
-    --     cutorch.setDevice(opt.gpuid)
-    --     cutorch.manualSeed(opt.seed)
-    -- end
     
     -- Create the data loader classes
     local train_data, valid_data, opt = load_data(opt)

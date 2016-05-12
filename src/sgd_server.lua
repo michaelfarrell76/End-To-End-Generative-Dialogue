@@ -1,15 +1,13 @@
 ------------------------------------------------------------------------
--- demo_server.lua
+-- sgd_server.lua
 --
--- This is the example of a class that is used to implement a sever in
---      server.lua. This class has an _init(opt) function that takes in
+-- This is a class that is used to launch the sgd server for this model
+--      This class has an _init(opt) function that takes in
 --      the global parameters, loads in the data and builds the model on 
 --      the parameter server. The class also has a run() function that
 --      forks out the child clients and executes the function 'worker'
 --      on each corresponding client. 
 --
--- If you wish to develop your own SGD model, create a new class that is
---      similar to this.
 ------------------------------------------------------------------------
 local sgd_server = torch.class('sgd_server')
 
