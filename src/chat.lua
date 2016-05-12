@@ -27,11 +27,11 @@ cmd:option('-simple', 		0, 	[[If = 1, output prediction is simply the first time
 cmd:option('-allow_unk', 	0, 	[[If = 1, prediction can include UNK tokens.]])
 cmd:option('-antilm',		0, 	[[If = 1, prediction limits scoring contribution from earlier input.]])
 cmd:option('-gamma',		3,	[[Number of initial word probabilities to discount from sequence probability.]])
-cmd:option('-lambda',		0.6,[[Discount on initial word probabilities while using antiLM.]])
-cmd:option('-len_reward',       0,[[Discount on initial word probabilities while using antiLM.]])
-cmd:option('-k2',       20,[[Discount on initial word probabilities while using antiLM.]])
+cmd:option('-lambda',		0.45,[[Discount on initial word probabilities while using antiLM.]])
+cmd:option('-len_reward',       2.5,[[Discount on initial word probabilities while using antiLM.]])
+cmd:option('-k2',       40,[[Discount on initial word probabilities while using antiLM.]])
 
-cmd:option('-decay',       0.65,[[Decay rate of lambda]])
+cmd:option('-decay',       0.9,[[Decay rate of lambda]])
 
 opt = cmd:parse(arg)
 

@@ -61,14 +61,14 @@ local function constrain(scores, allow_unk)
 end
 
 -- Returns encoder decoder scores accounting for context (standard forward pass)
-local function get_scores(m, source, cur_beam)
-    local source_l = source:size(1)
+local function get_scores(m, source, cur_beam, layer_type)
+    local source_l = source:size(1) 
     source = source:contiguous()
     source = source:view(1, -1):expand(cur_beam:size(1), source_l)
 
     -- Forward prop enc + dec
     local enc_out = m.enc:forward(source)
-    forward_connect(m.enc_rnn, m.dec_rnn, source_l)
+    forward_connect(m.enc_rnn, m.dec_rnn, source_l, layer_type)
     local preds = m.dec:forward(cur_beam)
 
     -- Return log probability distribution for all words
@@ -123,7 +123,8 @@ function beam:generate(K, source, gold)
 
         -- Score all next words for each context in the beam
         -- log p(y_{i+1} | y_c, x) for all y_c
-        local all = get_scores(self.m, source, cur_beam)
+
+        local all = get_scores(self.m, source, cur_beam, self.opt.layer_type)
 
         local out = all[#all]
 
@@ -140,7 +141,6 @@ function beam:generate(K, source, gold)
         if self.opt.antilm == 1 and i <= self.opt.gamma then
         	local lm = get_lm_scores(self.lm, cur_beam)
             lm = lm[#lm]
-            print(lambda)
             for k = 1, cur_K do
                 out[k]:csub(lm[k] * lambda)
             end
@@ -182,7 +182,7 @@ function beam:generate(K, source, gold)
             	-- Not *that* helpful, but right idea
             	-- local norm_score = scores[i+1][k] / (i + 1)
                 -- table.insert(result, {i+1, scores[i+1][k] +  i * self.opt.len_reward, hyps[i+1][k]:clone()})
-                table.insert(result, {i+1, scores[i+1][k] + torch.log(i) * 2.5, hyps[i+1][k]:clone()})
+                table.insert(result, {i+1, scores[i+1][k] + torch.log(i) * opt.len_reward, hyps[i+1][k]:clone()})
 
                 scores[i+1][k] = -INF
 
@@ -232,7 +232,8 @@ function beam:generate_k(k, source)
     local result = self:generate(k, source, nil)
     local outputs = {}
     local scores = {}
-    for i = 1, self.opt.k2 do
+    local max_ind = math.min(#result, self.opt.k2)
+    for i = 1, max_ind do
         -- result[i] = length, score, sentence
         local len = result[i][1]
         local score = result[i][2]

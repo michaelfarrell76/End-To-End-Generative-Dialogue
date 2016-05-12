@@ -1,6 +1,7 @@
 require 'hdf5'
 require 'beam'
 require 'dict'
+require 'cunn'
 
 ------------
 -- Options
@@ -10,7 +11,7 @@ cmd = torch.CmdLine()
 
 -- File location
 cmd:option('-model',    'seq2seq_lstm.t7.', [[Path to model .t7 file]])
-cmd:option('-lm',       'lm_lstm.t7',       [[Path to language model .t7 file]])
+cmd:option('-lm',       'nnlm.t7',       [[Path to language model .t7 file]])
 cmd:option('-src_file', '', [[Source sequence to decode (one line per sequence)]])
 cmd:option('-targ_file', '', [[True target sequence (optional)]])
 cmd:option('-output_file', 'pred.txt', [[Path to output the predictions (each line will be the
@@ -19,18 +20,22 @@ cmd:option('-src_dict', 'data/demo.src.dict', [[Path to source vocabulary (*.src
 cmd:option('-targ_dict', 'data/demo.targ.dict', [[Path to target vocabulary (*.targ.dict file)]])
 
 -- Beam search options
-cmd:option('-k', 			5, 	[[Beam size]])
-cmd:option('-max_sent_l', 	80, [[Maximum sentence length. If any sequences in srcfile are longer
-                               		than this then it will error out]])
-cmd:option('-simple', 		0, 	[[If = 1, output prediction is simply the first time the top of the beam
-                         			ends with an end-of-sentence token. If = 0, the model considers all 
-                         			hypotheses that have been generated so far that ends with end-of-sentence 
-                         			token and takes the highest scoring of all of them.]])
-cmd:option('-allow_unk', 	0, 	[[If = 1, prediction can include UNK tokens.]])
-cmd:option('-antilm',		0, 	[[If = 1, prediction limits scoring contribution from earlier input.]])
-cmd:option('-gamma',		3,	[[Number of initial word probabilities to discount from sequence probability.]])
-cmd:option('-lambda',       0.8,[[Discount on initial word probabilities while using antiLM.]])
-cmd:option('-k_best', 		1, 	[[If > 1, it will also output a k_best list of decoded sentences]])
+-- Beam search options
+cmd:option('-k',            50,     [[Beam size]])
+cmd:option('-max_sent_l',   20, [[Maximum sentence length. If any sequences in srcfile are longer
+                                    than this then it will error out]])
+cmd:option('-simple',       0,  [[If = 1, output prediction is simply the first time the top of the beam
+                                    ends with an end-of-sentence token. If = 0, the model considers all 
+                                    hypotheses that have been generated so far that ends with end-of-sentence 
+                                    token and takes the highest scoring of all of them.]])
+cmd:option('-allow_unk',    0,  [[If = 1, prediction can include UNK tokens.]])
+cmd:option('-antilm',       0,  [[If = 1, prediction limits scoring contribution from earlier input.]])
+cmd:option('-gamma',        3,  [[Number of initial word probabilities to discount from sequence probability.]])
+cmd:option('-lambda',       0.45,[[Discount on initial word probabilities while using antiLM.]])
+cmd:option('-len_reward',       2.5,[[Discount on initial word probabilities while using antiLM.]])
+cmd:option('-k2',       40,[[Discount on initial word probabilities while using antiLM.]])
+
+cmd:option('-decay',       0.9,[[Decay rate of lambda]])
 -- cmd:option('-replace_unk', 0, [[Replace the generated UNK tokens with the source token that 
 --                               had the highest attention weight. If srctarg_dict is provided, 
 --                               it will lookup the identified source token and give the corresponding 
@@ -46,6 +51,70 @@ opt = cmd:parse(arg)
 ------------
 -- Set up
 ------------
+
+-- Finds indices for all locations of a specific value
+function find_all(t, val)
+    local indices = {}
+    for i = 1, t:size(1) do
+        if t[i] == val then
+            table.insert(indices, i)
+        end
+    end
+    return indices
+end
+
+
+function split_utterances(source)
+    -- Fix for subtle (no end utterance token)
+    if opt.utter_context == 1 then
+        local source_split = {}
+        table.insert(source_split, source)
+        return source_split
+    end
+
+    source = source:view(1, source:size(1))
+
+
+    -- First determine context length
+    local std_len = source:size(2)
+    local source_split = {}
+    for i = 1, 2 do
+        table.insert(source_split, torch.zeros(source:size()))
+    end
+
+    -- Split each utterance out into entries in table
+    for i = 1, source:size(1) do
+        local cleaned = remove_pad(source[i])
+        local end_utterances = find_all(cleaned, END_UTTERANCE)
+
+        -- For now it's assumed opt.utter_context = 2
+        -- TODO: generalize to opt.utter_context = n
+        local first = cleaned:sub(1, end_utterances[1])
+        if end_utterances[1] + 1 > cleaned:size(1) then
+            -- Necessary to handle a few bad cases where second utterance length = 0
+            end_utterances[1] = cleaned:size(1) - 1
+        end
+        local second = cleaned:sub(end_utterances[1] + 1, cleaned:size(1))
+
+        -- End of first is always going to be end utterance token, which we
+        -- want to replace
+        first[first:size(1)] = END
+        first = pad_start(first)
+        second = pad_both(second)
+
+        -- Standardize length by prepending pad tokens
+        -- TODO: instead of assuming std length is the length of combined tokens,
+        -- use the max seq length found in either utterance in batch (should
+        -- result in less padding)
+        first = pad_blank(first, std_len)
+        second = pad_blank(second, std_len)
+
+        source_split[1][{i, {}}] = first
+        source_split[2][{i, {}}] = second
+    end
+
+    return source_split
+end
 
 function main()
     assert(path.exists(opt.src_file), 'src_file does not exist')
@@ -69,13 +138,13 @@ function main()
     word2idx_src = flip_table(idx2word_src)
     idx2word_targ = idx2key(opt.targ_dict)
     word2idx_targ = flip_table(idx2word_targ)
-    opt.layer_type = model.layer_type
+    opt.layer_type = model_opt.layer_type
 
     -- Format model
-    local enc = model[1]
-    local dec = model[2]
-    local enc_rnn = model[3]
-    local dec_rnn = model[4]
+    local enc = model[1]:double()
+    local dec = model[2]:double()
+    local enc_rnn = model[3]:double()
+    local dec_rnn = model[4]:double()
 
     local m = {
         enc = enc,
@@ -130,16 +199,24 @@ function main()
         print('SENT ' .. sent_id .. ': ' ..line)
 
         local source, source_str = sent2wordidx(line, word2idx_src)
+        source = pad_end(source)
+        -- if opt.model_type == 'hred' then
+            -- source = split_utterances(source)
+        -- end
+
         if opt.score_gold == 1 then
             target, target_str = sent2wordidx(gold[sent_id], word2idx_targ)
         end
 
-        source = pad_end(source)
+        
         -- local pred = sbeam:generate_map(source)
-        local preds = sbeam:generate_k(opt.k, source)
-        for i = 1, opt.k do
+
+        local preds, scores = sbeam:generate_k(opt.k, source)
+
+        local min_preds = math.min(opt.k2, #preds)
+        for i = 1, min_preds do
         	local pred_sent = wordidx2sent(preds[i], idx2word_targ, true)
-        	print('PRED (' .. i .. ') ' .. sent_id .. ': ' .. pred_sent)
+        	print('PRED (' .. i .. ') ' .. 'SCORE: '.. scores[i] .. ' ' .. sent_id .. ': ' .. pred_sent)
         end
 
         -- pred_score_total = pred_score_total + pred_score
