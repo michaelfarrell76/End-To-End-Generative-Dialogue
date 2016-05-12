@@ -130,8 +130,8 @@ function beam:generate(K, source, gold)
     local hyps = torch.zeros(n + 1, K, n + 1):long()
     hyps:fill(START)
 
+
     -- Beam me up, Scotty!
-    n = 20 -- Aritificial limit
     for i = 1, n do
         if full then break end
 
@@ -142,6 +142,7 @@ function beam:generate(K, source, gold)
         -- Score all next words for each context in the beam
         -- log p(y_{i+1} | y_c, x) for all y_c
         local all = get_scores(self.m, source, cur_beam)
+
         local out = all[#all]
 
         -- Only take first row when starting out as all predictions are same
@@ -151,11 +152,18 @@ function beam:generate(K, source, gold)
         end
 
         -- Recaculate scores for each sequence using MMI-antiLM
-        if self.opt.antilm == 1 then
+        if self.opt.antilm == 1 and i <= self.opt.gamma then
+            print(cur_beam)
         	local lm = get_lm_scores(self.lm, cur_beam)
-        	for k = 1, cur_K do
-        		scores[i][k] = antilm_score(all, lm, k, cur_beam, self.opt.allow_unk, self.opt.lambda)
-        	end
+            print(lm)
+            lm = lm[#lm]
+
+            for k = 1, cur_K do
+                out[k]:csub(lm[k] * self.opt.lambda - i * self.opt.len_reward )
+            end
+
+
+
         else
         	-- Apply hard constraints to certain vocabulary
         	out = constrain(out, self.opt.allow_unk)

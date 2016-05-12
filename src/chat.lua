@@ -18,7 +18,7 @@ cmd:option('-targ_dict','data/demo.targ.dict', 	[[Path to target vocabulary (*.t
 
 -- Beam search options
 cmd:option('-k',			5, 	[[Beam size]])
-cmd:option('-max_sent_l', 	80, [[Maximum sentence length. If any sequences in srcfile are longer
+cmd:option('-max_sent_l', 	20, [[Maximum sentence length. If any sequences in srcfile are longer
                                		than this then it will error out]])
 cmd:option('-simple', 		0, 	[[If = 1, output prediction is simply the first time the top of the beam
                          			ends with an end-of-sentence token. If = 0, the model considers all 
@@ -28,6 +28,7 @@ cmd:option('-allow_unk', 	0, 	[[If = 1, prediction can include UNK tokens.]])
 cmd:option('-antilm',		0, 	[[If = 1, prediction limits scoring contribution from earlier input.]])
 cmd:option('-gamma',		3,	[[Number of initial word probabilities to discount from sequence probability.]])
 cmd:option('-lambda',		0.8,[[Discount on initial word probabilities while using antiLM.]])
+cmd:option('-len_reward',       1,[[Discount on initial word probabilities while using antiLM.]])
 
 opt = cmd:parse(arg)
 
