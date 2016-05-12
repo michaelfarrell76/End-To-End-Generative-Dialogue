@@ -2,6 +2,8 @@
 
 A neural conversational model.
 
+This code implements multi-layer recurrent neural network encoder-decoder models (RNN, GRU, and LSTM) for training/sampling from conversation dialogue. Essentially, the model takes a series of sentences of preceding dialogue and attempts to predict a response sentence. All models and their training, evaluation, and sampling are detailed thoroughly in the paper [End-to-End Generative Dialogue](link).
+
 ## Requirements
 
 This code is written in Lua, and an installation of [Torch](https://github.com/torch/torch7/) is assumed. Training requires a few packages which can easily be installed through [LuaRocks](https://github.com/keplerproject/luarocks) (which comes with a Torch installation). Datasets are formatted and loaded using [hdf5](https://en.wikipedia.org/wiki/Hierarchical_Data_Format), which can be installed using this [guide](https://github.com/deepmind/torch-hdf5/blob/master/doc/usage.md).
