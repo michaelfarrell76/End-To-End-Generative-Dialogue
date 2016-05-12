@@ -105,12 +105,19 @@ require 'package'
 opt = cmd:parse(arg)
 
 -- Make a reasonable save name and log name
+
 opt.model_id = opt.layer_type .. '_' .. opt.model_type
+if opt.data_file ~= 'data/conv-train.hdf5' then 
+    opt.model_id = opt.model_id .. '_subtle'
+end
 if opt.fix_word_vecs then
     opt.model_id = opt.model_id  .. '_fix'
 end 
 if opt.hidden_size ~= 300 then 
     opt.model_id = opt.model_id .. '_hs' .. opt.hidden_size
+end
+if opt.word_vec_size ~= 300 then
+    opt.model_id = opt.model_id .. '_wv' .. opt.word_vecs
 end
 if opt.ada_grad then 
     opt.model_id = opt.model_id .. '_ada'
