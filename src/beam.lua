@@ -211,22 +211,6 @@ function beam:generate_map(source, gold)
     return sent[{{1, len}}], score
 end
 
--- For external use
--- function beam:generate_k(k, source)
---     local result = self:generate(k, source, nil)
---     local outputs = {}
---     local scores = {}
---     for i = 1, #result do
---         -- result[i] = length, score, sentence
---         local len = result[i][1]
---         local score = result[i][2]
---         local sent = result[i][3]
---         sent = sent[{{1, len}}]
---         table.insert(outputs, sent)
---         table.insert(scores, score)
---     end
---     return outputs, scores
--- end
 
 function beam:generate_k(k, source)
     local result = self:generate(k, source, nil)
