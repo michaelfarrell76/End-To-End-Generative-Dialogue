@@ -182,6 +182,7 @@ function beam:generate(K, source, gold)
             	-- local norm_score = scores[i+1][k] / (i + 1)
                 -- table.insert(result, {i+1, scores[i+1][k] +  i * self.opt.len_reward, hyps[i+1][k]:clone()})
                 table.insert(result, {i+1, scores[i+1][k] + torch.log(i) * 3, hyps[i+1][k]:clone()})
+
                 scores[i+1][k] = -INF
 
                 -- if #result == K then

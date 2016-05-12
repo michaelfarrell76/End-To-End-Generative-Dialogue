@@ -31,6 +31,7 @@ cmd:option('-lambda',		0.8,[[Discount on initial word probabilities while using 
 cmd:option('-len_reward',       0,[[Discount on initial word probabilities while using antiLM.]])
 cmd:option('-k2',       20,[[Discount on initial word probabilities while using antiLM.]])
 
+
 opt = cmd:parse(arg)
 
 ------------
@@ -104,8 +105,8 @@ function chat(sbeam)
 
         -- Or pick randomly from k best?
         local k_best, scores = sbeam:generate_k(opt.k, ctx)
-        local pred = remove_pad(k_best[math.random(#k_best)])
-        -- local pred = remove_pad(k_best[1])
+        -- local pred = remove_pad(k_best[math.random(#k_best)])
+        local pred = remove_pad(k_best[1])
 
         local pred_sent = wordidx2sent(pred, idx2word_targ, false)
         table.insert(dialogue, pred)
