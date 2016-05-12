@@ -81,25 +81,6 @@ local function get_lm_scores(lm, cur_beam)
 	return lm:forward(cur_beam)
 end
 
--- Discounts words early in prediction based on their uncontextual likelihood
--- See MMI-antiLM
-local function antilm_score(scores, lm_scores, k, cur_beam, allow_unk, lambda)
-	local function g(i)
-		if i <= opt.gamma then return 1 end
-		return 0
-	end
-
-	local score = 0
-	for i = 1, #scores - 1 do
-		local cscores = constrain(scores[i], allow_unk)
-		local idx = cur_beam[k][i]
-		score = score + cscores[k][idx] - (lambda * lm_scores[i][k][idx] * g(i))
-	end
-	
-	-- Prefer longer responses
-	score = score + (0.2 * #scores)
-	return score
-end
 
 -- Prevent sentences without content or only punctuation
 local function validate(hyp)
@@ -200,7 +181,7 @@ function beam:generate(K, source, gold)
             	-- Not *that* helpful, but right idea
             	-- local norm_score = scores[i+1][k] / (i + 1)
                 -- table.insert(result, {i+1, scores[i+1][k] +  i * self.opt.len_reward, hyps[i+1][k]:clone()})
-                table.insert(result, {i+1, scores[i+1][k] +  i * self.opt.len_reward, hyps[i+1][k]:clone()})
+                table.insert(result, {i+1, scores[i+1][k] + torch.log(i) * 3, hyps[i+1][k]:clone()})
                 scores[i+1][k] = -INF
 
                 -- if #result == K then
@@ -226,11 +207,27 @@ function beam:generate_map(source, gold)
 end
 
 -- For external use
+-- function beam:generate_k(k, source)
+--     local result = self:generate(k, source, nil)
+--     local outputs = {}
+--     local scores = {}
+--     for i = 1, #result do
+--         -- result[i] = length, score, sentence
+--         local len = result[i][1]
+--         local score = result[i][2]
+--         local sent = result[i][3]
+--         sent = sent[{{1, len}}]
+--         table.insert(outputs, sent)
+--         table.insert(scores, score)
+--     end
+--     return outputs, scores
+-- end
+
 function beam:generate_k(k, source)
     local result = self:generate(k, source, nil)
     local outputs = {}
     local scores = {}
-    for i = 1, #result do
+    for i = 1, self.opt.k2 do
         -- result[i] = length, score, sentence
         local len = result[i][1]
         local score = result[i][2]
@@ -241,5 +238,4 @@ function beam:generate_k(k, source)
     end
     return outputs, scores
 end
-
 return beam
