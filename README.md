@@ -26,6 +26,20 @@ If you'd like to chat with your trained model, you'll need the `penlight` packag
 ```bash
 $ luarocks install penlight
 ```
+## Table of Contents
+```
+.
+├── misc	                  # Miscellaneous files 
+├── notebooks               # Notebooks used for testing
+├── paper                   # Our writeup about this project
+├── slide                   # Presentation slides about this project
+├── src                     # All of our code is here
+├──.gitignore	
+├── README.md
+└── current_datafiles.txt   # List of currently used datafiles
+```
+
+
 ## Usage
 
 ### Data
