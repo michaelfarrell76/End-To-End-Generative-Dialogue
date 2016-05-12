@@ -1,0 +1,17 @@
+[0] Config.pm:324> INFO - This is Biber 2.1
+[0] Config.pm:327> INFO - Logfile is 'main.blg'
+[34] biber-darwin:276> INFO - === Thu May 12, 2016, 17:30:04
+[34] Biber.pm:333> INFO - Reading 'main.bcf'
+[115] Biber.pm:645> INFO - Found 16 citekeys in bib section 0
+[131] Biber.pm:2977> INFO - Processing section 0
+[145] Biber.pm:3115> INFO - Looking for bibtex format file 'main.bib' for section 0
+[147] bibtex.pm:1021> INFO - Decoding LaTeX character macros into UTF-8
+[150] bibtex.pm:895> INFO - Found BibTeX data source 'main.bib'
+[177] Utils.pm:146> WARN - I didn't find a database entry for crossref 'DBLP:conf/interspeech/2010' in entry 'mikolov-rnn' - ignoring (section 0)
+[313] UCollate.pm:66> INFO - Overriding locale 'en-US' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[313] UCollate.pm:66> INFO - Overriding locale 'en-US' defaults 'variable = shifted' with 'variable = non-ignorable'
+[313] Biber.pm:2854> INFO - Sorting list 'ynt' of type 'entry' with scheme 'ynt' and locale 'en-US'
+[313] Biber.pm:2858> INFO - No sort tailoring available for locale 'en-US'
+[332] bbl.pm:505> INFO - Writing 'main.bbl' with encoding 'UTF-8'
+[334] bbl.pm:596> INFO - Output to main.bbl
+[334] Biber.pm:106> INFO - WARNINGS: 1

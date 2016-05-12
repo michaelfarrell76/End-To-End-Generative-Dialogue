@@ -1,0 +1,266 @@
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{url}
+\usepackage{mathpazo}
+\usepackage{palatino}
+\usepackage{fullpage,graphicx}
+\usepackage{tikz}
+\usepackage{tikz-qtree}
+\usepackage[font={it}]{caption}
+% \usepackage[right, mathlines]{lineno}
+
+\usepackage[procnames]{listings}
+\usepackage{color}
+
+\definecolor{keywords}{RGB}{255,0,90}
+\definecolor{comments}{RGB}{0,0,113}
+\definecolor{red}{RGB}{160,0,0}
+\definecolor{green}{RGB}{0,150,0}
+ 
+\lstset{language=Python, 
+        basicstyle=\ttfamily\small, 
+        keywordstyle=\color{keywords},
+        commentstyle=\color{comments},
+        stringstyle=\color{red},
+        showstringspaces=false,
+        identifierstyle=\color{green},
+        procnamekeys={def,class}}
+ 
+% \linenumbers
+
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{patterns}
+\usetikzlibrary{matrix}
+\usetikzlibrary{automata}
+\usepackage{booktabs}
+
+% \pagestyle{empty}
+\pagenumbering{arabic}
+\usepackage{subfig}
+\usepackage{comment}
+
+\newcommand{\boldA}{\boldsymbol{A}}
+\newcommand{\boldB}{\boldsymbol{B}}
+\newcommand{\boldC}{\boldsymbol{C}}
+\newcommand{\boldD}{\boldsymbol{D}}
+\newcommand{\boldE}{\boldsymbol{E}}
+\newcommand{\boldF}{\boldsymbol{F}}
+\newcommand{\boldG}{\boldsymbol{G}}
+\newcommand{\boldH}{\boldsymbol{H}}
+\newcommand{\boldI}{\boldsymbol{I}}
+\newcommand{\boldJ}{\boldsymbol{J}}
+\newcommand{\boldK}{\boldsymbol{K}}
+\newcommand{\boldL}{\boldsymbol{L}}
+\newcommand{\boldM}{\boldsymbol{M}}
+\newcommand{\boldN}{\boldsymbol{N}}
+\newcommand{\boldO}{\boldsymbol{O}}
+\newcommand{\boldP}{\boldsymbol{P}}
+\newcommand{\boldQ}{\boldsymbol{Q}}
+\newcommand{\boldR}{\boldsymbol{R}}
+\newcommand{\boldS}{\boldsymbol{S}}
+\newcommand{\boldT}{\boldsymbol{T}}
+\newcommand{\boldU}{\boldsymbol{U}}
+\newcommand{\boldV}{\boldsymbol{V}}
+\newcommand{\boldW}{\boldsymbol{W}}
+\newcommand{\boldX}{\boldsymbol{X}}
+\newcommand{\boldY}{\boldsymbol{Y}}
+\newcommand{\boldZ}{\boldsymbol{Z}}
+\newcommand{\bolda}{\boldsymbol{a}}
+\newcommand{\boldb}{\boldsymbol{b}}
+\newcommand{\boldc}{\boldsymbol{c}}
+\newcommand{\boldd}{\boldsymbol{d}}
+\newcommand{\bolde}{\boldsymbol{e}}
+\newcommand{\boldf}{\boldsymbol{f}}
+\newcommand{\boldg}{\boldsymbol{g}}
+\newcommand{\boldh}{\boldsymbol{h}}
+\newcommand{\boldi}{\boldsymbol{i}}
+\newcommand{\boldj}{\boldsymbol{j}}
+\newcommand{\boldk}{\boldsymbol{k}}
+\newcommand{\boldl}{\boldsymbol{l}}
+\newcommand{\boldm}{\boldsymbol{m}}
+\newcommand{\boldn}{\boldsymbol{n}}
+\newcommand{\boldo}{\boldsymbol{o}}
+\newcommand{\boldp}{\boldsymbol{p}}
+\newcommand{\boldq}{\boldsymbol{q}}
+\newcommand{\boldr}{\boldsymbol{r}}
+\newcommand{\bolds}{\boldsymbol{s}}
+\newcommand{\boldt}{\boldsymbol{t}}
+\newcommand{\boldu}{\boldsymbol{u}}
+\newcommand{\boldv}{\boldsymbol{v}}
+\newcommand{\boldw}{\boldsymbol{w}}
+\newcommand{\boldx}{\boldsymbol{x}}
+\newcommand{\boldy}{\boldsymbol{y}}
+\newcommand{\boldz}{\boldsymbol{z}}
+
+\newcommand{\mcA}{\mathcal{A}}
+\newcommand{\mcB}{\mathcal{B}}
+\newcommand{\mcC}{\mathcal{C}}
+\newcommand{\mcD}{\mathcal{D}}
+\newcommand{\mcE}{\mathcal{E}}
+\newcommand{\mcF}{\mathcal{F}}
+\newcommand{\mcG}{\mathcal{G}}
+\newcommand{\mcH}{\mathcal{H}}
+\newcommand{\mcI}{\mathcal{I}}
+\newcommand{\mcJ}{\mathcal{J}}
+\newcommand{\mcK}{\mathcal{K}}
+\newcommand{\mcL}{\mathcal{L}}
+\newcommand{\mcM}{\mathcal{M}}
+\newcommand{\mcN}{\mathcal{N}}
+\newcommand{\mcO}{\mathcal{O}}
+\newcommand{\mcP}{\mathcal{P}}
+\newcommand{\mcQ}{\mathcal{Q}}
+\newcommand{\mcR}{\mathcal{R}}
+\newcommand{\mcS}{\mathcal{S}}
+\newcommand{\mcT}{\mathcal{T}}
+\newcommand{\mcU}{\mathcal{U}}
+\newcommand{\mcV}{\mathcal{V}}
+\newcommand{\mcW}{\mathcal{W}}
+\newcommand{\mcX}{\mathcal{X}}
+\newcommand{\mcY}{\mathcal{Y}}
+\newcommand{\mcZ}{\mathcal{Z}}
+
+\newcommand{\reals}{\ensuremath{\mathbb{R}}}
+\newcommand{\integers}{\ensuremath{\mathbb{Z}}}
+\newcommand{\rationals}{\ensuremath{\mathbb{Q}}}
+\newcommand{\naturals}{\ensuremath{\mathbb{N}}}
+\newcommand{\trans}{\ensuremath{\mathsf{T}}}
+\newcommand{\ident}{\boldsymbol{I}}
+\newcommand{\bzero}{\boldsymbol{0}}
+
+\newcommand{\balpha}{\boldsymbol{\alpha}}
+\newcommand{\bbeta}{\boldsymbol{\beta}}
+\newcommand{\boldeta}{\boldsymbol{\eta}}
+\newcommand{\bkappa}{\boldsymbol{\kappa}}
+\newcommand{\bgamma}{\boldsymbol{\gamma}}
+\newcommand{\bmu}{\boldsymbol{\mu}}
+\newcommand{\bphi}{\boldsymbol{\phi}}
+\newcommand{\bpi}{\boldsymbol{\pi}}
+\newcommand{\bpsi}{\boldsymbol{\psi}}
+\newcommand{\bsigma}{\boldsymbol{\sigma}}
+\newcommand{\btheta}{\boldsymbol{\theta}}
+\newcommand{\bxi}{\boldsymbol{\xi}}
+\newcommand{\bGamma}{\boldsymbol{\Gamma}}
+\newcommand{\bLambda}{\boldsymbol{\Lambda}}
+\newcommand{\bOmega}{\boldsymbol{\Omega}}
+\newcommand{\bPhi}{\boldsymbol{\Phi}}
+\newcommand{\bPi}{\boldsymbol{\Pi}}
+\newcommand{\bPsi}{\boldsymbol{\Psi}}
+\newcommand{\bSigma}{\boldsymbol{\Sigma}}
+\newcommand{\bTheta}{\boldsymbol{\Theta}}
+\newcommand{\bUpsilon}{\boldsymbol{\Upsilon}}
+\newcommand{\bXi}{\boldsymbol{\Xi}}
+\newcommand{\bepsilon}{\boldsymbol{\epsilon}}
+
+\def\argmin{\operatornamewithlimits{arg\,min}}
+\def\argmax{\operatornamewithlimits{arg\,max}}
+
+\newcommand{\given}{\,|\,}
+\newcommand{\distNorm}{\mathcal{N}}
+
+
+\usepackage{tabularx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\newcommand{\msc}[1]{\mathrm{\textsc{#1}}}
+\newcommand{\air}{\vspace{0.5cm}}
+
+\algtext*{EndWhile}% Remove "end while" text
+\algtext*{EndFor}% Remove "end while" text
+\algtext*{EndIf}% Remove "end if" text
+\algtext*{EndProcedure}% Remove "end while" text
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{defn}{Definition}
+
+\newcommand{\Scribe}[1]{\def\ScribeStr{Scribe: #1}}
+\newcommand{\Scribes}[1]{\def\ScribeStr{Scribes: #1}}
+\newcommand{\Lecturer}[1]{\def\LecStr{Lecturer: #1}}
+\newcommand{\Lecturers}[1]{\def\LecStr{Lecturers: #1}}
+\newcommand{\LectureNumber}[1]{\def\LecNum{#1}}
+\newcommand{\LectureDate}[1]{\def\LecDate{#1}}
+\newcommand{\LectureTitle}[1]{\def\LecTitle{#1}}
+
+\newdimen\headerwidth
+
+\newcommand{\MakeScribeTop}{
+\noindent
+\begin{center}
+  \framebox{
+    \vbox{
+      \headerwidth=\textwidth
+      % \advance\headerwidth by -0.22in
+      \hbox to \headerwidth {{\bf Artificial Intelligence \hfill (Harvard CS182, Fall 2015)} }
+      \vspace{4mm}
+      \hbox to \headerwidth {{\Large \hfill {\LecTitle} \hfill}}
+      \vspace{2mm}
+      \hbox to \headerwidth {\hfill \LecDate \hfill}
+      \vspace{2mm}
+      \hbox to \headerwidth {{\it  \hfill \LecStr \hfill }}
+      }
+    }
+\end{center}
+\vspace*{4mm}}
+
+
+\newcommand*{\QED}{\hfill\ensuremath{\square}}%
+
+\newtheorem{exercise}[theorem]{Question}
+\let\checkmark\undefined
+
+\newcommand{\exinline}[1]{(\refstepcounter{theorem}Question~\thetheorem\label{#1})}
+
+\usepackage[utf8]{inputenc}
+
+% \DeclareUnicodeCharacter{2693}{\anchor}
+\usepackage{bbding}
+\usepackage{soul}
+
+\ifthenelse{\isundefined{\StudentVersion}}{
+\newcommand{\censor}[1]{
+    {\small \textcolor{red}{\SunshineOpenCircled}} \textcolor{red}{#1}
+}
+\newcommand{\censorm}[1]{
+    \hbox{{\small \textcolor{red}{\SunshineOpenCircled}}} \textcolor{red}{#1}
+}
+
+}{
+\DeclareRobustCommand*\censor{%
+  {\small \textcolor{red}{\SunshineOpenCircled}}
+    \SOUL@setup%
+    \def\SOUL@everytoken{\phantom{\the\SOUL@token}}%
+    \def\SOUL@everyhyphen{%
+        \discretionary{%
+            \SOUL@setkern\SOUL@hyphkern%
+            \phantom{\SOUL@sethyphenchar}%
+        }{}{}%
+    }%
+    \def\SOUL@everyexhyphen##1{%
+        \SOUL@setkern\SOUL@hyphkern%
+        \hbox{\phantom{##1}}%
+        \discretionary{}{}{%
+            \SOUL@setkern\SOUL@charkern%
+        }%
+    }%
+    \SOUL@%
+}
+\newcommand{\censorm}[1]{
+    \hbox{{\small \textcolor{red}{\SunshineOpenCircled}}} \hspace*{5cm} 
+}
+
+}
+
+
+
+
+\newcommand{\bolddelta}{\boldsymbol{\delta}}
+\newcommand{\indicator}{\mathbf{1}}
+
+
+\def\argmin{\operatornamewithlimits{arg\,min}}
+\def\argmax{\operatornamewithlimits{arg\,max}}
+\def\softmax{\operatornamewithlimits{softmax}}
+\def\relu{\operatornamewithlimits{ReLU}}
+
+\newcommand{\din}{{d_{\mathrm{in}}}}
+\newcommand{\dout}{{d_{\mathrm{out}}}}

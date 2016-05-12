@@ -1,0 +1,424 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 2.5 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \sortlist{ynt}{ynt}
+    \entry{hochreiter-grad}{misc}{}
+      \name{author}{1}{}{%
+        {{hash=61ae218acb0f2e99e765281997fd01b6}{Hochreiter}{H\bibinitperiod}{S.}{S\bibinitperiod}{}{}{}{}}%
+      }
+      \strng{namehash}{61ae218acb0f2e99e765281997fd01b6}
+      \strng{fullhash}{61ae218acb0f2e99e765281997fd01b6}
+      \field{labelalpha}{Hoc91}
+      \field{sortinit}{1}
+      \field{sortinithash}{53e85f4cf497d2a4e1d51786552bcbf1}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{{Untersuchungen zu dynamischen neuronalen Netzen. Diploma thesis, Institut für Informatik, Lehrstuhl Prof. Brauer, Technische Universität München}}
+      \field{year}{1991}
+      \keyw{juergen}
+    \endentry
+    \entry{hochreiter}{article}{}
+      \name{author}{2}{}{%
+        {{hash=41b31e29fb2bdbf9f5c9c1b0d5b3e815}{Hochreiter}{H\bibinitperiod}{Sepp}{S\bibinitperiod}{}{}{}{}}%
+        {{hash=288bdbcfe1b91ad7484d7a24f74f99ed}{Schmidhuber}{S\bibinitperiod}{Jürgen}{J\bibinitperiod}{}{}{}{}}%
+      }
+      \list{location}{1}{%
+        {Cambridge, MA, USA}%
+      }
+      \list{publisher}{1}{%
+        {MIT Press}%
+      }
+      \strng{namehash}{4c2e1e2e1ac91e1df9d4f7b85ebe39b4}
+      \strng{fullhash}{4c2e1e2e1ac91e1df9d4f7b85ebe39b4}
+      \field{labelalpha}{HS97}
+      \field{sortinit}{1}
+      \field{sortinithash}{53e85f4cf497d2a4e1d51786552bcbf1}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{0899-7667}
+      \field{journaltitle}{Neural Comput.}
+      \field{month}{11}
+      \field{number}{8}
+      \field{title}{Long Short-Term Memory}
+      \field{volume}{9}
+      \field{year}{1997}
+      \field{pages}{1735\bibrangedash 1780}
+      \range{pages}{46}
+      \verb{doi}
+      \verb 10.1162/neco.1997.9.8.1735
+      \endverb
+      \verb{url}
+      \verb http://dx.doi.org/10.1162/neco.1997.9.8.1735
+      \endverb
+    \endentry
+    \entry{bengio-emb}{article}{}
+      \name{author}{4}{}{%
+        {{hash=40a8e4774982146adc2688546f54efb2}{Bengio}{B\bibinitperiod}{Yoshua}{Y\bibinitperiod}{}{}{}{}}%
+        {{hash=dcb65deeb8d2de03d00f0aeeb3499771}{Ducharme}{D\bibinitperiod}{Réjean}{R\bibinitperiod}{}{}{}{}}%
+        {{hash=da21e966c02c3cfd33d74369c7435c1a}{Vincent}{V\bibinitperiod}{Pascal}{P\bibinitperiod}{}{}{}{}}%
+        {{hash=ea41c010e40f12e367cba6ef65adc671}{Janvin}{J\bibinitperiod}{Christian}{C\bibinitperiod}{}{}{}{}}%
+      }
+      \list{publisher}{1}{%
+        {JMLR.org}%
+      }
+      \strng{namehash}{058f6aa7282521dda725a309bd2d3fea}
+      \strng{fullhash}{cfa59cc774bd7b9cd8d3538e481d7b36}
+      \field{labelalpha}{Ben+03}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{issn}{1532-4435}
+      \field{journaltitle}{J. Mach. Learn. Res.}
+      \field{month}{03}
+      \field{title}{A Neural Probabilistic Language Model}
+      \field{volume}{3}
+      \field{year}{2003}
+      \field{pages}{1137\bibrangedash 1155}
+      \range{pages}{19}
+      \verb{url}
+      \verb http://dl.acm.org/citation.cfm?id=944919.944966
+      \endverb
+    \endentry
+    \entry{nltk}{manual}{}
+      \name{author}{2}{}{%
+        {{hash=30274be7df9f865fff8d79b7df7a836e}{Bird}{B\bibinitperiod}{Edward\bibnamedelima Loper}{E\bibinitperiod\bibinitdelim L\bibinitperiod}{}{}{Steven}{S\bibinitperiod}}%
+        {{hash=95e002ca584c2d8d701c96f08c6d589f}{Klein}{K\bibinitperiod}{Ewan}{E\bibinitperiod}{}{}{}{}}%
+      }
+      \list{organization}{1}{%
+        {O'Reilly Media Inc}%
+      }
+      \strng{namehash}{9fd5cdac304febe4185d671ce1e3f56c}
+      \strng{fullhash}{9fd5cdac304febe4185d671ce1e3f56c}
+      \field{labelalpha}{BK09}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{Natural Language Processing with Python}
+      \field{year}{2009}
+    \endentry
+    \entry{mikolov-rnn}{inproceedings}{}
+      \name{author}{5}{}{%
+        {{hash=a2d359b12ca2fadf0b40136a73f021bb}{Mikolov}{M\bibinitperiod}{Tomas}{T\bibinitperiod}{}{}{}{}}%
+        {{hash=532398c21f4c14f31d6c3f5c9fb97d3b}{Karafiát}{K\bibinitperiod}{Martin}{M\bibinitperiod}{}{}{}{}}%
+        {{hash=338a19c162ee38a70d24f99ffb9a9c29}{Burget}{B\bibinitperiod}{Lukás}{L\bibinitperiod}{}{}{}{}}%
+        {{hash=fab6b9abb0de957011f995ff4ede63d4}{Cernocký}{C\bibinitperiod}{Jan}{J\bibinitperiod}{}{}{}{}}%
+        {{hash=d787f09b6c6cc374a9ad21fe9120fc1f}{Khudanpur}{K\bibinitperiod}{Sanjeev}{S\bibinitperiod}{}{}{}{}}%
+      }
+      \strng{namehash}{d4849f6d57e38d9b9846cfb360e45131}
+      \strng{fullhash}{9c8befbc8e117628222caad204b17d9a}
+      \field{labelalpha}{Mik+10}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{{INTERSPEECH} 2010, 11th Annual Conference of the International Speech Communication Association, Makuhari, Chiba, Japan, September 26-30, 2010}
+      \field{title}{Recurrent neural network based language model}
+      \field{year}{2010}
+      \field{pages}{1045\bibrangedash 1048}
+      \range{pages}{4}
+      \verb{url}
+      \verb http://www.isca-speech.org/archive/interspeech_2010/i10_1045.html
+      \endverb
+    \endentry
+    \entry{banchs-iris}{inproceedings}{}
+      \name{author}{2}{}{%
+        {{hash=e10f82d1e0c05323ed846a4c6b184cdb}{Banchs}{B\bibinitperiod}{Rafael\bibnamedelima E.}{R\bibinitperiod\bibinitdelim E\bibinitperiod}{}{}{}{}}%
+        {{hash=f397ee85433a25b75738faa0b764e496}{Li}{L\bibinitperiod}{Haizhou}{H\bibinitperiod}{}{}{}{}}%
+      }
+      \list{location}{1}{%
+        {Jeju Island, Korea}%
+      }
+      \list{publisher}{1}{%
+        {Association for Computational Linguistics}%
+      }
+      \strng{namehash}{b15d18de8a8ef1c0fb52634c87655116}
+      \strng{fullhash}{b15d18de8a8ef1c0fb52634c87655116}
+      \field{labelalpha}{BL12}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the ACL 2012 System Demonstrations}
+      \field{series}{ACL '12}
+      \field{title}{IRIS: A Chat-oriented Dialogue System Based on the Vector Space Model}
+      \field{year}{2012}
+      \field{pages}{37\bibrangedash 42}
+      \range{pages}{6}
+      \verb{url}
+      \verb http://dl.acm.org/citation.cfm?id=2390470.2390477
+      \endverb
+    \endentry
+    \entry{word2vec}{article}{}
+      \name{author}{4}{}{%
+        {{hash=a2d359b12ca2fadf0b40136a73f021bb}{Mikolov}{M\bibinitperiod}{Tomas}{T\bibinitperiod}{}{}{}{}}%
+        {{hash=ee3f7d7b96add98106db907e189d6c13}{Chen}{C\bibinitperiod}{Kai}{K\bibinitperiod}{}{}{}{}}%
+        {{hash=3d11e6f2a0d0a1183b2cf62996525afc}{Corrado}{C\bibinitperiod}{Greg}{G\bibinitperiod}{}{}{}{}}%
+        {{hash=4aecfb0cc2e1e3b7899129fa2a94e2b8}{Dean}{D\bibinitperiod}{Jeffrey}{J\bibinitperiod}{}{}{}{}}%
+      }
+      \strng{namehash}{d4849f6d57e38d9b9846cfb360e45131}
+      \strng{fullhash}{f24c60896b6daa69474b40efb61f4e88}
+      \field{labelalpha}{Mik+13}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{CoRR}
+      \field{title}{Efficient Estimation of Word Representations in Vector Space}
+      \field{volume}{abs/1301.3781}
+      \field{year}{2013}
+      \verb{url}
+      \verb http://arxiv.org/abs/1301.3781
+      \endverb
+    \endentry
+    \entry{ameixa}{inbook}{}
+      \name{author}{4}{}{%
+        {{hash=b8f9ed9442b5a3839c54e5c1bc13990e}{Ameixa}{A\bibinitperiod}{David}{D\bibinitperiod}{}{}{}{}}%
+        {{hash=4e04b186c3fb02bbf79135f92cb8bc9e}{Coheur}{C\bibinitperiod}{Luisa}{L\bibinitperiod}{}{}{}{}}%
+        {{hash=a87862d1f108f04130e2e32879d5e7b1}{Fialho}{F\bibinitperiod}{Pedro}{P\bibinitperiod}{}{}{}{}}%
+        {{hash=7a6f382c21ef12553f3839584c3900ff}{Quaresma}{Q\bibinitperiod}{Paulo}{P\bibinitperiod}{}{}{}{}}%
+      }
+      \name{editor}{3}{}{%
+        {{hash=818a89111c8320274e46efcb7b70577e}{Bickmore}{B\bibinitperiod}{Timothy}{T\bibinitperiod}{}{}{}{}}%
+        {{hash=0aef0da1729bd5c38a7c619d2104bc3e}{Marsella}{M\bibinitperiod}{Stacy}{S\bibinitperiod}{}{}{}{}}%
+        {{hash=dbe2889d23bfa8876f342a4dd79a236e}{Sidner}{S\bibinitperiod}{Candace}{C\bibinitperiod}{}{}{}{}}%
+      }
+      \list{location}{1}{%
+        {Cham}%
+      }
+      \list{publisher}{1}{%
+        {Springer International Publishing}%
+      }
+      \strng{namehash}{676f378148630eeadbe2a51a7ec7a472}
+      \strng{fullhash}{f95bfe6ba4cd5180016ce776b2eca1a0}
+      \field{labelalpha}{Ame+14}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{chapter}{Luke, I am Your Father: Dealing with Out-of-Domain Requests by Using Movies Subtitles}
+      \field{isbn}{978-3-319-09767-1}
+      \field{title}{Intelligent Virtual Agents: 14th International Conference, IVA 2014, Boston, MA, USA, August 27-29, 2014. Proceedings}
+      \field{year}{2014}
+      \field{pages}{13\bibrangedash 21}
+      \range{pages}{9}
+      \verb{doi}
+      \verb 10.1007/978-3-319-09767-1_2
+      \endverb
+      \verb{url}
+      \verb http://dx.doi.org/10.1007/978-3-319-09767-1_2
+      \endverb
+    \endentry
+    \entry{cho}{article}{}
+      \name{author}{6}{}{%
+        {{hash=3da7501a79d9346572c7fd6e41b615df}{Cho}{C\bibinitperiod}{Kyunghyun}{K\bibinitperiod}{}{}{}{}}%
+        {{hash=d27fe3f9898ba01eeca28e3bd205f9ea}{Merrienboer}{M\bibinitperiod}{Bart}{B\bibinitperiod}{van}{v\bibinitperiod}{}{}}%
+        {{hash=23bc43e1663cf51073e07f4ba4940635}{Gülçehre}{G\bibinitperiod}{Çaglar}{Ç\bibinitperiod}{}{}{}{}}%
+        {{hash=6deedc795e51da1bc7fd6289ab321a48}{Bougares}{B\bibinitperiod}{Fethi}{F\bibinitperiod}{}{}{}{}}%
+        {{hash=449689e8c1ced50f608244e3a96fe6d3}{Schwenk}{S\bibinitperiod}{Holger}{H\bibinitperiod}{}{}{}{}}%
+        {{hash=40a8e4774982146adc2688546f54efb2}{Bengio}{B\bibinitperiod}{Yoshua}{Y\bibinitperiod}{}{}{}{}}%
+      }
+      \strng{namehash}{9b1920db887fe0d658725c1e606b61f4}
+      \strng{fullhash}{ab67beaf866adf6627d1e94acd3f7edd}
+      \field{labelalpha}{Cho+14}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{CoRR}
+      \field{title}{Learning Phrase Representations using {RNN} Encoder-Decoder for Statistical Machine Translation}
+      \field{volume}{abs/1406.1078}
+      \field{year}{2014}
+      \verb{url}
+      \verb http://arxiv.org/abs/1406.1078
+      \endverb
+    \endentry
+    \entry{chung}{article}{}
+      \name{author}{4}{}{%
+        {{hash=7a79e6bb4ca772c9b3b38f4e9f45b83c}{Chung}{C\bibinitperiod}{Junyoung}{J\bibinitperiod}{}{}{}{}}%
+        {{hash=23bc43e1663cf51073e07f4ba4940635}{Gülçehre}{G\bibinitperiod}{Çaglar}{Ç\bibinitperiod}{}{}{}{}}%
+        {{hash=f8dfca934ead3a7cab6b2382a1baaaa1}{Cho}{C\bibinitperiod}{KyungHyun}{K\bibinitperiod}{}{}{}{}}%
+        {{hash=40a8e4774982146adc2688546f54efb2}{Bengio}{B\bibinitperiod}{Yoshua}{Y\bibinitperiod}{}{}{}{}}%
+      }
+      \strng{namehash}{2000d0778084bb56905b1654d519f50f}
+      \strng{fullhash}{d406421fdaffac6be5acc83f3a8f3175}
+      \field{labelalpha}{Chu+14}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{CoRR}
+      \field{title}{Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling}
+      \field{volume}{abs/1412.3555}
+      \field{year}{2014}
+      \verb{url}
+      \verb http://arxiv.org/abs/1412.3555
+      \endverb
+    \endentry
+    \entry{sutskever}{article}{}
+      \name{author}{3}{}{%
+        {{hash=8d569d1d5b8b5a7836017a98b430f959}{Sutskever}{S\bibinitperiod}{Ilya}{I\bibinitperiod}{}{}{}{}}%
+        {{hash=494b568c5dc85ba8f3f409635f9c5f25}{Vinyals}{V\bibinitperiod}{Oriol}{O\bibinitperiod}{}{}{}{}}%
+        {{hash=1633c392d651912a53a929a28bd31bb4}{Le}{L\bibinitperiod}{Quoc\bibnamedelima V.}{Q\bibinitperiod\bibinitdelim V\bibinitperiod}{}{}{}{}}%
+      }
+      \strng{namehash}{1d392d72b9007aedcf451de389a4f813}
+      \strng{fullhash}{1d392d72b9007aedcf451de389a4f813}
+      \field{labelalpha}{SVL14}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{CoRR}
+      \field{title}{Sequence to Sequence Learning with Neural Networks}
+      \field{volume}{abs/1409.3215}
+      \field{year}{2014}
+      \verb{url}
+      \verb http://arxiv.org/abs/1409.3215
+      \endverb
+    \endentry
+    \entry{li}{article}{}
+      \name{author}{5}{}{%
+        {{hash=9e784630a0c25d3ed602dfe506235c30}{Li}{L\bibinitperiod}{Jiwei}{J\bibinitperiod}{}{}{}{}}%
+        {{hash=fda9fdf6ebb4aa0e4f37826ef02391c3}{Galley}{G\bibinitperiod}{Michel}{M\bibinitperiod}{}{}{}{}}%
+        {{hash=15e87e276e6019ac1304793ab77184be}{Brockett}{B\bibinitperiod}{Chris}{C\bibinitperiod}{}{}{}{}}%
+        {{hash=159bca5607e3797666654a2e3022978a}{Gao}{G\bibinitperiod}{Jianfeng}{J\bibinitperiod}{}{}{}{}}%
+        {{hash=3b3db39806e6059146b4d991272b0a78}{Dolan}{D\bibinitperiod}{Bill}{B\bibinitperiod}{}{}{}{}}%
+      }
+      \strng{namehash}{deaecf55c405f8de9e78713a6782909c}
+      \strng{fullhash}{ebb34a0115f9aa341fe4537a56723b18}
+      \field{labelalpha}{Li+15}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{CoRR}
+      \field{title}{A Diversity-Promoting Objective Function for Neural Conversation Models}
+      \field{volume}{abs/1510.03055}
+      \field{year}{2015}
+      \verb{url}
+      \verb http://arxiv.org/abs/1510.03055
+      \endverb
+    \endentry
+    \entry{serban}{article}{}
+      \name{author}{5}{}{%
+        {{hash=267cf1f6856fbdaf8b0d5149337a07b0}{Serban}{S\bibinitperiod}{Iulian\bibnamedelima Vlad}{I\bibinitperiod\bibinitdelim V\bibinitperiod}{}{}{}{}}%
+        {{hash=e654f78302387639b336288e6017821c}{Sordoni}{S\bibinitperiod}{Alessandro}{A\bibinitperiod}{}{}{}{}}%
+        {{hash=40a8e4774982146adc2688546f54efb2}{Bengio}{B\bibinitperiod}{Yoshua}{Y\bibinitperiod}{}{}{}{}}%
+        {{hash=d4fc395f7b2417c2c944e1a10f7ae5f5}{Courville}{C\bibinitperiod}{Aaron\bibnamedelima C.}{A\bibinitperiod\bibinitdelim C\bibinitperiod}{}{}{}{}}%
+        {{hash=5b77dedc7f77ff84caad46064e6e3cbb}{Pineau}{P\bibinitperiod}{Joelle}{J\bibinitperiod}{}{}{}{}}%
+      }
+      \strng{namehash}{472c0b09473c5326b525bf653752b54d}
+      \strng{fullhash}{321f381ef60150db6ad3f15272782511}
+      \field{labelalpha}{Ser+15}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{CoRR}
+      \field{title}{Building End-To-End Dialogue Systems Using Generative Hierarchical Neural Networks}
+      \field{volume}{abs/1507.04808}
+      \field{year}{2015}
+      \verb{url}
+      \verb http://arxiv.org/abs/1507.04808
+      \endverb
+    \endentry
+    \entry{hred}{inproceedings}{}
+      \name{author}{6}{}{%
+        {{hash=e654f78302387639b336288e6017821c}{Sordoni}{S\bibinitperiod}{Alessandro}{A\bibinitperiod}{}{}{}{}}%
+        {{hash=40a8e4774982146adc2688546f54efb2}{Bengio}{B\bibinitperiod}{Yoshua}{Y\bibinitperiod}{}{}{}{}}%
+        {{hash=504f787e206155ccc92e66ceb3c46891}{Vahabi}{V\bibinitperiod}{Hossein}{H\bibinitperiod}{}{}{}{}}%
+        {{hash=843ff5a6f38679e8f84b06a1487d4a4e}{Lioma}{L\bibinitperiod}{Christina}{C\bibinitperiod}{}{}{}{}}%
+        {{hash=eb71a4ba28c187491209d2dc9661df02}{Grue\bibnamedelima Simonsen}{G\bibinitperiod\bibinitdelim S\bibinitperiod}{Jakob}{J\bibinitperiod}{}{}{}{}}%
+        {{hash=249bb150525fcf94fd8a35571a611e24}{Nie}{N\bibinitperiod}{Jian-Yun}{J\bibinithyphendelim Y\bibinitperiod}{}{}{}{}}%
+      }
+      \list{location}{1}{%
+        {Melbourne, Australia}%
+      }
+      \list{publisher}{1}{%
+        {ACM}%
+      }
+      \strng{namehash}{c8f8d3cfdb0f751180f2fc047142daec}
+      \strng{fullhash}{3f655ca80af18ebadbe468d5f6137c9a}
+      \field{labelalpha}{Sor+15}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the 24th ACM International on Conference on Information and Knowledge Management}
+      \field{isbn}{978-1-4503-3794-6}
+      \field{series}{CIKM '15}
+      \field{title}{A Hierarchical Recurrent Encoder-Decoder for Generative Context-Aware Query Suggestion}
+      \field{year}{2015}
+      \field{pages}{553\bibrangedash 562}
+      \range{pages}{10}
+      \verb{doi}
+      \verb 10.1145/2806416.2806493
+      \endverb
+      \verb{url}
+      \verb http://doi.acm.org/10.1145/2806416.2806493
+      \endverb
+      \keyw{query suggestion,recurrent neural networks}
+    \endentry
+    \entry{vinyals}{article}{}
+      \name{author}{2}{}{%
+        {{hash=494b568c5dc85ba8f3f409635f9c5f25}{Vinyals}{V\bibinitperiod}{Oriol}{O\bibinitperiod}{}{}{}{}}%
+        {{hash=1633c392d651912a53a929a28bd31bb4}{Le}{L\bibinitperiod}{Quoc\bibnamedelima V.}{Q\bibinitperiod\bibinitdelim V\bibinitperiod}{}{}{}{}}%
+      }
+      \strng{namehash}{02791041f372f1bcc0393431393bda36}
+      \strng{fullhash}{02791041f372f1bcc0393431393bda36}
+      \field{labelalpha}{VL15}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{CoRR}
+      \field{title}{A Neural Conversational Model}
+      \field{volume}{abs/1506.05869}
+      \field{year}{2015}
+      \verb{url}
+      \verb http://arxiv.org/abs/1506.05869
+      \endverb
+    \endentry
+    \entry{luan}{article}{}
+      \name{author}{3}{}{%
+        {{hash=89952d52953aa56e0f7e1e7ccb8403ac}{Luan}{L\bibinitperiod}{Yi}{Y\bibinitperiod}{}{}{}{}}%
+        {{hash=d37991bdea586917a3231eff496609c3}{Ji}{J\bibinitperiod}{Yangfeng}{Y\bibinitperiod}{}{}{}{}}%
+        {{hash=d9964335acf3f82957cd1e681220c042}{Ostendorf}{O\bibinitperiod}{Mari}{M\bibinitperiod}{}{}{}{}}%
+      }
+      \strng{namehash}{a33e28dcf9b0188dba25206535138d40}
+      \strng{fullhash}{a33e28dcf9b0188dba25206535138d40}
+      \field{labelalpha}{LJO16}
+      \field{sortinit}{2}
+      \field{sortinithash}{8343b463aacf48517c044b4d2c9c45ed}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{CoRR}
+      \field{title}{{LSTM} based Conversation Models}
+      \field{volume}{abs/1603.09457}
+      \field{year}{2016}
+      \verb{url}
+      \verb http://arxiv.org/abs/1603.09457
+      \endverb
+    \endentry
+  \endsortlist
+\endrefsection
+\endinput
+

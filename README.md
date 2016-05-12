@@ -1,6 +1,14 @@
 # End-to-End Generative Dialogue
 
-A neural conversational model.
+This code implements multi-layer recurrent neural network encoder-decoder models (RNN, GRU, and LSTM) for training/sampling from conversation dialogue. Essentially, the model takes a series of sentences of preceding dialogue and attempts to predict a response sentence. All models and their training, evaluation, and sampling are detailed thoroughly in the paper [End-to-End Generative Dialogue](https://github.com/michaelfarrell76/End-To-End-Generative-Dialogue/blob/master/paper/main.pdf).
+
+## Primary contributors
+
+[Kevin Yang](https://github.com/kyang01)
+
+[Michael Farrell](https://github.com/michaelfarrell76)
+
+[Colton Gyulay](https://github.com/cgyulay)
 
 ## Requirements
 
@@ -147,14 +155,6 @@ $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5
 
 ```
 
-## Primary contributors
-
-[Kevin Yang](https://github.com/kyang01)
-
-[Michael Farrell](https://github.com/michaelfarrell76)
-
-[Colton Gyulay](https://github.com/cgyulay)
-
 ## Relevant links
 
 - https://medium.com/chat-bots/the-complete-beginner-s-guide-to-chatbots-8280b7b906ca#.u1jngyhzc
@@ -185,12 +185,6 @@ $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5
 - Add way to do localhost without password on server
 - Get working on google servers
 - Make sure server setup is correctly done
-
-**General**
-- Start result collection of some sort. Maybe have some datasheet and when we run a good model we record the results?
-- Run each of the models for 10 epochs-ish? -> save the model, record results ^
-- Experiment with HRED model
-- Add word error rate when reporting
 
 ## Acknowledgments
 
