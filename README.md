@@ -186,12 +186,6 @@ $ th train.lua -data_file data/conv-train.hdf5 -val_data_file data/conv-val.hdf5
 - Get working on google servers
 - Make sure server setup is correctly done
 
-**General**
-- Start result collection of some sort. Maybe have some datasheet and when we run a good model we record the results?
-- Run each of the models for 10 epochs-ish? -> save the model, record results ^
-- Experiment with HRED model
-- Add word error rate when reporting
-
 ## Acknowledgments
 
 Our implementation utilizes code from the following:
