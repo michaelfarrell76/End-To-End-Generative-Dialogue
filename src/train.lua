@@ -25,10 +25,11 @@ cmd:text("")
 cmd:text("**Data options**")
 cmd:text("")
 
-cmd:option('-data_file',    'data/demo-train.hdf5',     'Path to the training *.hdf5 file from preprocess.py')
-cmd:option('-val_data_file','data/demo-val.hdf5',       'Path to validation *.hdf5 file from preprocess.py')
-cmd:option('-save_file',    'seq2seq_lstm',             'Save file name (model will be saved as savefile_epochX_PPL.t7  where X is the X-th epoch and PPL is the validation perplexity')
+cmd:option('-data_file',    'data/conv-train.hdf5',     'Path to the training *.hdf5 file from preprocess.py')
+cmd:option('-val_data_file','data/conv-val.hdf5',       'Path to validation *.hdf5 file from preprocess.py')
+cmd:option('-save_file',    '',                         'Save file name (model will be saved as savefile_epochX_PPL.t7  where X is the X-th epoch and PPL is the validation perplexity')
 cmd:option('-train_from',   '',                         'If training from a checkpoint then this is the path to the pretrained model.')
+cmd:option('-load_red',   false,                        'If training a HRED model and loading parameters from subtle red model.')
 
 -- RNN model specs
 cmd:text("")
@@ -96,16 +97,35 @@ cmd:option('-torch_path',       '/Users/michaelfarrell/torch/install/bin/th',   
 cmd:option('-extension',       '',   'The location from the home directory to the helper functions')
 cmd:option('-username',       'michaelfarrell',   'The username for connecting to remote clients')
 cmd:option('-add_to_path' ,     '/home/michaelfarrell/Distributed-SGD/lua-lua/End-To-End-Generative-Dialogue/src/?.lua;',  'A string that will be appended on to the front of the path')
-cmd:option('-wait',         500,  'Waits to parallelize until below this threshold')
+cmd:option('-wait',         200,  'Waits to parallelize until below this threshold')
 
 -- Used to update the path variable
 require 'package'
 
-
-
 -- Parse arguments
 opt = cmd:parse(arg)
 torch.manualSeed(opt.seed)
+
+
+if opt.save_file:len() == 0 then
+    opt.model_id = opt.layer_type .. '_' .. opt.model_type
+    if opt.data_file ~= 'data/conv-train.hdf5' then 
+        opt.model_id = opt.model_id .. '_subtle'
+    end
+    if opt.fix_word_vecs then
+        opt.model_id = opt.model_id  .. '_fix'
+    end 
+    if opt.hidden_size ~= 300 then 
+        opt.model_id = opt.model_id .. '_hs' .. opt.hidden_size
+    end
+    if opt.word_vec_size ~= 300 then
+        opt.model_id = opt.model_id .. '_wv' .. opt.word_vecs
+    end
+    if opt.ada_grad then 
+        opt.model_id = opt.model_id .. '_ada'
+    end
+end
+print(opt.model_id)
 
 -- Add on location to path of new class if not already in path
 package.path = opt.add_to_path .. package.path
