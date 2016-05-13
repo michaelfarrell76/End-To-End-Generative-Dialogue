@@ -565,6 +565,7 @@ function train(m, criterion, train_data, valid_data)
                     stats = stats .. string.format('Training: %d/%d/%d total/source/target tokens/sec',
                         (num_words_target+num_words_source) / time_taken,
                         num_words_source / time_taken, num_words_target / time_taken)
+                    stats = stats .. string.format('Time ellapse: %d', timer:time().real - start_time)
                     opt.print(stats)
                 end
                 sys.sleep(.1)
