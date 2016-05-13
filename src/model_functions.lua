@@ -514,14 +514,14 @@ function train(m, criterion, train_data, valid_data)
 
         while i <= data:size() do
             if opt.parallel then
-                if cur_perp < opt.wait then
+                if cur_perp < thresh then
                     skip = opt.n_proc
                     for j = 2, skip do
                         local pkg = {parameters = m.params, index = batch_order[i]}
                         parallel.children[j]:send(pkg)
                         i = i + 1
                     end
-                    opt.wait = -1
+                    thresh = -1
                 end
 
                 -- parallel.children:join()
