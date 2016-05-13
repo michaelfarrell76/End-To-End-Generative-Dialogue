@@ -124,10 +124,10 @@ function chat(sbeam)
         table.insert(dialogue, pred)
         print('\n' .. pred_sent .. '\n')
 
-        for i = 1, #k_best do
-            pred_sent = wordidx2sent(remove_pad(k_best[i]), idx2word_targ, false)
-            print('PRED (' .. scores[i] .. '): ' .. pred_sent)
-        end
+        -- for i = 1, #k_best do
+        --     pred_sent = wordidx2sent(remove_pad(k_best[i]), idx2word_targ, false)
+        --     print('PRED (' .. scores[i] .. '): ' .. pred_sent)
+        -- end
         print('')
 
         -- TODO: add logical way to end discourse

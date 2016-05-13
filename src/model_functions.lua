@@ -1,6 +1,7 @@
 require 'rnn'
 require 'hdf5'
 
+INF = 1e15
 ------------
 -- Coupling
 ------------
@@ -467,7 +468,7 @@ function train(m, criterion, train_data, valid_data)
         local start_time = timer:time().real
         local num_words_target = 0
         local num_words_source = 0
-        cur_perp = 10000000000
+        cur_perp = INF
 
         local skip = 0
         if opt.parallel then
@@ -478,7 +479,9 @@ function train(m, criterion, train_data, valid_data)
 
         local i = 1
 
-        if opt.parallel and cur_perp > opt.wait then
+        local thresh = opt.wait or INF + 1
+
+        if opt.parallel and cur_perp >  thresh then
             skip = 1
         end
 
