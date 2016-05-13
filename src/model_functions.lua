@@ -483,6 +483,7 @@ function train(m, criterion, train_data, valid_data)
 
         if opt.parallel and cur_perp >  thresh then
             skip = 1
+            thresh = -1
         end
 
         for j = 1, skip do
