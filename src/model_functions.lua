@@ -501,6 +501,7 @@ function train(m, criterion, train_data, valid_data)
                     local reply = parallel.children[j]:receive("noblock")
                     if reply ~= nil then
                         rec = rec + 1
+                        print(rec)
                         for k = 1, #m.params do
                             if opt.ada_grad then
                                 historical_grad[k]:add(torch.cmul(reply.gps[k], reply.gps[k]))
@@ -540,6 +541,7 @@ function train(m, criterion, train_data, valid_data)
                     opt.print(stats)
                 end
                 sys.sleep(.1)
+                print('a')
             else
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
                 batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm = train_ind(batch_order[i], m, criterion, train_data)
@@ -580,13 +582,13 @@ function train(m, criterion, train_data, valid_data)
                     opt.print(stats)
                 end
             end
-
+            print('b')
             -- Friendly reminder
             if i % 200 == 0 then
                 collectgarbage()
             end
         end
-
+        print('c')
         return train_loss, train_nonzeros
     end
 
