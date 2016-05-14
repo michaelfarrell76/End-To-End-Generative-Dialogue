@@ -468,43 +468,36 @@ function train(m, criterion, train_data, valid_data)
         local start_time = timer:time().real
         local num_words_target = 0
         local num_words_source = 0
-        print('d')
         
         local i = 1
 
          for j = 1, skip do
             local pkg = {parameters = m.params, index = batch_order[i]}
+            parallel.children[j]:join()
             parallel.children[j]:send(pkg)
             i = i + 1
         end
-        print('e')
 
 
         local rec = 0
         while rec < 3 do --data:size() do
-            print('f')
             if opt.parallel then
-                print('g')
                 if thresh ~= nil and cur_perp < thresh then
-                     print('h')
                     skip = opt.n_proc
                     for j = 2, skip do
                         local pkg = {parameters = m.params, index = batch_order[i]}
+                        parallel.children[j]:join()
                         parallel.children[j]:send(pkg)
                         i = i + 1
                         -- here should check if i is data:size()
                     end
                     thresh = nil
                 end
-                print('i')
                 -- parallel.children:join()
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
                 for j =  1, skip do
-                    print('j')
                     local reply = parallel.children[j]:receive("noblock")
-                    print('k')
                     if reply ~= nil then
-                         print('l')
                         rec = rec + 1
                         for k = 1, #m.params do
                             if opt.ada_grad then
@@ -531,7 +524,6 @@ function train(m, criterion, train_data, valid_data)
                     end
                     
                 end
-                print('m')
                 local time_taken = timer:time().real - start_time
                 if i % opt.print_every == 0  and batch_l ~= nil then
                     local stats = string.format('Epoch: %d, Batch: %d/%d, Batch size: %d, LR: %.4f, ',
@@ -588,7 +580,6 @@ function train(m, criterion, train_data, valid_data)
                     opt.print(stats)
                 end
             end
-            print('o')
             -- Friendly reminder
             if i % 200 == 0 then
                 collectgarbage()
@@ -632,8 +623,6 @@ function train(m, criterion, train_data, valid_data)
             end
         end
     end
-    parallel.children:join()
-    torch.setheaptracking(true)
 
 
     for epoch = opt.start_epoch, opt.num_epochs do
