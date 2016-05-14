@@ -469,12 +469,12 @@ function train(m, criterion, train_data, valid_data)
         local num_words_target = 0
         local num_words_source = 0
 
-        parallel.children:join('break')
         
         local i = 1
 
          for j = 1, skip do
             local pkg = {parameters = m.params, index = batch_order[i]}
+            parallel.children[j]:receive("noblock")
             parallel.children[j]:send(pkg)
             i = i + 1
         end
@@ -583,6 +583,9 @@ function train(m, criterion, train_data, valid_data)
                 collectgarbage()
             end
         end
+
+        parallel.children:join()
+
         return train_loss, train_nonzeros
     end
 
@@ -621,6 +624,7 @@ function train(m, criterion, train_data, valid_data)
             end
         end
     end
+    parallel.children:join()
 
 
 
