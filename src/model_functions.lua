@@ -468,7 +468,7 @@ function train(m, criterion, train_data, valid_data)
         local start_time = timer:time().real
         local num_words_target = 0
         local num_words_source = 0
-
+        print('d')
         
         local i = 1
 
@@ -481,7 +481,7 @@ function train(m, criterion, train_data, valid_data)
 
 
         local rec = 0
-        while rec < 3 do--data:size() do
+        while rec < data:size() do
             if opt.parallel then
                 if thresh ~= nil and cur_perp < thresh then
                     skip = opt.n_proc
@@ -501,7 +501,6 @@ function train(m, criterion, train_data, valid_data)
                     local reply = parallel.children[j]:receive("noblock")
                     if reply ~= nil then
                         rec = rec + 1
-                        print(rec)
                         for k = 1, #m.params do
                             if opt.ada_grad then
                                 historical_grad[k]:add(torch.cmul(reply.gps[k], reply.gps[k]))
@@ -516,7 +515,7 @@ function train(m, criterion, train_data, valid_data)
                         train_nonzeros = train_nonzeros + reply.nonzeros
                         train_loss = train_loss + reply.loss * reply.batch_l
 
-                        if i <= 3 then --data:size() then
+                        if i <= data:size() then
                             local pkg = {parameters = m.params, index = batch_order[i]}
                             parallel.children[j]:join()
                             parallel.children[j]:send(pkg)
@@ -541,7 +540,6 @@ function train(m, criterion, train_data, valid_data)
                     opt.print(stats)
                 end
                 sys.sleep(.5)
-                print('a')
             else
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
                 batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm = train_ind(batch_order[i], m, criterion, train_data)
@@ -582,13 +580,11 @@ function train(m, criterion, train_data, valid_data)
                     opt.print(stats)
                 end
             end
-            print('b')
             -- Friendly reminder
             if i % 200 == 0 then
                 collectgarbage()
             end
         end
-        print('c')
         return train_loss, train_nonzeros
     end
 
@@ -632,20 +628,19 @@ function train(m, criterion, train_data, valid_data)
 
 
     for epoch = opt.start_epoch, opt.num_epochs do
-
+        print('b')
         -- Causing error after 1st epoch (likely because of clean_layer)
         -- TODO: figure out how to fix clean_layer
         m.enc:training()
         m.dec:training()
+        print('c')
         local total_loss, total_nonzeros = train_batch(train_data, epoch)
-
-        print('main')
 
         local train_score = math.exp(total_loss / total_nonzeros)
         opt.print('Train', train_score)
 
-        local valid_score = eval(m, criterion, valid_data)
-        opt.print('Valid', valid_score)
+        -- local valid_score = eval(m, criterion, valid_data)
+        -- opt.print('Valid', valid_score)
 
         opt.train_perf[#opt.train_perf + 1] = train_score
         opt.val_perf[#opt.val_perf + 1] = valid_score
@@ -658,7 +653,9 @@ function train(m, criterion, train_data, valid_data)
             opt.print('Saving checkpoint to ' .. save_file)
             m.enc:clearState(); m.enc_rnn:clearState(); m.dec:clearState(); clean_layer(m.dec_rnn:clearState())
             torch.save(save_file, {{m.enc, m.dec, m.enc_rnn, m.dec_rnn}, opt})
+            print('past')
         end
+        print('a')
     end
 end
 
