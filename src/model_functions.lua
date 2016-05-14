@@ -478,10 +478,12 @@ function train(m, criterion, train_data, valid_data)
             parallel.children[j]:send(pkg)
             i = i + 1
         end
+        print('e')
 
 
         local rec = 0
         while rec < 3 do --data:size() do
+            print('f')
             if opt.parallel then
                 if thresh ~= nil and cur_perp < thresh then
                     skip = opt.n_proc
@@ -628,12 +630,10 @@ function train(m, criterion, train_data, valid_data)
 
 
     for epoch = opt.start_epoch, opt.num_epochs do
-        print('b')
         -- Causing error after 1st epoch (likely because of clean_layer)
         -- TODO: figure out how to fix clean_layer
         m.enc:training()
         m.dec:training()
-        print('c')
         local total_loss, total_nonzeros = train_batch(train_data, epoch)
 
         local train_score = math.exp(total_loss / total_nonzeros)
@@ -656,9 +656,7 @@ function train(m, criterion, train_data, valid_data)
             opt.print = nil
             torch.save(save_file, {{m.enc, m.dec, m.enc_rnn, m.dec_rnn}, opt})
             opt.print = holdprint
-            print('past')
         end
-        print('a')
     end
 end
 
