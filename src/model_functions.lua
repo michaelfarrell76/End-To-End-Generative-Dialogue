@@ -480,7 +480,7 @@ function train(m, criterion, train_data, valid_data)
 
 
         local rec = 0
-        while rec < 5 do--data:size() do
+        while rec < data:size() do
             if opt.parallel then
                 if thresh ~= nil and cur_perp < thresh then
                     skip = opt.n_proc
@@ -513,7 +513,7 @@ function train(m, criterion, train_data, valid_data)
                         train_nonzeros = train_nonzeros + reply.nonzeros
                         train_loss = train_loss + reply.loss * reply.batch_l
 
-                        if i <= 5 then --data:size() then
+                        if i <= data:size() then
                             local pkg = {parameters = m.params, index = batch_order[i]}
                             parallel.children[j]:join()
                             parallel.children[j]:send(pkg)
@@ -632,9 +632,9 @@ function train(m, criterion, train_data, valid_data)
         local train_score = math.exp(total_loss / total_nonzeros)
         opt.print('Train', train_score)
 
-        -- local valid_score = eval(m, criterion, valid_data)
-        -- opt.print('Valid', valid_score)
-        valid_score = 10000
+        local valid_score = eval(m, criterion, valid_data)
+        opt.print('Valid', valid_score)
+
         opt.train_perf[#opt.train_perf + 1] = train_score
         opt.val_perf[#opt.val_perf + 1] = valid_score
 
