@@ -468,61 +468,28 @@ function train(m, criterion, train_data, valid_data)
         local start_time = timer:time().real
         local num_words_target = 0
         local num_words_source = 0
-        cur_perp = INF
 
-        local skip = 0
-        if opt.parallel then
-            skip = opt.n_proc
-            parallel.children:join()
-
-        end
-
+        parallel.children:join()
+        
         local i = 1
 
-        local thresh = opt.wait or INF + 1
-
-        if opt.parallel and cur_perp >  thresh then
-            skip = 1
-            thresh = -1
-        end
-
-        for j = 1, skip do
+         for j = 1, skip do
             local pkg = {parameters = m.params, index = batch_order[i]}
             parallel.children[j]:send(pkg)
             i = i + 1
         end
 
-       
-        if opt.ada_grad then
-            opt.print('Using ada_grad')
-            local fudge_fact = .000000001
-            historical_grad = {}
-            fudge = {}
-            l_r = {}
-            for k = 1, #m.params do
-                historical_grad[k] = torch.zeros(m.params[k]:size(1))
-                fudge[k] = torch.zeros(m.params[k]:size(1)):fill(fudge_fact)
-                l_r[k] = torch.zeros(m.params[k]:size(1)):fill(opt.learning_rate)
-                if opt.gpuid > 0 then
-                    historical_grad[k] = historical_grad[k]:cuda()
-                    fudge[k] = fudge[k]:cuda()
-                    l_r[k] = l_r[k]:cuda()
-                end
-            end
-        end
-
-        
-
-        while i <= data:size() do
+        while i <= 8 do--data:size() do
             if opt.parallel then
-                if cur_perp < thresh then
+                if thresh ~= nil and cur_perp < thresh then
                     skip = opt.n_proc
                     for j = 2, skip do
                         local pkg = {parameters = m.params, index = batch_order[i]}
                         parallel.children[j]:send(pkg)
                         i = i + 1
+                        -- here should check if i is data:size()
                     end
-                    thresh = -1
+                    thresh = nil
                 end
 
                 -- parallel.children:join()
@@ -620,6 +587,44 @@ function train(m, criterion, train_data, valid_data)
     end
 
     local total_loss, total_nonzeros, batch_loss, batch_nonzeros
+
+    parallel.children:join()
+    cur_perp = INF
+
+    thresh = opt.wait or INF + 1
+
+    skip = 0
+
+    if opt.parallel then
+        if  cur_perp > thresh then
+            skip = 1
+        else
+            skip = opt.n_proc
+            thresh = nil
+        end
+    end
+
+
+    if opt.ada_grad then
+        opt.print('Using ada_grad')
+        local fudge_fact = .000000001
+        historical_grad = {}
+        fudge = {}
+        l_r = {}
+        for k = 1, #m.params do
+            historical_grad[k] = torch.zeros(m.params[k]:size(1))
+            fudge[k] = torch.zeros(m.params[k]:size(1)):fill(fudge_fact)
+            l_r[k] = torch.zeros(m.params[k]:size(1)):fill(opt.learning_rate)
+            if opt.gpuid > 0 then
+                historical_grad[k] = historical_grad[k]:cuda()
+                fudge[k] = fudge[k]:cuda()
+                l_r[k] = l_r[k]:cuda()
+            end
+        end
+    end
+
+
+
     for epoch = opt.start_epoch, opt.num_epochs do
 
         -- Causing error after 1st epoch (likely because of clean_layer)
