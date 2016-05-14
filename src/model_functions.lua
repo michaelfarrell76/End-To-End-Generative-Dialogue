@@ -626,7 +626,7 @@ function train(m, criterion, train_data, valid_data)
             end
         end
     end
-
+    break_start = nil
     ignore_time = 0
 
     for epoch = opt.start_epoch, opt.num_epochs do
