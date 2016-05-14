@@ -468,6 +468,10 @@ function train(m, criterion, train_data, valid_data)
         local start_time = timer:time().real
         local num_words_target = 0
         local num_words_source = 0
+
+        if break_start then
+            ignore_time = ignore_time + (timer:time().real - break_start)
+        end
         
         local i = 1
 
@@ -534,7 +538,7 @@ function train(m, criterion, train_data, valid_data)
                     stats = stats .. string.format('Training: %d/%d/%d total/source/target tokens/sec',
                         (num_words_target+num_words_source) / time_taken,
                         num_words_source / time_taken, num_words_target / time_taken)
-                    stats = stats .. string.format(' Time ellapse: %d', timer:time().real)
+                    stats = stats .. string.format(' Time ellapse: %d', timer:time().real - ignore_time)
                     opt.print(stats)
                 end
                 sys.sleep(.5)
@@ -583,6 +587,7 @@ function train(m, criterion, train_data, valid_data)
                 collectgarbage()
             end
         end
+        break_start = timer:time().real
         return train_loss, train_nonzeros
     end
 
@@ -621,6 +626,8 @@ function train(m, criterion, train_data, valid_data)
             end
         end
     end
+
+    ignore_time = 0
 
     for epoch = opt.start_epoch, opt.num_epochs do
         -- Causing error after 1st epoch (likely because of clean_layer)
