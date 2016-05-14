@@ -541,6 +541,7 @@ function train(m, criterion, train_data, valid_data)
                     opt.print(stats)
                 end
                 sys.sleep(.1)
+                print('a')
             else
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
                 batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm = train_ind(batch_order[i], m, criterion, train_data)
@@ -581,6 +582,7 @@ function train(m, criterion, train_data, valid_data)
                     opt.print(stats)
                 end
             end
+            print('b')
             -- Friendly reminder
             if i % 200 == 0 then
                 collectgarbage()
