@@ -469,7 +469,7 @@ function train(m, criterion, train_data, valid_data)
         local num_words_target = 0
         local num_words_source = 0
 
-        parallel.children:join()
+        parallel.children:join('break')
         
         local i = 1
 
