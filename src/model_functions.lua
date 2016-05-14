@@ -633,7 +633,7 @@ function train(m, criterion, train_data, valid_data)
         end
     end
     parallel.children:join()
-
+    torch.setheaptracking(true)
 
 
     for epoch = opt.start_epoch, opt.num_epochs do
