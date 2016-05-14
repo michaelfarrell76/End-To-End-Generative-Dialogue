@@ -485,7 +485,9 @@ function train(m, criterion, train_data, valid_data)
         while rec < 3 do --data:size() do
             print('f')
             if opt.parallel then
+                print('g')
                 if thresh ~= nil and cur_perp < thresh then
+                     print('h')
                     skip = opt.n_proc
                     for j = 2, skip do
                         local pkg = {parameters = m.params, index = batch_order[i]}
@@ -495,13 +497,15 @@ function train(m, criterion, train_data, valid_data)
                     end
                     thresh = nil
                 end
-
+                print('i')
                 -- parallel.children:join()
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
                 for j =  1, skip do
-
+                    print('j')
                     local reply = parallel.children[j]:receive("noblock")
+                    print('k')
                     if reply ~= nil then
+                         print('l')
                         rec = rec + 1
                         for k = 1, #m.params do
                             if opt.ada_grad then
