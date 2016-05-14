@@ -641,7 +641,7 @@ function train(m, criterion, train_data, valid_data)
 
         -- local valid_score = eval(m, criterion, valid_data)
         -- opt.print('Valid', valid_score)
-
+        valid_score = 100000
         opt.train_perf[#opt.train_perf + 1] = train_score
         opt.val_perf[#opt.val_perf + 1] = valid_score
 
