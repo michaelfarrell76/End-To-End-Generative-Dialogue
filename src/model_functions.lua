@@ -469,7 +469,7 @@ function train(m, criterion, train_data, valid_data)
         local num_words_target = 0
         local num_words_source = 0
 
-        if break_start then
+        if break_start ~= nil then
             ignore_time = ignore_time + (timer:time().real - break_start)
         end
         
