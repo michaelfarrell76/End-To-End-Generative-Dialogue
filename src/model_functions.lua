@@ -481,7 +481,7 @@ function train(m, criterion, train_data, valid_data)
 
 
         local rec = 0
-        while rec <= 3 do--data:size() do
+        while rec < 3 do--data:size() do
             if opt.parallel then
                 if thresh ~= nil and cur_perp < thresh then
                     skip = opt.n_proc
@@ -540,7 +540,7 @@ function train(m, criterion, train_data, valid_data)
                     stats = stats .. string.format('Time ellapse: %d', timer:time().real - start_time)
                     opt.print(stats)
                 end
-                sys.sleep(.1)
+                sys.sleep(.5)
                 print('a')
             else
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
