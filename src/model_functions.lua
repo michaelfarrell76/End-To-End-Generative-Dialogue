@@ -588,7 +588,6 @@ function train(m, criterion, train_data, valid_data)
 
     local total_loss, total_nonzeros, batch_loss, batch_nonzeros
 
-    parallel.children:join()
     cur_perp = INF
 
     thresh = opt.wait or INF + 1
