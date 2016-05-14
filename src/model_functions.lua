@@ -621,7 +621,6 @@ function train(m, criterion, train_data, valid_data)
             end
         end
     end
-    beginning time 
 
     for epoch = opt.start_epoch, opt.num_epochs do
         -- Causing error after 1st epoch (likely because of clean_layer)
