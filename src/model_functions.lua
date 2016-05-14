@@ -479,7 +479,9 @@ function train(m, criterion, train_data, valid_data)
             i = i + 1
         end
 
-        while i <= 8 do--data:size() do
+
+        local rec = 0
+        while rec <= 5 do--data:size() do
             if opt.parallel then
                 if thresh ~= nil and cur_perp < thresh then
                     skip = opt.n_proc
@@ -498,6 +500,7 @@ function train(m, criterion, train_data, valid_data)
 
                     local reply = parallel.children[j]:receive("noblock")
                     if reply ~= nil then
+                        rec = rec + 1
                         for k = 1, #m.params do
                             if opt.ada_grad then
                                 historical_grad[k]:add(torch.cmul(reply.gps[k], reply.gps[k]))
@@ -512,7 +515,7 @@ function train(m, criterion, train_data, valid_data)
                         train_nonzeros = train_nonzeros + reply.nonzeros
                         train_loss = train_loss + reply.loss * reply.batch_l
 
-                        if i <= data:size() then
+                        if i <= 5 then --data:size() then
                             local pkg = {parameters = m.params, index = batch_order[i]}
                             parallel.children[j]:join()
                             parallel.children[j]:send(pkg)
@@ -584,8 +587,6 @@ function train(m, criterion, train_data, valid_data)
             end
         end
 
-        parallel.children:join()
-
         return train_loss, train_nonzeros
     end
 
@@ -635,6 +636,8 @@ function train(m, criterion, train_data, valid_data)
         m.enc:training()
         m.dec:training()
         local total_loss, total_nonzeros = train_batch(train_data, epoch)
+
+        print('main')
 
         local train_score = math.exp(total_loss / total_nonzeros)
         opt.print('Train', train_score)
