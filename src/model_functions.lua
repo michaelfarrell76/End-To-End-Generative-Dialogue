@@ -532,6 +532,7 @@ function train(m, criterion, train_data, valid_data)
                     end
                     
                 end
+                print('m')
                 local time_taken = timer:time().real - start_time
                 if i % opt.print_every == 0  and batch_l ~= nil then
                     local stats = string.format('Epoch: %d, Batch: %d/%d, Batch size: %d, LR: %.4f, ',
@@ -545,6 +546,7 @@ function train(m, criterion, train_data, valid_data)
                     stats = stats .. string.format('Time ellapse: %d', timer:time().real - start_time)
                     opt.print(stats)
                 end
+                print('n')
                 sys.sleep(.5)
             else
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
@@ -586,6 +588,7 @@ function train(m, criterion, train_data, valid_data)
                     opt.print(stats)
                 end
             end
+            print('o')
             -- Friendly reminder
             if i % 200 == 0 then
                 collectgarbage()
