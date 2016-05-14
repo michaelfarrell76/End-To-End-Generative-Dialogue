@@ -474,7 +474,6 @@ function train(m, criterion, train_data, valid_data)
 
          for j = 1, skip do
             local pkg = {parameters = m.params, index = batch_order[i]}
-            parallel.children[j]:receive("noblock")
             parallel.children[j]:send(pkg)
             i = i + 1
         end
