@@ -537,9 +537,7 @@ function train(m, criterion, train_data, valid_data)
                     stats = stats .. string.format('Time ellapse: %d', timer:time().real - start_time)
                     opt.print(stats)
                 end
-                print('n')
                 sys.sleep(.5)
-                print('nn')
             else
                 local batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm
                 batch_l, target_l, source_l, nonzeros, loss, param_norm, grad_norm = train_ind(batch_order[i], m, criterion, train_data)
