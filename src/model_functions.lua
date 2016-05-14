@@ -480,7 +480,7 @@ function train(m, criterion, train_data, valid_data)
 
 
         local rec = 0
-        while rec < 3 do--data:size() do
+        while rec < 5 do--data:size() do
             if opt.parallel then
                 if thresh ~= nil and cur_perp < thresh then
                     skip = opt.n_proc
@@ -513,7 +513,7 @@ function train(m, criterion, train_data, valid_data)
                         train_nonzeros = train_nonzeros + reply.nonzeros
                         train_loss = train_loss + reply.loss * reply.batch_l
 
-                        if i <= 3 then --data:size() then
+                        if i <= 5 then --data:size() then
                             local pkg = {parameters = m.params, index = batch_order[i]}
                             parallel.children[j]:join()
                             parallel.children[j]:send(pkg)
