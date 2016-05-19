@@ -2,6 +2,8 @@
 
 This code implements multi-layer recurrent neural network encoder-decoder models (RNN, GRU, and LSTM) for training/sampling from conversation dialogue. In other words, the model takes a series of sentences of preceding dialogue and attempts to predict a response sentence. All models and their training, evaluation, and sampling are detailed thoroughly in the paper [End-to-End Generative Dialogue](https://github.com/michaelfarrell76/End-To-End-Generative-Dialogue/blob/master/paper/main.pdf).
 
+[Here](https://github.com/michaelfarrell76/End-To-End-Generative-Dialogue/blob/master/paper/main.pdf) is a link to the paper describing this project.
+
 ## Primary contributors
 
 [Kevin Yang](https://github.com/kyang01)
